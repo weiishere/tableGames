@@ -1,12 +1,12 @@
 {
-    "name": "koa-weapp-demo",
+    "name": "table_gamms",
     "version": "1.0.0",
     "description": "",
     "main": "app.js",
     "scripts": {
         "start": "pm2 start process.prod.json --no-daemon",
-        "dev": "nodemon --config nodemon.json app.js",
-        "initdb": "npm install && node tools/initdb.js"
+        "build": "",
+        "dev": "nodemon --config nodemon.json app.js"
     },
     "author": "Jason",
     "license": "MIT",
@@ -21,8 +21,7 @@
         "mkdir-p": "0.0.7",
         "mysql": "^2.14.1",
         "pify": "^2.3.0",
-        "sqlite3": "^3.1.13",
-        "wafer-node-sdk": "^1.1.1"
+        "sqlite3": "^3.1.13"
     },
     "devDependencies": {
         "babel-eslint": "^7.1.0",
