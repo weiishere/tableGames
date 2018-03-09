@@ -28,6 +28,7 @@ app.ws.use(route.all('/test/:id'), function (ctx) {
 
 const webpackConfig = require('../webpack.config.babel');
 const compiler = webpack(webpackConfig);
+
 //热部署，自动刷新，需要结合 webpack.config.dev.babel 中的定义
 // app.use(webpackDevMiddleware(compiler, {
 //     noInfo: true, //如果设置该参数为 true，则不打印输出信息
