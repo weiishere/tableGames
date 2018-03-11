@@ -4,18 +4,35 @@ const Koa = require('koa'),
     response = require('./middlewares/response'),
     route = require('koa-route'),
     websockify = require('koa-websocket'),
+    views = require('koa-views'),
+    path = require('path'),
+    Router = require('koa-router'),
     webpack = require('webpack');
 const { devMiddleware, hotMiddleware } = require('koa-webpack-middleware');
+const router = require('./routes');
+
 
 // 创建一个Koa对象表示web app本身:
 const app = websockify(new Koa());
 app.use(bodyParser())
-// 对于任何请求，app将调用该异步函数处理请求：
-app.use(async (ctx, next) => {
-    await next();
-    ctx.response.type = 'text/html';
-    ctx.response.body = '<h1>Hello, koa2!</h1>';
-});
+// 加载模板引擎
+app.use(views(path.join(__dirname, './view'), {
+    extension: 'ejs'
+  }))
+
+// let home = new Router();
+// let router = new Router()
+// home.get('home', async (ctx) => {
+//     await ctx.render('index',{
+//         title:'koa title',
+//         scripts:`<script src='http://apps.bdimg.com/libs/zepto/1.1.4/zepto.js'></script>`
+//     })
+// })
+// 装载所有子路由
+//router.use('/', home.routes(), home.allowedMethods());
+
+// 加载路由中间件
+app.use(router.routes()).use(router.allowedMethods())
 app.ws.use(route.all('/test/:id'), function (ctx) {
     // `ctx` is the regular koa context created from the `ws` onConnection `socket.upgradeReq` object.
     // the websocket is added to the context on `ctx.websocket`.
@@ -44,7 +61,7 @@ const compiler = webpack(webpackConfig);
 
 
 app.use(devMiddleware(compiler, {
-    noInfo: false,
+    noInfo: true,
     quiet: false,
     lazy: true,
     watchOptions: {
