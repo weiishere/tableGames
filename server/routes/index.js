@@ -1,9 +1,10 @@
-const Router = require('koa-router');
-let router = new Router()
-const home = require('./home');
-
-// 装载所有子路由
-router.use('/', home.routes(), home.allowedMethods());
 
 
-module.exports = router;
+module.exports = (app) => {
+    app.get('/home/', function (req, res, next) {
+        res.render('index.ejs', {
+            title: '模板项目',
+            scripts: `<script src='https://cdn.socket.io/socket.io-1.4.5.js'></script><script src='/dist/home.bundle.js'></script>`
+        });
+    });
+};

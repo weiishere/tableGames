@@ -13,12 +13,16 @@
     "dependencies": {
         "axios": "^0.15.3",
         "ejs": "^2.5.7",
+        "express": "^4.16.2",
+        "express-ws": "^3.0.0",
+        "inflation": "^2.0.0",
         "knex": "^0.13.0",
         "koa": "^2.0.0",
         "koa-bodyparser": "^3.2.0",
         "koa-log4": "^2.1.0",
         "koa-route": "^3.2.0",
         "koa-router": "^7.0.1",
+        "koa-static": "^4.0.2",
         "koa-views": "^6.1.4",
         "koa-websocket": "^4.1.0",
         "lodash": "^4.17.4",
@@ -26,7 +30,11 @@
         "mysql": "^2.14.1",
         "pify": "^2.3.0",
         "react": "^16.2.0",
-        "sqlite3": "^3.1.13"
+        "socket.io": "^2.0.4",
+        "sqlite3": "^3.1.13",
+        "unpipe": "^1.0.0",
+        "webpack": "^3.6.0",
+        "ws": "^5.0.0"
     },
     "devDependencies": {
         "babel-core": "^6.26.0",
@@ -39,14 +47,13 @@
         "debug": "^2.6.8",
         "eslint": "^3.9.1",
         "eslint-config-standard": "^6.2.1",
-        "eslint-plugin-promise": "^3.3.1",
+        "eslint-plugin-promise": "^3.7.0",
         "eslint-plugin-standard": "^2.0.1",
         "extract-text-webpack-plugin": "^3.0.2",
         "file-loader": "^1.1.11",
         "koa-webpack-middleware": "^1.0.7",
-        "less-loader": "^4.0.6",
-        "style-loader": "^0.20.2",
-        "webpack": "^4.1.1",
+        "less-loader": "^4.1.0",
+        "style-loader": "^0.20.3",
         "webpack-hot-middleware": "^2.21.2"
     }
 }

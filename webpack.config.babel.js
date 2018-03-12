@@ -25,30 +25,34 @@ const webpackConfig = {
     //   'react-router-redux': path.resolve(nodeModules, 'react-router-redux-fixed/lib/index.js'),
     // }
   },
-  mode: 'development',
+  //mode: 'development',
   // 入口文件 让webpack用哪个文件作为项目的入口
   entry: {
     //index:['./client/pages/index/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=20000&reload=true']
     home: [
-      './client/home/index',
-      'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'
+      './client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'
     ],
     //tableGame: ['./client/tableGame/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
 
   // 出口 让webpack把处理完成的文件放在哪里
+
   output: {
     // 编译输出目录, 不能省略
     path: path.resolve(appPath, 'dist'),
     filename: '[name].bundle.js', //文件名称
-    publicPath: '/dist/' //资源上下文路径
+    publicPath: 'http://localhost:3300/dist/' //资源上下文路径
   },
 
   module: {
     rules: [{
       test: /\.(js|jsx)$/,
-      loader: 'babel-loader'
+      loader: 'babel-loader',
+      exclude: /(node_modules|bower_components)/,
+      query: {
+        presets: ['es2015']
+      }
     }, {
       test: /\.(css|less)$/,
       use: ExtractTextPlugin.extract({
@@ -72,7 +76,7 @@ const webpackConfig = {
       loader: 'url-loader'
     }],
   },
-
+  
   plugins: [
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(), // 热部署替换模块
