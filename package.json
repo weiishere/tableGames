@@ -12,17 +12,20 @@
     "license": "MIT",
     "dependencies": {
         "axios": "^0.15.3",
+        "ejs": "^2.5.7",
         "knex": "^0.13.0",
         "koa": "^2.0.0",
         "koa-bodyparser": "^3.2.0",
         "koa-log4": "^2.1.0",
         "koa-route": "^3.2.0",
         "koa-router": "^7.0.1",
+        "koa-views": "^6.1.4",
         "koa-websocket": "^4.1.0",
         "lodash": "^4.17.4",
         "mkdir-p": "0.0.7",
         "mysql": "^2.14.1",
         "pify": "^2.3.0",
+        "react": "^16.2.0",
         "sqlite3": "^3.1.13"
     },
     "devDependencies": {

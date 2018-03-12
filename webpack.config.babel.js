@@ -24,17 +24,18 @@ const webpackConfig = {
     // alias: {
     //   'react-router-redux': path.resolve(nodeModules, 'react-router-redux-fixed/lib/index.js'),
     // }
-    //模块别名定义，方便直接引用别名
-    // alias: {
-    //   'react-router-redux': path.resolve(nodeModules, 'react-router-redux-fixed/lib/index.js'),
-    // }
   },
-
+  mode: 'development',
   // 入口文件 让webpack用哪个文件作为项目的入口
   entry: {
     //index:['./client/pages/index/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=20000&reload=true']
-    tableGame: ['./client/tableGame/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
+    home: [
+      './client/home/index',
+      'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'
+    ],
+    //tableGame: ['./client/tableGame/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
+
 
   // 出口 让webpack把处理完成的文件放在哪里
   output: {
@@ -46,77 +47,38 @@ const webpackConfig = {
 
   module: {
     rules: [{
-        test   : /\.(js|jsx)$/,
-        loader : 'babel-loader'
+      test: /\.(js|jsx)$/,
+      loader: 'babel-loader'
     }, {
-        test: /\.(css|less)$/,
-        use : ExtractTextPlugin.extract({
-            fallback: 'style-loader',
-            use     : [{
-                loader: 'css-loader'
-            }, {
-                loader : 'postcss-loader',
-                options: {
-                    plugins: () => [autoprefixer({
-                        browsers: ['last 5 versions']
-                    })]
-                }
-            }, {
-                loader: 'less-loader'
-            }]
+      test: /\.(css|less)$/,
+      use: ExtractTextPlugin.extract({
+        fallback: 'style-loader',
+        use: [{
+          loader: 'css-loader'
+        }, {
+          loader: 'postcss-loader',
+          options: {
+            plugins: () => [autoprefixer({
+              browsers: ['last 5 versions']
+            })]
+          }
+        }, {
+          loader: 'less-loader'
+        }]
 
-        })
+      })
     }, {
-        test  : /\.(ico|png|gif|jpg|jpeg)$/,
-        loader: 'url-loader'
+      test: /\.(ico|png|gif|jpg|jpeg)$/,
+      loader: 'url-loader'
     }],
-    // loaders: [
-    //   // https://github.com/MoOx/eslint-loader
-    //   // {
-    //   //   enforce: 'pre',
-    //   //   test: /\.js$/,
-    //   //   exclude: /node_modules/,
-    //   //   loader: 'eslint-loader'
-    //   // },
-    //   {
-    //     test: /\.js?$/,
-    //     loader: 'babel-loader',
-    //     exclude: /node_modules/,
-    //     query: {
-    //       plugins: [
-    //         ["import", { libraryName: "antd", style: "css" }]
-    //       ]
-    //     }
-    //   },
-    //   // https://github.com/webpack/url-loader
-    //   {
-    //     test: /\.(png|jpg|gif)$/,
-    //     loader: 'url-loader',
-    //     query: {
-    //       name: '[hash].[ext]',
-    //       limit: 10000, // 10kb
-    //     }
-    //   },
-    //   {
-    //     test: /\.(mp4|ogg|eot|woff|ttf|svg)$/,
-    //     loader: 'file-loader',
-    //   },
-    //   {
-    //     test: /\.css/,
-    //     loader: 'style-loader!css-loader',
-    //   },
-    //   {
-    //     test: /\.less/,
-    //     loader: 'style-loader!css-loader!less-loader',
-    //   }
-    // ]
   },
 
   plugins: [
+    new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(), // 热部署替换模块
     new webpack.DefinePlugin({
       'process.env': {
-        'NODE_ENV': JSON.stringify('development'),
+        'process.env.NODE_ENV': JSON.stringify('development'),
       }
     })
   ]
