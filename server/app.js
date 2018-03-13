@@ -74,7 +74,7 @@ app.use((err, req, res, next) => {
 });
 const prot = 3300;
 const server = http.createServer(app);
-
+/*
 var WebSocket = require('ws');
 var wss = new WebSocket.Server({ server });
 wss.on('connection', function connection(ws,request) {
@@ -89,43 +89,100 @@ wss.on('connection', function connection(ws,request) {
             }
         });
     });
+});*/
+/*
+const io = require('socket.io');
+const ws = io.listen(server);
+var checkNickname = function(name){
+    for(var k in ws.sockets.sockets){
+        if(ws.sockets.sockets.hasOwnProperty(k)){
+            if(ws.sockets.sockets[k] && ws.sockets.sockets[k].nickname == name){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+ws.on('connection', function(client){
+    console.log('\033[96msomeone is connect\033[39m \n');
+    client.on('join', function(msg){
+        // 检查是否有重复
+        if(checkNickname(msg)){
+            client.emit('nickname', '昵称有重复!');
+        }else{
+            client.nickname = msg;
+            ws.sockets.emit('announcement', '系统', msg + ' 加入了聊天室!');
+        }
+    });
+    // 监听发送消息
+    client.on('send.message', function(msg){
+        client.broadcast.emit('send.message',client.nickname,  msg);
+    });
+    // 断开连接时，通知其它用户
+    client.on('disconnect', function(){
+        if(client.nickname){
+            client.broadcast.emit('send.message','系统',  client.nickname + '离开聊天室!');
+        }
+    })
+})
+*/
+var io = require('socket.io')(server);
+var fs = require('fs');
+var hashName = new Array();
+io.on('connection', function (socket) {
+    console.log('接入链接-------------------------socket.id ' + socket.id);
+    socket.on('disconnect', function () {
+        console.log('连接断开：---------------------------socket.id:' + socket.id);
+    });
+    socket.on('setName', function (data) {
+        console.log('---------------------------设置名称:' + data);
+        socket.name = data;
+    });
+    socket.on('sayTo', function (data) {
+        for(let i in io.sockets.sockets){
+            const item = io.sockets.sockets[i];
+            if(item.name===data.to){
+                const _mes = `---------------------------${data.from}对${data.to}说:${data.msg}`
+                console.log(_mes);
+                item.emit('message', _mes);
+            }
+        }
+        // io.sockets.forEach(item => {
+        //     console.log('===' + item.name)
+        //     if (item.name === toName) {
+        //         const _mes = `---------------------------${data.from}对${data.to}说:${data.msg}`
+        //         console.log(_mes);
+        //         item.emit('message', _mes);
+        //     }
+        // })
+        // var toSocket;
+        // if (toSocket = _.findWhere(io.sockets.sockets, { name: toName })) {
+        //     console.log(`---------------------------${data.from}对${data.to}说:${data.msg}`);
+        //     toSocket.emit('message', data.msg);
+        // }
+    })
 });
 // const io = require('socket.io');
 // const ws = io.listen(server);
-// var checkNickname = function(name){
-//     for(var k in ws.sockets.sockets){
-//         if(ws.sockets.sockets.hasOwnProperty(k)){
-//             if(ws.sockets.sockets[k] && ws.sockets.sockets[k].nickname == name){
-//                 return true;
-//             }
-//         }
-//     }
-//     return false;
-// }
-// ws.on('connection', function(client){
-//     console.log('\033[96msomeone is connect\033[39m \n');
-//     client.on('join', function(msg){
-//         // 检查是否有重复
-//         if(checkNickname(msg)){
-//             client.emit('nickname', '昵称有重复!');
-//         }else{
-//             client.nickname = msg;
-//             ws.sockets.emit('announcement', '系统', msg + ' 加入了聊天室!');
-//         }
-//     });
+// ws.on('connection', function (client) {
 //     // 监听发送消息
-//     client.on('send.message', function(msg){
-//         client.broadcast.emit('send.message',client.nickname,  msg);
+//     client.on('join', function (msg) {
+//         client.nickname = msg;
+//         console.log('announcement', '系统', msg + ' 加入了聊天室!')
+//         //ws.sockets.emit('announcement', '系统', msg + ' 加入了聊天室!');
+//     });
+//     client.on('send.message', function (msg) {
+//         //client.broadcast.emit('send.message', client.nickname, msg);
+//         console.log('收到信息:' + msg)
+//         client.broadcast.emit('send.message', msg);
 //     });
 //     // 断开连接时，通知其它用户
-//     client.on('disconnect', function(){
-//         if(client.nickname){
-//             client.broadcast.emit('send.message','系统',  client.nickname + '离开聊天室!');
+//     client.on('disconnect', function () {
+//         if (client.nickname) {
+//             //client.broadcast.emit('send.message', '系统', client.nickname + '离开聊天室!');
 //         }
 //     })
-
-// })
-
+// });
 
 
 server.listen(prot);

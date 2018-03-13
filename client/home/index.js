@@ -1,4 +1,4 @@
-const mess = document.getElementById("mess");
+/*const mess = document.getElementById("mess");
 let time = 1;
 if (window.WebSocket) {
     var wsServer = new WebSocket('ws://localhost:3300');
@@ -20,9 +20,9 @@ if (window.WebSocket) {
         e.preventDefault();
         wsServer.send(time++);
     }, false);
-}
-/*
-var ws = io.connect('http://localhost:3300');
+}*/
+
+var ws = io('ws://localhost:3300');
 var sendMsg = function (msg) {
     ws.emit('send.message', msg);
 }
@@ -51,31 +51,29 @@ var send = function () {
 }
 
 ws.on('connect', function () {
-    // var nickname = window.prompt('输入你的昵称!');
-    // while (!nickname) {
-    //     nickname = window.prompt('昵称不能为空，请重新输入!')
-    // }
-    let nickname = 'name' + Math.random();
-    ws.emit('join', nickname);
+    console.log("连接服务器");
+    // let nickname = 'userName-' + parseInt(Math.random() * 1000000);
+    // ws.emit('setName', nickname);
+});
+ws.on('message', function (data) {
+    document.getElementById('contents').innerHTML += data;
+});
+ws.on('disconnect', function () {
+    console.log("与服务其断开");
 });
 
-// 昵称有重复
-ws.on('nickname', function () {
-    var nickname = window.prompt('昵称有重复，请重新输入!');
-    while (!nickname) {
-        nickname = window.prompt('昵称不能为空，请重新输入!')
-    }
-    ws.emit('join', nickname);
-});
-
-ws.on('send.message', function (from, msg) {
-    addMessage(from, msg);
-});
-
-ws.on('announcement', function (from, msg) {
-    addMessage(from, msg);
-});
-
+document.getElementById('btn1').addEventListener('click', function (e) {
+    //alert('已设置' + document.getElementById('setNameInput').value);
+    ws.emit('setName', document.getElementById('setNameInput').value);
+}, false);
+document.getElementById('btn2').addEventListener('click', function (e) {
+    ws.emit('sayTo', {
+        from: document.getElementById('setNameInput').value,
+        to: document.getElementById('toNameInput').value,
+        msg: document.getElementById('sendMes').value
+    });
+}, false);
+/*
 document.querySelector('textarea').addEventListener('keypress', function (event) {
     if (event.which == 13) {
         send();
