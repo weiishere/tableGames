@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const webpack = require('webpack');
+const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const appPath = path.resolve(__dirname, 'public');
 const nodeModules = path.resolve(__dirname, 'node_modules');
@@ -28,11 +29,9 @@ const webpackConfig = {
   //mode: 'development',
   // 入口文件 让webpack用哪个文件作为项目的入口
   entry: {
-    //index:['./client/pages/index/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=20000&reload=true']
-    home: [
-      './client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'
-    ],
-    //tableGame: ['./client/tableGame/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
+    // app: ['./client/app', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
+    home: ['./client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
+    room: ['./client/room/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
 
@@ -42,7 +41,7 @@ const webpackConfig = {
     // 编译输出目录, 不能省略
     path: path.resolve(appPath, 'dist'),
     filename: '[name].bundle.js', //文件名称
-    publicPath: 'http://localhost:3300/dist/' //资源上下文路径
+    publicPath: '/dist/' //资源上下文路径
   },
 
   module: {
@@ -54,9 +53,9 @@ const webpackConfig = {
         presets: ['es2015']
       }
     }, {
-      test: /\.(css|less)$/,
+      test: /\.(css)$/,
       use: ExtractTextPlugin.extract({
-        fallback: 'style-loader',
+        fallback: "style-loader",
         use: [{
           loader: 'css-loader'
         }, {
@@ -69,15 +68,23 @@ const webpackConfig = {
         }, {
           loader: 'less-loader'
         }]
-
       })
+    }, {
+      test: /\.less$/,
+      use: [{
+        loader: "style-loader"
+      }, {
+        loader: "css-loader"
+      }, {
+        loader: "less-loader"
+      }]
     }, {
       test: /\.(ico|png|gif|jpg|jpeg)$/,
       loader: 'url-loader'
     }],
   },
-  
   plugins: [
+    new ExtractTextPlugin("styles.css"),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(), // 热部署替换模块
     new webpack.DefinePlugin({

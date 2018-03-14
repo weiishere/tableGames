@@ -22,33 +22,7 @@ if (window.WebSocket) {
     }, false);
 }*/
 
-var ws = io('ws://localhost:3300');
-var sendMsg = function (msg) {
-    ws.emit('send.message', msg);
-}
-var addMessage = function (from, msg) {
-    var li = document.createElement('li');
-    li.innerHTML = '<span>' + from + '</span>' + ' : ' + msg;
-    document.querySelector('#chat_conatiner').appendChild(li);
-
-    // 设置内容区的滚动条到底部
-    document.querySelector('#chat').scrollTop = document.querySelector('#chat').scrollHeight;
-
-    // 并设置焦点
-    document.querySelector('textarea').focus();
-
-}
-
-var send = function () {
-    var ele_msg = document.querySelector('textarea');
-    var msg = ele_msg.value.replace('\r\n', '').trim();
-    console.log(msg);
-    if (!msg) return;
-    sendMsg(msg);
-    // 添加消息到自己的内容区
-    addMessage('你', msg);
-    ele_msg.value = '';
-}
+var ws = io('ws://localhost:3300/');
 
 ws.on('connect', function () {
     console.log("连接服务器");
@@ -73,21 +47,3 @@ document.getElementById('btn2').addEventListener('click', function (e) {
         msg: document.getElementById('sendMes').value
     });
 }, false);
-/*
-document.querySelector('textarea').addEventListener('keypress', function (event) {
-    if (event.which == 13) {
-        send();
-    }
-});
-document.querySelector('textarea').addEventListener('keydown', function (event) {
-    if (event.which == 13) {
-        send();
-    }
-});
-document.querySelector('#send').addEventListener('click', function () {
-    send();
-});
-
-document.querySelector('#clear').addEventListener('click', function () {
-    document.querySelector('#chat_conatiner').innerHTML = '';
-});*/
