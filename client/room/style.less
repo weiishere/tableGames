@@ -1,18 +1,20 @@
 .dockBar{
     position: absolute;
-    border: solid 1px #ccc;
-    background: #eee
+    border: solid 0px #ccc;
+    background: #eee;
+    box-sizing: border-box
 }
+
 .wrapper {
     position: relative;
-    width: 400px;
-    height: 600px;
-    margin: 0 auto;
-    background: #ddd;
+    width: 100%;
+    height: 100%;
+    background: rgb(53, 139, 45);
+    
     .dockBottom {
         .dockBar;
-        width: 300px;
-        height: 50px;
+        width: 70%;
+        height: 15%;
         bottom: 0;
         left: 0;
         right: 0;
@@ -20,17 +22,27 @@
     }
     .dockLeft {
         .dockBar;
-        width: 50px;
-        height: 450px;
+        width: 15%;
+        height: 70%;
         top: 0;
         left: 0;
         bottom: 0;
         margin:auto 0;
     }
+    .dockCenter{
+        .dockBar;
+        width: 70%;
+        height: 70%;
+        left: 15%;
+        right: 15%;
+        top:15%;
+        bottom: 15%;
+        background: rgb(9, 104, 33)
+    }
     .dockRight {
         .dockBar;
-        width: 50px;
-        height: 450px;
+        width: 15%;
+        height: 70%;
         top: 0;
         right: 0;
         bottom: 0;
@@ -38,8 +50,8 @@
     }
     .dockTop {
         .dockBar;
-        width: 300px;
-        height: 50px;
+        width: 70%;
+        height: 15%;
         top: 0;
         left: 0;
         right: 0;

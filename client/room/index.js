@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
+import url from 'url';
+import '../reset.less';
 import './style.less';
 
 class Room extends Component {
@@ -10,12 +12,13 @@ class Room extends Component {
         return <div className='wrapper'>
             <div className='dockBottom'></div>
             <div className='dockLeft'></div>
+            <div className='dockCenter'></div>
             <div className='dockRight'></div>
             <div className='dockTop'></div>
         </div>
     }
 }
 render(
-    <Room  />,
+    <Room />,
     document.getElementById('layout')
 )
