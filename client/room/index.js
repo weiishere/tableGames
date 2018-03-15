@@ -3,6 +3,7 @@ import { render } from 'react-dom';
 import url from 'url';
 import '../reset.less';
 import './style.less';
+import { debug } from 'util';
 
 class Room extends Component {
     constructor(props) {
@@ -15,28 +16,39 @@ class Room extends Component {
         const roomId = this.getQueryString('roomId');
         const ws = io('ws://localhost:3300/');
         ws.on('connect', function () {
-            if (roomId) {
-                //加入
-                ws.emit('join', JSON.stringify({
-                    user: user,
-                    roomId: roomId
-                }));
-            } else {
-                //开房
-                ws.emit('checkin', JSON.stringify({
-                    user: user, 
-                    option: {
-                        maxGamerNumber: 4,
-                        mulriple: 1,//倍数
-                        score: 100,//底分
-                        gameTime: 8
-                    }
-                }));
-            }
+            ws.emit('checkin', JSON.stringify({
+                user: user,
+                roomId: roomId,
+                option: {
+                    maxGamerNumber: 4,
+                    mulriple: 1,//倍数
+                    score: 100,//底分
+                    gameTime: 8
+                }
+            }));
+            // if (roomId) {
+            //     //加入
+            //     ws.emit('join', JSON.stringify({
+            //         user: user,
+            //         roomId: roomId
+            //     }));
+            // } else {
+            //     //开房
+            //     ws.emit('checkin', JSON.stringify({
+            //         user: user, 
+            //         option: {
+            //             maxGamerNumber: 4,
+            //             mulriple: 1,//倍数
+            //             score: 100,//底分
+            //             gameTime: 8
+            //         }
+            //     }));
+            // }
         });
-        ws.on('message', function (data) {
-            const type = JSON.parse(data);
-            switch (type) {
+        ws.on('message', function (msg) {
+            const data = JSON.parse(msg);
+
+            switch (data.type) {
                 case 'roomData':
                     break;
                 case 'notified':
@@ -44,6 +56,7 @@ class Room extends Component {
                 case 'error':
                     break;
             }
+            console.log(data.msg);
         });
     }
     componentWillMount() {

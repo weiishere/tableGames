@@ -1,7 +1,9 @@
+const UUID = require('../util/UUID');
+
 class Room {
     constructor(option) {
         const _option = Object.assign({
-            roomId: 1,
+            roomId: 1,//(new UUID()).generateUUID(),
             gamers: [
                 {
                     uid: 1,

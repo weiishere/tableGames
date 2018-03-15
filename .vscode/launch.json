@@ -4,18 +4,28 @@
     // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-        "type": "chrome",
-        "request": "launch",
-        "name": "Launch Chrome",
-        "url": "http://localhost:3300",
-        "webRoot": "${workspaceFolder}"
-    },
+        // {
+        //     "type": "chrome",
+        //     "request": "launch",
+        //     "name": "Launch Chrome",
+        //     "url": "http://localhost:3300",
+        //     "webRoot": "${workspaceFolder}"
+        // },
+        // {
+        //     "type": "node",
+        //     "request": "launch",
+        //     "name": "启动程序",
+        //     "program": "${workspaceFolder}\\server\\app.js"
+        // },
         {
             "type": "node",
             "request": "launch",
-            "name": "启动程序",
-            "program": "${workspaceFolder}\\server\\app.js"
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/server/app.js",
+            "args": ["myFolder/server/app.js"],
+            "windows": {
+                "args": ["myFolder\\server\\app.js"]
+            }
         }
     ]
 }
