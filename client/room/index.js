@@ -7,6 +7,60 @@ import './style.less';
 class Room extends Component {
     constructor(props) {
         super(props);
+        const user = {
+            uid: this.getQueryString('uid'),
+            name: this.getQueryString('name'),
+            avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
+        }
+        const roomId = this.getQueryString('roomId');
+        const ws = io('ws://localhost:3300/');
+        ws.on('connect', function () {
+            if (roomId) {
+                //加入
+                ws.emit('join', JSON.stringify({
+                    user: user,
+                    roomId: roomId
+                }));
+            } else {
+                //开房
+                ws.emit('checkin', JSON.stringify({
+                    user: user, 
+                    option: {
+                        maxGamerNumber: 4,
+                        mulriple: 1,//倍数
+                        score: 100,//底分
+                        gameTime: 8
+                    }
+                }));
+            }
+        });
+        ws.on('message', function (data) {
+            const type = JSON.parse(data);
+            switch (type) {
+                case 'roomData':
+                    break;
+                case 'notified':
+                    break;
+                case 'error':
+                    break;
+            }
+        });
+    }
+    componentWillMount() {
+
+    }
+    getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var reg_rewrite = new RegExp("(^|/)" + name + "/([^/]*)(/|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        var q = window.location.pathname.substr(1).match(reg_rewrite);
+        if (r != null) {
+            return unescape(r[2]);
+        } else if (q != null) {
+            return unescape(q[2]);
+        } else {
+            return null;
+        }
     }
     render() {
         return <div className='wrapper'>

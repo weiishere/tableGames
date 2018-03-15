@@ -1,10 +1,18 @@
 class Room {
     constructor(option) {
         const _option = Object.assign({
+            roomId: 1,
             gamers: [
                 {
                     uid: 1,
                     niceName: '葛大爷',
+                    avatar: '',
+                    point: 1000,
+                    state: 'wait'//ready
+                },
+                {
+                    uid: 2,
+                    niceName: '董卓',
                     avatar: '',
                     point: 1000,
                     state: 'wait'//ready
@@ -39,7 +47,7 @@ class Room {
             if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
         //全都准备好了
-        if (roomState === 'playing') {
+        if (roomState === 'playing' && this.gamers.length === this.maxGamerNumber) {
             self.begin();
         }
     }
