@@ -20,7 +20,7 @@ class Room extends Component {
                 user: user,
                 roomId: roomId,
                 option: {
-                    maxGamerNumber: 4,
+                    gamerNumber: 4,
                     mulriple: 1,//倍数
                     score: 100,//底分
                     gameTime: 8
@@ -37,7 +37,7 @@ class Room extends Component {
             //     ws.emit('checkin', JSON.stringify({
             //         user: user, 
             //         option: {
-            //             maxGamerNumber: 4,
+            //             gamerNumber: 4,
             //             mulriple: 1,//倍数
             //             score: 100,//底分
             //             gameTime: 8
@@ -56,7 +56,7 @@ class Room extends Component {
                 case 'error':
                     break;
             }
-            console.log(data.msg);
+            console.log(data.content);
         });
     }
     componentWillMount() {

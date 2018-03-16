@@ -1,6 +1,7 @@
 
 const fs = require('fs');
 const Room = require('../gameEngine/room');
+const Majiang = require('../gameEngine/majiang');
 
 module.exports = (server) => {
     const io = require('socket.io')(server);
@@ -11,12 +12,11 @@ module.exports = (server) => {
             console.log('连接断开：---------------------------socket.id:' + socket.id);
         });
         socket.on('checkin', function (_data) {
-            let data = JSON.parse(_data);
+            let data = JSON.parse(_data);//user, roomId, option
             const otherRoom = findUserInRoom(data.user.uid);
             if (otherRoom && otherRoom.roomId !== data.roomId) {
                 setTimeout(() => {
-                    socket.emit('message', `{"type":"notified","msg":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                    //sendForUser(data.user.uid, `{"type":"notified","msg":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                    socket.emit('message', `{"type":"notified","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                 }, 1000);
                 return;
             }
@@ -31,13 +31,13 @@ module.exports = (server) => {
                     socket.user = data.user;
                     console.log(data.user.name + '加入房间ID:' + room.roomId);
                     setTimeout(() => {
-                        sendForRoom(data.roomId, `{"type":"notified","msg":"${data.user.name}加入房间ID:${room.roomId}"}`);
+                        sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}"}`);
                     }, 2000);
-                    //sendForRoom(data.roomId, `{"type":"notified","msg":"${data.user.name}加入房间ID:${room.roomId}}`);
+                    //sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}}`);
                 } else {
                     socket.user = data.user;
                     setTimeout(() => {
-                        sendForRoom(data.roomId, `{"type":"notified","msg":"${data.user.name}很装神，刷新了页面"}`);
+                        sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
                     }, 2000);
                 }
             } else {
@@ -47,20 +47,30 @@ module.exports = (server) => {
                 const room = new Room({
                     roomId: data.roomId,
                     gamers: [data.user],
-                    maxGamerNumber: data.option.maxGamerNumber,
+                    gamerNumber: data.option.gamerNumber,
                     mulriple: data.option.mulriple,//倍数
                     score: data.option.score,//底分
                     gameTime: data.option.gameTime,
                     state: 'wait'
                 });
+                const majiang = new Majiang();
                 rooms.push(room);
                 socket.user = data.user;
                 console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
 
                 setTimeout(() => {
-                    sendForUser(data.user.uid, `{"type":"notified","msg":"${data.user.name}成功开房间ID:${room.roomId}"}`);
+                    sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
+                    sendForUser(data.user.uid, `{"type":"roomData","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                 }, 1000);
             }
+        });
+        socket.on('ready', function (_data) {
+            let data = JSON.parse(_data), room;//uid,roomId,state
+            const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
+            if (_rooms.length === 1) room = _rooms[0];
+            room.setUserState(data.uid, data.state);
+            // room.gamers.forEach(gamer => { if (gamer.uid === data.uid) gamer.state = state; });
+            // room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber;//准备人数等于规定人数
         });
     });
     const sendForUser = (uid, content) => {

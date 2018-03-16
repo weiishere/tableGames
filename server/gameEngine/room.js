@@ -20,7 +20,7 @@ class Room {
                     state: 'wait'//ready
                 }
             ],//玩家
-            maxGamerNumber: 4,
+            gamerNumber: 4,
             mulriple: 1,//倍数
             score: 100,//底分
             gameTime: 4,
@@ -32,10 +32,12 @@ class Room {
         });
     }
     gamerJoin(user) {
-        if (this.gamers.length < this.maxGamerNumber) {
+        if (this.gamers.length < this.gamerNumber) {
             this.gamers.push(user);
+            return true;
         } else {
             //拒绝加入
+            return false;
         }
     }
     setRoomState(state) {
@@ -46,15 +48,16 @@ class Room {
         const self = this;
         this.gamers.forEach((gamer) => {
             if (gamer.uid === uid) gamer.state = state;
-            if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
+            //if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
-        //全都准备好了
-        if (roomState === 'playing' && this.gamers.length === this.maxGamerNumber) {
+        ////准备人数等于规定人数,全都准备好了
+        if (this.gamers.filter(gamer => gamer.state === 'ready').length === this.gamerNumber) {
+            self.setRoomState('playing');
             self.begin();
-        }
+        };
     }
     begin() {
-        this.state = 'playing';
+        //this.state = 'playing';
     }
     //全部局数结束
     end() {
