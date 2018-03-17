@@ -7,14 +7,14 @@ class Room {
             gamers: [
                 {
                     uid: 1,
-                    niceName: '葛大爷',
+                    name: '葛大爷',
                     avatar: '',
                     point: 1000,
                     state: 'wait'//ready
                 },
                 {
                     uid: 2,
-                    niceName: '董卓',
+                    name: '董卓',
                     avatar: '',
                     point: 1000,
                     state: 'wait'//ready
@@ -40,6 +40,9 @@ class Room {
             return false;
         }
     }
+    gamerLeave(uid) {
+        this.gamers = this.gamers.filter(gamer => gamer.uid != uid);
+    }
     setRoomState(state) {
         this.state = state
     }
@@ -50,14 +53,9 @@ class Room {
             if (gamer.uid === uid) gamer.state = state;
             //if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
-        ////准备人数等于规定人数,全都准备好了
-        if (this.gamers.filter(gamer => gamer.state === 'ready').length === this.gamerNumber) {
-            self.setRoomState('playing');
-            self.begin();
-        };
     }
     begin() {
-        //this.state = 'playing';
+        //this.gameStart();
     }
     //全部局数结束
     end() {

@@ -31,7 +31,7 @@ const webpackConfig = {
   entry: {
     // app: ['./client/app', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
     home: ['./client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
-    room: ['./client/room/index', 'webpack-hot-middleware/client']
+    room: ['./client/room/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
 
