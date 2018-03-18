@@ -1,20 +1,24 @@
 const getRedom = require('../../util/redom');
+const UUID = require('../../util/uuid');
 
 class Majiang {
     constructor(option) {
         const _option = Object.assign({
-            gameId: 1,//(new UUID()).generateUUID(),
-            gameState: [
-                { uid: '1', increase: 0, cards: [], groupCards: [] },
-                { uid: '2', increase: 0, cards: [], groupCards: [] },
-                { uid: '3', increase: 0, cards: [], groupCards: [] },
-                { uid: '4', increase: 0, cards: [], groupCards: [] }
-            ],
+            gameId: (new UUID()).generateUUID(),
+            gameState: [{ uid: '1' }, { uid: '2' }, { uid: '3' }, { uid: '4' }],
+            // gameState: [
+            //     { uid: '1', increase: 0, cards: [], groupCards: [] },
+            //     { uid: '2', increase: 0, cards: [], groupCards: [] },
+            //     { uid: '3', increase: 0, cards: [], groupCards: [] },
+            //     { uid: '4', increase: 0, cards: [], groupCards: [] }
+            // ],
         }, option || {});
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
+        this.gameState = this.gameState.map(state => { return { uid: state.uid, increase: 0, cards: [], groupCards: [] } });
         this.cards = [];
+        this.outCards = [];
         this.init();
     }
     init() {
@@ -36,20 +40,46 @@ class Majiang {
         const _length = _cards.length;
         getRedomCard();
     }
-    assignCard() {
+    sendData() {
+        this.sendMsgHandler({
+            gameState: this.gameState,
+            outCards: this.outCards,
+            remainCardNumber: this.cards.length
+        });
+    }
+    //发牌，同时也就开始游戏了
+    assignCard(callback) {
         this.gameState.forEach(state => {
             state.cards = this.cards.splice(0, 13);
-        })
+        });
+        this.sendData();
     }
+    //抓牌
     fatchCard(uid) {
-        const cardByCatch = this.cards.splice(0, 1)[0];
+        if (this.cards.length === 0) {
+            //如果总牌数为0了，则结束游戏
+            this.overHandler.call(this);
+            return false;
+        }
         const state = this.gameState.filter(item => item.uid === uid)[0];
+        const cardByCatch = this.cards.splice(0, 1)[0];
         state.cards.push(cardByCatch);
         return cardByCatch;
     }
+    //出牌
     showCard(uid, card) {
         const state = this.gameState.filter(item => item.uid === uid)[0];
         state.cards = state.cards.filter(item => item.key != card.key);
+        this.outCards.push(state.cards.filter(item => item.key === card.key)[0]);
+    }
+    setBegin(fn) {
+        this.beginHandler = fn;
+    }
+    setOverHander(fn) {
+        this.overHandler = fn;
+    }
+    setSendMsg(fn) {
+        this.sendMsgHandler = fn;
     }
 }
 module.exports = Majiang;

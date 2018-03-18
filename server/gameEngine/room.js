@@ -1,4 +1,5 @@
 const UUID = require('../util/UUID');
+const Majiang = require('./majiang')
 
 class Room {
     constructor(option) {
@@ -25,7 +26,8 @@ class Room {
             score: 100,//底分
             gameTime: 4,
             state: 'wait',//wait、playing、end,
-            recode: []
+            recode: [],
+            gameType: 'majiang'//‘jinhua’
         }, option);
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
@@ -54,12 +56,37 @@ class Room {
             //if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
     }
+    singleGameBegin() {
+        const self = this;
+        const game = new Majiang({
+            gameState: this.gamers.map(gamer => { return { uid: gamer.uid } })
+        });
+        game.setSendMsg(function (content) {
+            //监听游戏发出的任何信息
+            self.sendMsg && self.sendMsg(content);
+        })
+        game.setOverHander(function () {
+            //监听单局游戏结束，进入下一局
+            if (self.gameTime > 0) {
+                //单局开始
+                self.gameTime--;
+                self.state = 'playing';
+                self.singleGameBegin();
+            } else {
+                self.state = 'end';
+                self.end();//所有局数结束，房间结束
+            }
+        });
+        game.assignCard();//分发牌
+    }
     begin() {
+        this.singleGameBegin();
         //this.gameStart();
     }
     //全部局数结束
     end() {
         this.state = 'end';
+        this.endHandler && this.endHandler();
     }
     //单局结算
     settlement(result) {
@@ -77,6 +104,12 @@ class Room {
                 }
             });
         });
+    }
+    setSendMsg(fn) {
+        this.sendMsg = fn;
+    }
+    setEnd(fn) {
+        this.endHandler = fn;
     }
 }
 module.exports = Room;

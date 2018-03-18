@@ -1,5 +1,5 @@
 const Room = require('./room');
-const Majiang = require('./majiang');
+const clone = require('clone');
 let rooms = [];
 
 module.exports = (io, socket) => {
@@ -49,6 +49,7 @@ module.exports = (io, socket) => {
                 setTimeout(() => {
                     console.log(`{"type":"notified","content":"${socket.user.name}离开了房间ID:${room.roomId}"}`);
                     sendForRoom(room.roomId, `{"type":"notified","content":"${socket.user.name}离开了房间ID:${room.roomId}"}`);
+                    sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
                 }, 500);
             }
         },
@@ -75,11 +76,12 @@ module.exports = (io, socket) => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
                         setTimeout(() => {
                             sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}"}`);
-                         }, 100);
+                        }, 100);
                     }, 500);
                 } else {
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
+                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
                     }, 500);
                 }
             } else {
@@ -93,9 +95,9 @@ module.exports = (io, socket) => {
                     mulriple: data.option.mulriple,//倍数
                     score: data.option.score,//底分
                     gameTime: data.option.gameTime,
-                    state: 'wait'
+                    state: 'wait',
+                    gameType: 'majiang'
                 });
-                const majiang = new Majiang();
                 rooms.push(room);
                 socket.user = data.user;
                 console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
@@ -104,29 +106,55 @@ module.exports = (io, socket) => {
                     sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
-                     }, 100);
+                    }, 100);
                 }, 500);
             }
         },
         ready: (data) => {
-            let room;//uid,roomId,state
+            let room;//user,roomId,state
             const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
             if (_rooms.length === 1) room = _rooms[0];
-            room.setUserState(data.uid, data.state);
-            ////准备人数等于规定人数,全都准备好了
-            // if (this.gamers.filter(gamer => gamer.state === 'ready').length === this.gamerNumber) {
-            //     self.setRoomState('playing');
-            //     self.begin();
-            // };
+            room.setUserState(data.user.uid, data.state);
             if (room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber) {
                 //准备人数等于规定人数，游戏开始
-                room.state = 'playing';
-                majiang.begin();
+                room.setSendMsg(function (content) {
+                    //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
+                    room.gamers.forEach(gamer => {
+                        const _data = {
+                            gameState: (() => {
+                                let result = new Object(), l = content.gameState.length;
+                                for (let i = 0; i < l; i++) {
+                                    const userState = content.gameState[i];
+                                    result['user_' + userState.uid] = clone(userState);
+                                    if (userState.uid !== gamer.uid) {
+                                        result['user_' + userState.uid].cards = userState.cards.length;
+                                    }
+                                }
+                                return result;
+                            })(),
+                            // gameState: content.gameState.map(state => {
+                            //     return {
+                            //         uid: state.uid,
+                            //         increase: state.increase,
+                            //         cards: state.uid == gamer.uid ? state.cards : state.cards.length,//不是自己的话则返回数量
+                            //         groupCards: state.groupCards
+                            //     }
+                            // }),
+                            outCards: content.outCards,
+                            remainCardNumber: content.remainCardNumber
+                        }
+                        sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                    });
+                })
+                room.setEnd(function () {
+
+                });
+                room.begin();
             }
             setTimeout(() => {
-                sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
-                //sendForUser(data.user.uid, `{"type":"roomData","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
-            }, 500);
+                //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
+                sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
+            }, 100);
         }
     }
 }
