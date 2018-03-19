@@ -26,6 +26,7 @@ import {
 } from '../../common/lufylegend-1.10.1.min';
 import util from './util';
 import imgData from './images';
+import { text } from '../../../../../Library/Caches/typescript/2.6/node_modules/@types/body-parser';
 
 
 /*
@@ -87,14 +88,40 @@ const main = function () {
 }
 const gameInit = function (result) {
     imglist = result;
-    alert('游戏开始');
+    const game_mine = new Gamer({
+        name:'name1',
+        avatar:'',
+        point:100,
+        state:'wait'
+    },{
+        width:800,height:80
+    },'mine');
+}
+function Gamer(userInfo,size, type) {
+    base(this, LSprite, []);
+    this.userInfo = userInfo;
+    this.size=size;
+    this.type = type;//mine、left、right、front
+    this.setView();
+}
+Gamer.prototype.setView = function () {
+    //主区域
+    if(this.type==='mine'){
+        this.wrapperLayer=tool.createSprite({}, function () {
+            this.graphics.drawRect(1, "#cccccc", [0, 0, 800, 80], true, "#000000");
+        })
+    }
+    this.addChild(this.wrapperLayer);
+    //this.wrapperLayer = tool.createSprite({ image: [imglist["cards"], 0, 0, 80, 10] });
+    //牌列wrap
+    //头像名字分数
 }
 
 
 module.exports = class {
     constructor() { }
     init() {
-        LInit(30, "canvas", 640, 960, main, LEvent.INIT);
+        LInit(30, "canvas", 960, 480, main, LEvent.INIT);
     }
     removeAll() {
         if (LGlobal.frameRate) window.clearInterval(LGlobal.frameRate);

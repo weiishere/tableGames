@@ -44,6 +44,44 @@ module.exports = ({ LSprite, LTextField, LShape }) => {
         for (var i = 0; i < this.length; i++) { if (this[i] == item) { isPass = true; break; } }
         return isPass;
     }
+    const extend = (function() {
+        var isObjFunc = function(name) {
+            var toString = Object.prototype.toString
+            return function() {
+                return toString.call(arguments[0]) === '[object ' + name + ']'
+            } 
+        }
+        var   isObject = isObjFunc('Object'),
+            isArray = isObjFunc('Array'),
+            isBoolean = isObjFunc('Boolean')
+        return function extend() {
+            var index = 0,isDeep = false,obj,copy,destination,source,i
+            if(isBoolean(arguments[0])) {
+                index = 1
+                isDeep = arguments[0]
+            }
+            for(i = arguments.length - 1;i>index;i--) {
+                destination = arguments[i - 1]
+                source = arguments[i]
+                if(isObject(source) || isArray(source)) {
+                    console.log(source)
+                    for(var property in source) {
+                        obj = source[property]
+                        if(isDeep && ( isObject(obj) || isArray(obj) ) ) {
+                            copy = isObject(obj) ? {} : []
+                            var extended = extend(isDeep,copy,obj)
+                            destination[property] = extended 
+                        }else {
+                            destination[property] = source[property]
+                        }
+                    }
+                } else {
+                    destination = source
+                }
+            }
+            return destination
+        }
+    })();
     return {
         getRedom: (minNum, maxNum) => {
             switch (arguments.length) {
@@ -58,25 +96,25 @@ module.exports = ({ LSprite, LTextField, LShape }) => {
                 option.call(_sprite);
                 return _sprite;
             }
-            // var _option = extend({
-            //     x: 0,
-            //     y: 0,
-            //     image: "",
-            //     click: undefined,
-            // }, option || {});
-            var _option = Object.assign(
-                {
-                    x: 0,
-                    y: 0,
-                    image: "",
-                    click: undefined,
-                }, option || {})
+            var _option = extend({
+                x: 0,
+                y: 0,
+                image: null,
+                click: undefined,
+            }, option || {});
+            // var _option = Object.assign(
+            //     {
+            //         x: 0,
+            //         y: 0,
+            //         image: "",
+            //         click: undefined,
+            //     }, option || {})
             var _sprite = new LSprite();
             _sprite.x = _option.x;
             _sprite.y = _option.y;
-            if (_option.image != "") {
+            if (_option.image) {
                 //var bitmap = new LBitmap(new LBitmapData(imglist[_option.image]));
-                var bitmap = new LBitmap(new LBitmapData(_option.image));
+                var bitmap = new LBitmap(new LBitmapData(..._option.image));
                 _sprite.addChild(bitmap);
             }
             if (_option.click) {
@@ -111,6 +149,7 @@ module.exports = ({ LSprite, LTextField, LShape }) => {
             _text.x = _option.x;
             if (callBack) { callBack.call(_text); }
             return _text;
-        }
+        },
+        extend
     }
 }
