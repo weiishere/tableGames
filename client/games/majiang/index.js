@@ -89,27 +89,45 @@ const main = function () {
 const gameInit = function (result) {
     imglist = result;
     const game_mine = new Gamer({
-        name:'name1',
-        avatar:'',
-        point:100,
-        state:'wait'
-    },{
-        width:800,height:80
-    },'mine');
+        name: 'name1',
+        avatar: '',
+        point: 100,
+        state: 'wait'
+    }, { width: 800, height: 80 }, 'mine');
+    const game_left = new Gamer({
+        name: 'name1',
+        avatar: '',
+        point: 100,
+        state: 'wait'
+    }, { width: 80, height: 400 }, 'left');
+    const game_right = new Gamer({
+        name: 'name1',
+        avatar: '',
+        point: 100,
+        state: 'wait'
+    }, { width: 80, height: 400 }, 'right');
+    const game_front = new Gamer({
+        name: 'name1',
+        avatar: '',
+        point: 100,
+        state: 'wait'
+    }, { width: 800, height: 80 }, 'front');
 }
-function Gamer(userInfo,size, type) {
+function Gamer(userInfo, size, type) {
     base(this, LSprite, []);
     this.userInfo = userInfo;
-    this.size=size;
+    this.size = size;
     this.type = type;//mine、left、right、front
     this.setView();
 }
 Gamer.prototype.setView = function () {
+    const self = this;
     //主区域
-    if(this.type==='mine'){
-        this.wrapperLayer=tool.createSprite({}, function () {
-            this.graphics.drawRect(1, "#cccccc", [0, 0, 800, 80], true, "#000000");
-        })
+    this.wrapperLayer = tool.createSprite({}, function () {
+        this.graphics.drawRect(1, "#cccccc", [0, 0, self.size.width, self.size.height], true, "#000000");
+    })
+    if (this.type === 'mine') {
+        
     }
     this.addChild(this.wrapperLayer);
     //this.wrapperLayer = tool.createSprite({ image: [imglist["cards"], 0, 0, 80, 10] });

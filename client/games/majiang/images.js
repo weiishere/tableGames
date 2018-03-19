@@ -1,3 +1,3 @@
 module.exports = new Array(
-    { name: "demo", path: "/images/games/majiang/demo.jpg" }
+    { name: "cards", path: "/images/games/majiang/cards.png" }
 );
