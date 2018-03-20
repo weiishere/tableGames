@@ -31,7 +31,7 @@ const webpackConfig = {
   entry: {
     // app: ['./client/app', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
     home: ['./client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
-    room: ['./client/room/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
+    room: ['./client/room/index_dom', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
 
@@ -47,7 +47,7 @@ const webpackConfig = {
   module: {
     rules: [{
       test: /\.(js|jsx)$/,
-      loader: 'babel-loader',
+      loader: 'babel-loader?cacheDirectory=true',
       exclude: /(node_modules|bower_components)/,
       query: {
         presets: ['es2015']

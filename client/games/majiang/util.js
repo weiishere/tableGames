@@ -64,7 +64,7 @@ module.exports = ({ LSprite, LTextField, LShape }) => {
                 destination = arguments[i - 1]
                 source = arguments[i]
                 if(isObject(source) || isArray(source)) {
-                    console.log(source)
+                    //console.log(source)
                     for(var property in source) {
                         obj = source[property]
                         if(isDeep && ( isObject(obj) || isArray(obj) ) ) {
