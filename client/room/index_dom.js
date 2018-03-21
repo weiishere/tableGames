@@ -61,6 +61,8 @@ class Room extends Component {
             }
             console.log(data.content);
         });
+
+        
     }
     componentWillMount() {
 
@@ -94,14 +96,18 @@ class Room extends Component {
             otherGamers = this.state.room.gamers.filter(gamer => gamer.uid !== this.state.user.uid);
         }
         return this.state.room ?
-            <div className='wrapper'>
+            <div className='wrapper css10e99f6c6f1c375'>
                 <div className='dockBottom'>
-                    <span>{me.name}</span>
+                    <div className='userDock'>
+                        <img src='/images/games/majiang/head.jpg' />
+                        <div>{me.name}</div>
+                    </div>
+
                     {this.state.game ? <div className='cardsListWrap'>
                         {this.state.game.gameState['user_' + this.state.user.uid].cards.map(item => <span key={item.key}>{getColorName(item.number, item.color)}</span>)}
-                    </div> : (me.state == 'wait' ?
-                        <button onClick={() => this.ready('ready')}>准备</button> :
-                        <button onClick={() => this.ready('wait')}>取消准备</button>)}
+                    </div> : <div className='operateWrap'>{me.state == 'wait' ?
+                        <button className='css10e99f6c6f1c375' onClick={() => this.ready('ready')}>准备开始</button> :
+                        <button onClick={() => this.ready('wait')}>取消准备</button>}</div>}
                 </div>
                 <div className='dockLeft'>
                     {otherGamers[0] ? <div><span>{otherGamers[0].name}</span> | <span>{getStateStr(otherGamers[0].state)}</span></div> : '...'}
