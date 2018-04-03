@@ -1,5 +1,6 @@
 const UUID = require('../util/UUID');
-const Majiang = require('./majiang')
+const Majiang = require('./majiang');
+const clone = require('clone');
 
 class Room {
     constructor(option) {
@@ -27,11 +28,36 @@ class Room {
             gameTime: 4,
             state: 'wait',//wait、playing、end,
             recode: [],
-            gameType: 'majiang'//‘jinhua’
+            gameType: 'majiang',//‘jinhua’
+            game: {},//正在进行的游戏
         }, option);
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
+        let self = this;
+        this.gameType = "majiang";
+        this.game = new Majiang();
+        this.game.setSendMsg(function (content) {
+            //监听游戏发出的任何信息
+            self.sendMsg && self.sendMsg(content);
+        })
+        this.game.setOverHander(function () {
+            //监听单局游戏结束，进入下一局
+            if (self.gameTime > 0) {
+                //单局开始
+                self.gameTime--;
+                self.state = 'playing';
+                self.singleGameBegin();
+            } else {
+                self.state = 'end';
+                self.end();//所有局数结束，房间结束
+            }
+        });
+    }
+    getSimplyData() {
+        const dataClone = clone(this);
+        delete dataClone.game;
+        return dataClone;
     }
     gamerJoin(user) {
         if (this.gamers.length < this.gamerNumber) {
@@ -56,31 +82,15 @@ class Room {
             //if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
     }
-    singleGameBegin() {
+    singleGameBegin(scoket) {
         const self = this;
-        const game = new Majiang({
-            gameState: this.gamers.map(gamer => { return { uid: gamer.uid } })
-        });
-        game.setSendMsg(function (content) {
-            //监听游戏发出的任何信息
-            self.sendMsg && self.sendMsg(content);
-        })
-        game.setOverHander(function () {
-            //监听单局游戏结束，进入下一局
-            if (self.gameTime > 0) {
-                //单局开始
-                self.gameTime--;
-                self.state = 'playing';
-                self.singleGameBegin();
-            } else {
-                self.state = 'end';
-                self.end();//所有局数结束，房间结束
-            }
-        });
-        game.assignCard();//分发牌
+        //注册游戏客户端动作
+        //game.regAction(scoket, this);
+        this.game.init(this.gamers.map(gamer => { return { uid: gamer.uid } }));
+        this.game.assignCard();//分发牌
     }
-    begin() {
-        this.singleGameBegin();
+    begin(scoket) {
+        this.singleGameBegin(scoket);
         //this.gameStart();
     }
     //全部局数结束

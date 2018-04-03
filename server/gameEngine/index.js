@@ -2,7 +2,7 @@ const Room = require('./room');
 const clone = require('clone');
 let rooms = [];
 
-module.exports = (io, socket) => {
+module.exports = (io, scoket) => {
     const sendForUser = (uid, content) => {
         for (let i in io.sockets.sockets) {
             const item = io.sockets.sockets[i];
@@ -37,18 +37,24 @@ module.exports = (io, socket) => {
         }
         return null;
     }
+    const getRoom = (roomId) => {
+        let room;//user,roomId,state
+        const _rooms = rooms.filter(item => item.roomId + '' === roomId);
+        if (_rooms.length === 1) room = _rooms[0];
+        return room;
+    }
     return {
         connection: () => {
-            //console.log('接入链接-------------------------socket.id ' + socket.id);
+            //console.log('接入链接-------------------------scoket.id ' + scoket.id);
         },
         disconnect: () => {
-            //console.log('连接断开：---------------------------socket.id:' + socket.id);
-            const room = findUserInRoom(socket.user.uid);
+            //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
+            const room = findUserInRoom(scoket.user.uid);
             if (room) {
-                room.gamerLeave(socket.user.uid);
+                room.gamerLeave(scoket.user.uid);
                 setTimeout(() => {
-                    console.log(`{"type":"notified","content":"${socket.user.name}离开了房间ID:${room.roomId}"}`);
-                    sendForRoom(room.roomId, `{"type":"notified","content":"${socket.user.name}离开了房间ID:${room.roomId}"}`);
+                    console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                    sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
                     sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
                 }, 500);
             }
@@ -58,7 +64,7 @@ module.exports = (io, socket) => {
             const otherRoom = findUserInRoom(data.user.uid);
             if (otherRoom && otherRoom.roomId !== data.roomId) {
                 setTimeout(() => {
-                    socket.emit('message', `{"type":"notified","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                    scoket.emit('message', `{"type":"notified","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                 }, 1000);
                 return;
             }
@@ -67,13 +73,16 @@ module.exports = (io, socket) => {
                 //走加入流程
                 let room = _rooms[0];
                 const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
-                socket.user = data.user;
+                data.user['master'] = false;
+                scoket.user = data.user;
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
                     console.log(data.user.name + '加入房间ID:' + room.roomId);
                     room.gamerJoin(data.user);
+                    //为用户注册scoket事件
+                    room.game.regAction(scoket, room);
                     setTimeout(() => {
-                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
+                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
                             sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}"}`);
                         }, 100);
@@ -81,7 +90,7 @@ module.exports = (io, socket) => {
                 } else {
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
-                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
+                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                     }, 500);
                 }
             } else {
@@ -99,21 +108,22 @@ module.exports = (io, socket) => {
                     gameType: 'majiang'
                 });
                 rooms.push(room);
-                socket.user = data.user;
+                data.user['master'] = true;
+                scoket.user = data.user;
                 console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
-
+                //为用户注册scoket事件
+                room.game.regAction(scoket);
                 setTimeout(() => {
-                    sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
+                    sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                     }, 100);
                 }, 500);
             }
+            
         },
         ready: (data) => {
-            let room;//user,roomId,state
-            const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
-            if (_rooms.length === 1) room = _rooms[0];
+            let room = getRoom(data.roomId);
             room.setUserState(data.user.uid, data.state);
             if (room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber) {
                 //准备人数等于规定人数，游戏开始
@@ -130,6 +140,7 @@ module.exports = (io, socket) => {
                                         result['user_' + userState.uid].cards = userState.cards.length;
                                     }
                                 }
+
                                 return result;
                             })(),
                             // gameState: content.gameState.map(state => {
@@ -140,7 +151,7 @@ module.exports = (io, socket) => {
                             //         groupCards: state.groupCards
                             //     }
                             // }),
-                            outCards: content.outCards,
+                            //outCards: content.outCards,
                             remainCardNumber: content.remainCardNumber
                         }
                         sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
@@ -149,12 +160,17 @@ module.exports = (io, socket) => {
                 room.setEnd(function () {
 
                 });
-                room.begin();
+                room.begin(scoket);
             }
             setTimeout(() => {
                 //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
-                sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
+                sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
             }, 100);
         }
+        //注册游戏客户端动作
+        // regAction: (scoket) => {
+        //     const room = this.getRoom(data.roomId);
+        //     room.game.regAction(scoket, this);
+        // }
     }
 }

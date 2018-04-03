@@ -1,3 +1,4 @@
+._transition{-webkit-transition: all 0.1s ease-out;}
 button{
     margin: 0;
     padding: 0;
@@ -9,12 +10,15 @@ button{
     color: #fff;
     background-size: 100% 100%;
     box-shadow: .1rem .1rem .3rem #000;
+    ._transition;
+    &.hide{opacity: 0;transform: translate3d(0,-.5rem,0)}
+    &.active{opacity: 1;}
 }
 .dockBar{
     position: absolute;
     border: solid 0px #ccc;
     box-sizing: border-box;
-    border:solid 1px #fff;
+    border:solid 1px #eee;
 }
 
 .wrapper {
@@ -35,11 +39,21 @@ button{
         .cardsListWrap{
             width: 100%;
             text-align: center;
+            margin-top: .7rem;
             span{
-                border:solid 1px #999;
-                width:2rem;
-                height: 3.5rem;
+                color:#333;
+                width:2.2rem;
+                height: 3rem;
                 display: inline-block;
+                //background: url(/images/games/majiang/cards3.png);// .2rem .1rem;
+                background-size: 100% 100% !important;
+                ._transition;
+                &:hover{
+                    //transform: translate3d(0,-.5rem,0);
+                }
+                &.active{
+                    transform: translate3d(0,-.5rem,0);
+                }
             }
         }
         .operateWrap{
@@ -47,14 +61,18 @@ button{
             left: 0;right: 0;
             margin: auto;
             top: -3rem;
-            background: #3689f552;
+            background: #3689f534;
             height: 3rem;
-            text-align: center
+            text-align: center;
+            z-index: 10;
         }
         .userDock{
             position: absolute;
+            height: 4rem;
             left: 2rem;
-            top:.5rem;
+            top:0;
+            bottom: 0;
+            margin: auto;
             text-align: center;
             img{width: 2rem;
                 height: 2rem;
@@ -63,28 +81,94 @@ button{
                 box-shadow: 0.05rem 0.05rem 0.3rem #000
             }
         }
+        .outCardsWrap{
+            position:absolute;
+            width: 18rem;
+            height: 4rem;
+            top:-4rem;
+            left:0;
+            right: 0;
+            margin:0 auto;
+            span{
+                color:#333;
+                width:1.3rem;
+                height: 1.8rem;
+                display: inline-block;
+                background-size: 100% 100% !important;
+                ._transition;
+            }
+        }
     }
     .dockLeft {
         .dockBar;
-        width: 10%;
+        width: 15%;
         height: 75%;
         top: 0;
         left: 0;
         margin:auto 0;
+        .userDock{
+            position: absolute;
+            //width: 100%;
+            left: 1.5rem;
+            top:1.5rem;
+            text-align: center;
+            img{width: 2rem;
+                height: 2rem;
+                border:solid .2rem #99602d;
+                border-radius: 2rem;
+                box-shadow: 0.05rem 0.05rem 0.3rem #000
+            }
+        }
+        .cardsListWrap{
+            width: .7rem;
+            float: left;
+            text-align: center;
+            margin-left: 2rem;
+            margin-top: 7rem;
+            span{
+                margin-top: -.6rem;
+                color:#333;
+                width:.7rem;
+                height:1.4rem;
+                float: left;
+                //background: url(/images/games/majiang/cards3.png);// .2rem .1rem;
+                background-size: 100% 100% !important;
+                ._transition;
+                -webkit-transform: rotate(180deg);
+            }
+        }
+        .outCardsWrap{
+            position:absolute;
+            width: 13rem;
+            top:8.5rem;
+            height: 4rem;
+            right:-8.5rem;
+            margin:0 auto;
+            -webkit-transform: rotate(90deg);
+            span{
+                color:#333;
+                width:1.3rem;
+                height: 1.8rem;
+                display: inline-block;
+                background-size: 100% 100% !important;
+                ._transition;
+            }
+        }
     }
     .dockCenter{
         .dockBar;
-        width: 80%;
+        width: 70%;
         height: 60%;
-        left: 10%;
-        right: 10%;
+        left: 15%;
+        right: 15%;
         top:15%;
         bottom: 25%;
-        background: rgba(212, 212, 212,0.3)
+        background: rgba(212, 212, 212,0.3);
+        p{font-size:.5rem;}
     }
     .dockRight {
         .dockBar;
-        width: 10%;
+        width: 15%;
         height: 75%;
         top: 0;
         right: 0;
@@ -92,7 +176,7 @@ button{
     }
     .dockTop {
         .dockBar;
-        width: 80%;
+        width: 70%;
         height: 15%;
         top: 0;
         left: 0;

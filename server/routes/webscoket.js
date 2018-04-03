@@ -16,6 +16,9 @@ module.exports = (server) => {
         socket.on('ready', function (_data) {
             gameEngine.ready(JSON.parse(_data));
         });
+        // socket.on('showCard', function (_data) {
+        //     gameEngine.ready(JSON.parse(_data));
+        // });
     });
 
 };

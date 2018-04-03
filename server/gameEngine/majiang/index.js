@@ -16,12 +16,10 @@ class Majiang {
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
-        this.gameState = this.gameState.map(state => { return { uid: state.uid, increase: 0, cards: [], groupCards: [] } });
         this.cards = [];
-        this.outCards = [];
-        this.init();
     }
-    init() {
+    init(gameState) {
+        this.gameState = gameState.map(state => { return { uid: state.uid, increase: 0, cards: [], outCards: [], groupCards: [] } });
         const cardColors = ['b', 't', 'w'], _cards = [],
             getRedomCard = () => {
                 //const cardsLength = _cards.length;
@@ -33,6 +31,7 @@ class Majiang {
         cardColors.forEach(cardColor => {
             for (let i = 1; i <= 9; i++) {
                 for (let j = 1; j <= 4; j++) {
+                    //根据图片的样子，前6个按照2.7/3.8单位走，后3个换行
                     _cards.push({ key: `card-${cardColor}-${i}-${j}`, color: cardColor, number: i });
                 }
             }
@@ -40,17 +39,35 @@ class Majiang {
         const _length = _cards.length;
         getRedomCard();
     }
+    regAction(socket) {
+        const self = this;
+        socket.on('showCard', function (_data) {
+            const data = JSON.parse(_data);
+            const state = self.gameState.filter(item => item.uid === data.uid)[0];
+            state.outCards.push(state.cards.filter(item => item.key === data.cardKey)[0]);
+            state.cards = state.cards.filter(item => item.key !== data.cardKey);
+            self.sendData();
+        });
+    }
     sendData() {
         this.sendMsgHandler({
             gameState: this.gameState,
-            outCards: this.outCards,
             remainCardNumber: this.cards.length
         });
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
+        const objectArraySort = function (keyName) {
+            return function (objectN, objectM) {
+                var valueN = objectN[keyName]
+                var valueM = objectM[keyName]
+                if (valueN < valueM) return -1
+                else if (valueN > valueM) return 1
+                else return 0
+            }
+        }
         this.gameState.forEach(state => {
-            state.cards = this.cards.splice(0, 13);
+            state.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
         });
         this.sendData();
     }
@@ -67,11 +84,11 @@ class Majiang {
         return cardByCatch;
     }
     //出牌
-    showCard(uid, card) {
-        const state = this.gameState.filter(item => item.uid === uid)[0];
-        state.cards = state.cards.filter(item => item.key != card.key);
-        this.outCards.push(state.cards.filter(item => item.key === card.key)[0]);
-    }
+    // showCard(uid, card) {
+    //     const state = this.gameState.filter(item => item.uid === uid)[0];
+    //     state.cards = state.cards.filter(item => item.key != card.key);
+    //     this.outCards.push(state.cards.filter(item => item.key === card.key)[0]);
+    // }
     setBegin(fn) {
         this.beginHandler = fn;
     }
