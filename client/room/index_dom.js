@@ -17,22 +17,25 @@ class Room extends Component {
                 name: getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: '/images/games/majiang/head.jpg',
-                state: 'wait'
+                state: 'wait',
             },
+            //allowColor: 'none',//t、b、w、none、all
             roomId: getQueryString('roomId'),
             roomLog: [],
             room: null,
             game: null,
-            activeCard: ''
+            activeCard: '',
         }
         //const roomId = getQueryString('roomId');
+        this.isLack = false;
         this.ready = this.ready.bind(this);
         this.showCard = this.showCard.bind(this);
+        this.chooseColor = this.chooseColor.bind(this);
+        this.concatCard = this.concatCard.bind(this);
         this.ws = io('ws://localhost:3300/');
 
     }
     componentDidMount() {
-
         const self = this;
         this.ws.on('connect', function () {
             self.ws.emit('checkin', JSON.stringify({
@@ -69,6 +72,9 @@ class Room extends Component {
 
 
     }
+    componentWillUpdate() {
+
+    }
     componentWillMount() {
 
     }
@@ -81,31 +87,80 @@ class Room extends Component {
         }));
     }
     showCard() {
-        this.ws.emit('showCard', JSON.stringify({
-            roomId: this.state.roomId,
-            uid: this.state.user.uid,
-            cardKey: this.state.activeCard
-        }));
+        const _showCard = this.concatCard().filter(card => card.key === this.state.activeCard)[0];
+        //必须在打缺了的情况下，或者打的缺花色的牌，才通过
+        if (_showCard.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack || this.isLack) {
+            this.ws.emit('showCard', JSON.stringify({
+                roomId: this.state.roomId,
+                uid: this.state.user.uid,
+                cardKey: this.state.activeCard
+            }));
+        }
         this.setState({
             activeCard: ''
         })
     }
+    //选择定缺
+    chooseColor(color) {
+        this.ws.emit('chooseColor', JSON.stringify({
+            roomId: this.state.roomId,
+            uid: this.state.user.uid,
+            color: color
+        }));
+    }
+    //动作
+    actionHandler(type) {
+        this.ws.emit('action', JSON.stringify({
+            roomId: this.state.roomId,
+            uid: this.state.user.uid,
+            actionType: type
+        }));
+    }
+    concatCard() {
+        //返回所有牌的组合
+        let allCards = [], meState = this.state.game.gameState['user_' + this.state.user.uid];
+        if (meState.fatchCard) { allCards.push(meState.fatchCard) }
+        allCards = allCards.concat(meState.cards);
+        meState.groupCards.meet.forEach(meetArr => {
+            allCards = allCards.concat(meetArr);
+        })
+        meState.groupCards.fullMeet.forEach(meetArr => {
+            allCards = allCards.concat(meetArr);
+        })
+        return allCards;
+    }
     render() {
         let me, otherGamers = [], getStateStr = (state) => {
+            if (this.state.room.state !== 'wait') return '';
             switch (state) {
-                case 'wait': return '等待中'; break;
-                case 'ready': return '已准备就绪'; break;
+                case 'wait': return ''; break;
+                case 'ready': return <span className='ready_ok'></span>; break;
             }
-        }, getColorName = (number, color) => {
+        }, getColorName = ({ number, color }) => {
             let _number, _color;
-            _number = ["一", "二", "三", "四", "五", "六", "七", "八", "九"][number - 1];
             switch (color) {
                 case 't': _color = '条'; break;
                 case 'b': _color = '筒'; break;
                 case 'w': _color = '万'; break;
             }
+            if (!number) return _color;
+            _number = ["一", "二", "三", "四", "五", "六", "七", "八", "九"][number - 1];
             return _number + _color;
+        }, getCardClass = ({ key, color }) => {
+            let _class = this.state.activeCard === key ? 'active' : '';
+            const colorLack = this.state.game.gameState['user_' + me.uid].colorLack;
+            if (!colorLack ||
+                (colorLack === 't' && color === 't') ||
+                (colorLack === 'b' && color === 'b') ||
+                (colorLack === 'w' && color === 'w')) {
+                //_class += ' '
+            } else {
+                if (this.isLack) return _class;//如果已经缺了就不加禁用了
+                _class += ' gray'
+            }
+            return _class;
         }, leftGamer, topGamer, rightGamer;
+        this.isLack = this.state.game && this.concatCard().filter(card => card.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack).length === 0 ? true : false;
         if (this.state.room) {
             me = this.state.room.gamers.filter(gamer => gamer.uid === this.state.user.uid)[0];
             otherGamers = this.state.room.gamers.filter(gamer => gamer.uid !== this.state.user.uid);
@@ -115,7 +170,24 @@ class Room extends Component {
         }
         const ready = <button onClick={() => this.ready('ready')}>准备开始</button>;
         const cancleReady = <button onClick={() => this.ready('wait')}>取消开始</button>;
-        const showCard = <button className={this.state.activeCard ? 'active' : 'hide'} onClick={this.showCard}>出牌</button>;
+        const lackColorChoose = <div>
+            <div style={{ lineHeight: '2rem' }}>请选择您要缺的牌型</div>
+            <span>
+                <button onClick={() => this.chooseColor('b')}>筒</button>&nbsp;&nbsp;
+                <button onClick={() => this.chooseColor('t')}>条</button>&nbsp;&nbsp;
+                <button onClick={() => this.chooseColor('w')}>万</button>
+            </span>
+        </div>
+        //const showCard = <button className={this.state.activeCard ? 'active' : 'hide'} onClick={this.showCard}>出牌</button>;
+        const showCard = <button onClick={this.showCard}>出牌</button>;
+        const meetBtu = <button key='meet' onClick={() => this.actionHandler('meet')}>碰</button>;
+        const fullMeetBtu = <button key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
+        const winBtu = <button key='winning' onClick={() => this.actionHandler('win')}>胡牌</button>;
+        const passBtu = <button key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
+        const fatchCard = this.state.game && this.state.game.gameState['user_' + me.uid].fatchCard;
+
+
+
         return this.state.room ?
             <div className='wrapper'>
                 <div className='dockBottom'>
@@ -123,20 +195,58 @@ class Room extends Component {
                         <img src='/images/games/majiang/head.jpg' />
                         <div>{me.name}</div>
                     </div>
-
                     {this.state.game ? <div className='cardsListWrap'>
                         {this.state.game.gameState['user_' + me.uid].cards.map(item =>
                             <span
                                 style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
                                 key={item.key}
-                                onClick={() => { this.setState({ activeCard: (this.state.activeCard === item.key ? '' : item.key) }) }}
-                                className={this.state.activeCard === item.key ? 'active' : ''}
+                                onClick={(e) => {
+
+                                    if (e.target.className.indexOf('gray') == -1)
+                                        this.setState({ activeCard: (this.state.activeCard === item.key ? '' : item.key) })
+                                }}
+                                className={getCardClass(item)}
                                 title={getColorName(item.number, item.color)}>
                             </span>)}
+                        {fatchCard ? <span
+                            style={{ background: `url(/images/games/majiang/cards/${fatchCard.color}${fatchCard.number}.png)`, marginLeft: '.5rem' }}
+                            key={fatchCard.key}
+                            onClick={(e) => {
+
+                                if (e.target.className.indexOf('gray') == -1)
+                                    this.setState({ activeCard: (this.state.activeCard === fatchCard.key ? '' : fatchCard.key) })
+                            }}
+                            className={getCardClass(fatchCard)}
+                            title={getColorName(fatchCard.number, fatchCard.color)}></span> : ''}
+
+                        {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.meet.map((group, index) =>
+                            <div key={'group1_' + index} className='groupCardWrap'>{group.map(_meet => <span
+                                key={_meet.key}
+                                style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
+                            </span>)}</div>
+                        )}
+                        {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.fullMeet.map((group, index) =>
+                            <div key={'group2_' + index} className='groupCardWrap'>{group.map(_meet => <span
+                                key={_meet.key}
+                                style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
+                            </span>)}</div>
+                        )}
+
                     </div> : ''}
+
+
                     <div className='operateWrap'>
                         {this.state.game ? '' : (me.state == 'wait' ? ready : cancleReady)}
-                        {this.state.game ? showCard : ''}
+                        {this.state.activeCard && this.state.game.gameState['user_' + me.uid].catcher ? showCard : ''}
+                        {this.state.game && !this.state.game.gameState['user_' + me.uid].colorLack && lackColorChoose}
+                        {
+                            this.state.game && this.state.game.gameState['user_' + me.uid].actionCode.map(action => {
+                                if (action === 'meet') return meetBtu;
+                                if (action === 'fullMeet') return fullMeetBtu;
+                                if (action === 'winning') return winBtu;
+                            })
+                        }
+                        {this.state.game && this.state.game.gameState['user_' + me.uid].actionCode.length !== 0 && passBtu}
                     </div>
                     <div className='outCardsWrap'>
                         {this.state.game ? this.state.game.gameState['user_' + me.uid].outCards.map(item =>
@@ -146,6 +256,9 @@ class Room extends Component {
                                 title={getColorName(item.number, item.color)}>
                             </span>) : ''}
                     </div>
+                    {this.state.game &&
+                        (this.state.game.gameState['user_' + me.uid].colorLack ?
+                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + me.uid].colorLack })}</span> : '')}
                 </div>
                 <div className='dockLeft'>
                     {leftGamer ?
@@ -154,7 +267,7 @@ class Room extends Component {
                             <div>{leftGamer.name}</div>
                             <div>{getStateStr(leftGamer.state)}</div>
                         </div> : '...'}
-                    {this.state.game ? <div className='cardsListWrap'>
+                    {leftGamer && this.state.game ? <div className='cardsListWrap'>
                         {(() => {
                             let result = [];
                             for (let i = 0; i < +this.state.game.gameState['user_' + leftGamer.uid].cards; i++) {
@@ -164,16 +277,21 @@ class Room extends Component {
                         })()}
                     </div> : ''}
                     <div className='outCardsWrap'>
-                        {this.state.game ? this.state.game.gameState['user_' + leftGamer.uid].outCards.map(item =>
+                        {leftGamer && this.state.game ? this.state.game.gameState['user_' + leftGamer.uid].outCards.map(item =>
                             <span
                                 style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
                                 key={`out_${item.key}`}
                                 title={getColorName(item.number, item.color)}>
                             </span>) : ''}
                     </div>
+                    {(leftGamer && this.state.game) &&
+                        (this.state.game.gameState['user_' + leftGamer.uid].colorLack ?
+                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + leftGamer.uid].colorLack })}</span> : '')}
                 </div>
                 <div className='dockCenter'>
-                    {this.state.room ? (this.state.room.state === 'wait' && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)) : ''}
+                    <div>
+                        {this.state.room.state === 'wait' && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)}
+                    </div>
                 </div>
                 <div className='dockRight'>
                     {otherGamers[1] ? <div><span>{otherGamers[1].name}</span> | <span>{getStateStr(otherGamers[1].state)}</span></div> : '...'}

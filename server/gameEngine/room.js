@@ -86,10 +86,33 @@ class Room {
         const self = this;
         //注册游戏客户端动作
         //game.regAction(scoket, this);
-        this.game.init(this.gamers.map(gamer => { return { uid: gamer.uid } }));
+        //默认第一个用户是庄家
+        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, catcher: index == 0 ? true : false } }));
         this.game.assignCard();//分发牌
     }
-    begin(scoket) {
+    begin(scoket, sendForRoom, sendForUser) {
+        const self = this;
+        this.setSendMsg(function (content) {
+            //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
+            self.gamers.forEach(gamer => {
+                const _data = {
+                    gameState: (() => {
+                        let result = new Object(), l = content.gameState.length;
+                        for (let i = 0; i < l; i++) {
+                            const userState = content.gameState[i];
+                            result['user_' + userState.uid] = clone(userState);
+                            if (userState.uid !== gamer.uid) {
+                                result['user_' + userState.uid].cards = userState.cards.length;
+                            }
+                        }
+
+                        return result;
+                    })(),
+                    remainCardNumber: content.remainCardNumber
+                }
+                sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+            });
+        })
         this.singleGameBegin(scoket);
         //this.gameStart();
     }

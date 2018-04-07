@@ -11,14 +11,31 @@ button{
     background-size: 100% 100%;
     box-shadow: .1rem .1rem .3rem #000;
     ._transition;
-    &.hide{opacity: 0;transform: translate3d(0,-.5rem,0)}
+    &.hide{opacity: 0;transform: translate3d(0,-.5rem,0);height: 0}
     &.active{opacity: 1;}
+}
+.gray { 
+    -webkit-filter: grayscale(100%);
+    -moz-filter: grayscale(100%);
+    -ms-filter: grayscale(100%);
+    -o-filter: grayscale(100%);
+    filter: grayscale(100%);
+    filter: gray;
+    &:after{
+        position: absolute;
+        content: '';
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.3);
+    }
 }
 .dockBar{
     position: absolute;
     border: solid 0px #ccc;
     box-sizing: border-box;
-    border:solid 1px #eee;
+    border:solid 0px #eee;
 }
 
 .wrapper {
@@ -28,6 +45,13 @@ button{
     background: url('/images/games/majiang/desktop.png');
     background-size: cover;
     color:#fff;
+    .ready_ok{
+        display: inline-block;
+        width: 1.5rem;
+        height: 2rem;
+        background: url('/images/games/majiang/ok.png');
+        background-size: cover;
+    }
     .dockBottom {
         .dockBar;
         width: 100%;
@@ -40,7 +64,17 @@ button{
             width: 100%;
             text-align: center;
             margin-top: .7rem;
+            .groupCardWrap{
+                display: inline-block;
+                margin: 0 .5rem;
+                span{
+                    -webkit-transform: rotate(180deg) skewX(-10deg);
+                    width:2rem;
+                    height: 2.7rem;
+                }
+            }
             span{
+                position: relative;
                 color:#333;
                 width:2.2rem;
                 height: 3rem;
@@ -60,9 +94,9 @@ button{
             position: absolute;
             left: 0;right: 0;
             margin: auto;
-            top: -3rem;
-            background: #3689f534;
-            height: 3rem;
+            top: -4rem;
+            //background: #3689f534;
+            height: 4.5rem;
             text-align: center;
             z-index: 10;
         }
@@ -97,6 +131,15 @@ button{
                 background-size: 100% 100% !important;
                 ._transition;
             }
+        }
+        .colorLack{
+            position: absolute;
+            right: 1.2rem;
+            bottom: 1.2rem;
+            padding: 0 .2rem;
+            border:solid 1px #f5e47f;
+            border-radius: .3rem;
+            color: #f5e47f
         }
     }
     .dockLeft {
@@ -153,6 +196,15 @@ button{
                 background-size: 100% 100% !important;
                 ._transition;
             }
+        }
+        .colorLack{
+            position: absolute;
+            right: .2rem;
+            bottom: .2rem;
+            padding: 0 .2rem;
+            border:solid 1px #f5e47f;
+            border-radius: .3rem;
+            color: #f5e47f
         }
     }
     .dockCenter{

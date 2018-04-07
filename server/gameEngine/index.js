@@ -52,11 +52,16 @@ module.exports = (io, scoket) => {
             const room = findUserInRoom(scoket.user.uid);
             if (room) {
                 room.gamerLeave(scoket.user.uid);
-                setTimeout(() => {
-                    console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                    sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                    sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room)}}`);
-                }, 500);
+                if (room.gamers.length === 0) {
+                    //如果人全部都离开了，清除room数据
+                    rooms = rooms.filter(_room => _room.id !== room.id);
+                } else {
+                    setTimeout(() => {
+                        console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                        sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                        sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                    }, 500);
+                }
             }
         },
         checkin: (data) => {
@@ -73,7 +78,7 @@ module.exports = (io, scoket) => {
                 //走加入流程
                 let room = _rooms[0];
                 const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
-                data.user['master'] = false;
+                //data.user['catcher'] = false;
                 scoket.user = data.user;
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
@@ -89,9 +94,13 @@ module.exports = (io, scoket) => {
                     }, 500);
                 } else {
                     setTimeout(() => {
-                        sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
+                        //sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                    }, 500);
+                        setTimeout(() => {
+                            //可能还在游戏中，发一个游戏状态
+                            room.game.sendData()
+                        }, 200);
+                    }, 200);
                 }
             } else {
                 //走建房流程
@@ -108,7 +117,7 @@ module.exports = (io, scoket) => {
                     gameType: 'majiang'
                 });
                 rooms.push(room);
-                data.user['master'] = true;
+                //data.user['catcher'] = true;
                 scoket.user = data.user;
                 console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
                 //为用户注册scoket事件
@@ -120,47 +129,18 @@ module.exports = (io, scoket) => {
                     }, 100);
                 }, 500);
             }
-            
+
         },
         ready: (data) => {
             let room = getRoom(data.roomId);
             room.setUserState(data.user.uid, data.state);
             if (room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber) {
                 //准备人数等于规定人数，游戏开始
-                room.setSendMsg(function (content) {
-                    //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
-                    room.gamers.forEach(gamer => {
-                        const _data = {
-                            gameState: (() => {
-                                let result = new Object(), l = content.gameState.length;
-                                for (let i = 0; i < l; i++) {
-                                    const userState = content.gameState[i];
-                                    result['user_' + userState.uid] = clone(userState);
-                                    if (userState.uid !== gamer.uid) {
-                                        result['user_' + userState.uid].cards = userState.cards.length;
-                                    }
-                                }
-
-                                return result;
-                            })(),
-                            // gameState: content.gameState.map(state => {
-                            //     return {
-                            //         uid: state.uid,
-                            //         increase: state.increase,
-                            //         cards: state.uid == gamer.uid ? state.cards : state.cards.length,//不是自己的话则返回数量
-                            //         groupCards: state.groupCards
-                            //     }
-                            // }),
-                            //outCards: content.outCards,
-                            remainCardNumber: content.remainCardNumber
-                        }
-                        sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
-                    });
-                })
+                room.state = 'playing';
                 room.setEnd(function () {
 
                 });
-                room.begin(scoket);
+                room.begin(scoket, sendForRoom, sendForUser);
             }
             setTimeout(() => {
                 //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
