@@ -1,5 +1,6 @@
 const getRedom = require('../../util/redom');
 const UUID = require('../../util/uuid');
+const winCore = require('./winCore');
 const clone = require('clone');
 
 //用于对牌组排序
@@ -78,7 +79,7 @@ class Majiang {
             }
         }
     }
-    concatCard(state) {
+    concatCard(state, isGroup) {
         //返回所有牌的组合(排序后的)
         let allCards = [];
         allCards = allCards.concat(state.cards);
@@ -92,15 +93,15 @@ class Majiang {
     }
     //【核心算法函数】处理牌桌子上的各种情况，返回是否暂停，并发送消息
     doGameState(uid, showCrad, from) {
-        const otherGameState = (from === 'other' ? this.gameState.filter(item => item.uid !== uid) : this.gameState.filter(item => item.uid === uid));
+        const gameStates = (from === 'other' ? this.gameState.filter(item => item.uid !== uid) : this.gameState.filter(item => item.uid === uid));
         let result = false;
         //let isOtherPass = false;
-        otherGameState.forEach(userState => {
+        gameStates.forEach(userState => {
             //如果某玩家有碰或者杠，那么其他玩家也可能胡牌，所以其他玩家每个人都要计算
             userState.actionCode = [];//首先清空动作代码
             //如果对比的是自己要定缺的牌色，不予继续
             if (showCrad.color === userState.colorLack) { return false; }
-            let _concatCard = this.concatCard(userState);
+            //let _concatCard = this.concatCard(userState);
             const alikeCount = userState.cards.filter(card => card.color === showCrad.color && card.number === showCrad.number).length;
             if (from === 'other' && alikeCount === 2) {
                 userState.actionCode.push('meet');//有碰(自己的话不能碰)
@@ -109,42 +110,9 @@ class Majiang {
                 if (from === 'other') userState.actionCode.push('meet');//别人打的牌，如果有杠，当然也可以选择碰
             }
             //计算胡牌
-            if (_concatCard.filter(card => card.color === userState.colorLack).length === 0) {
-                _concatCard.push(showCrad);//加入对比的牌
-                //如果还没打缺，就没必要算了
-                const allCardsTemp = clone(_concatCard);
-                let serial = 0, same3 = 0, same2 = 0;//顺子个数、三同个数、对子个数
-                let nextIndex = 0;//下一个计算对子的序号
-                allCardsTemp.forEach((item, index) => {
-                    if (index + 2 !== allCardsTemp.length && index === nextIndex) {
-                        let isHas3 = false;
-                        if (allCardsTemp[index + 1].color === allCardsTemp[index + 2].color === item.color) {
-                            if (allCardsTemp[index + 1].number - item.number === 1 && allCardsTemp[index + 2].number - allCardsTemp[index + 1].number === 1) {
-                                //如果相邻的三个牌分别相差1，那么就是顺子
-                                serial++;
-                                nextIndex = index + 3;
-                                isHas3 = true;
-                            }
-                            if (item.number == allCardsTemp[index + 1].number == allCardsTemp[index + 2].number) {
-                                //如果相邻的三个牌花色和数值都相同，那么就是三连子
-                                same3++;
-                                nextIndex = index + 3;
-                                isHas3 = true;
-                            }
-                        }
-                        if (!isHas3 && allCardsTemp[index + 1].color === item.color) {
-                            if (item.number == allCardsTemp[index + 1].number) {
-                                //如果相邻的两个个牌花色和数值都相同
-                                same2++;
-                                nextIndex = index + 2;
-                            }
-                        }
-                    }
-                });
-                //公式：n*AAA+m*ABC+DD=14 
-                if ((serial + same3) * 3 == 12 && same2 == 1) {
-                    userState.actionCode.push('winning');//有胡牌
-                }
+            const _cards = userState.cards.concat(showCrad).sort(objectArraySort('key'));
+            if (winCore(_cards)) {
+                userState.actionCode.push('winning');//有胡牌
             }
             if (userState.actionCode.length !== 0 && !result) {
                 result = true;

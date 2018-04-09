@@ -179,11 +179,12 @@ class Room extends Component {
             </span>
         </div>
         //const showCard = <button className={this.state.activeCard ? 'active' : 'hide'} onClick={this.showCard}>出牌</button>;
+        const btuStyle={margin:'0 .2rem'}
         const showCard = <button onClick={this.showCard}>出牌</button>;
-        const meetBtu = <button key='meet' onClick={() => this.actionHandler('meet')}>碰</button>;
-        const fullMeetBtu = <button key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
-        const winBtu = <button key='winning' onClick={() => this.actionHandler('win')}>胡牌</button>;
-        const passBtu = <button key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
+        const meetBtu = <button style={btuStyle} key='meet' onClick={() => this.actionHandler('meet')}>碰</button>;
+        const fullMeetBtu = <button style={btuStyle} key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
+        const winBtu = <button style={btuStyle} key='winning' onClick={() => this.actionHandler('win')}>胡牌</button>;
+        const passBtu = <button style={btuStyle} key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
         const fatchCard = this.state.game && this.state.game.gameState['user_' + me.uid].fatchCard;
 
 
