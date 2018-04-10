@@ -73,8 +73,8 @@ module.exports = (cards) => {
                 }
             }
         }
-        console.log('首先抽取的对子:' + duiziCard.number + duiziCard.color);
-        console.log(copy_cards.map(card => card.number + card.color));//抽了一个对和其他所有的克剩下的牌，做连子判断
+        //console.log('首先抽取的对子:' + duiziCard.number + duiziCard.color);
+        //console.log(copy_cards.map(card => card.number + card.color));//抽了一个对和其他所有的克剩下的牌，做连子判断
         const tCard = copy_cards.splice(0, 1)[0];
         const result = keBijiao(tCard);
         if (result) {
@@ -82,7 +82,7 @@ module.exports = (cards) => {
             break;
         }
     }
-    console.log("最终结果：" + isWin);
+    //console.log("最终结果：" + isWin);
     return isWin;
 }
 

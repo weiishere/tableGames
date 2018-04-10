@@ -26,7 +26,7 @@ class Room {
             mulriple: 1,//倍数
             score: 100,//底分
             gameTime: 4,
-            state: 'wait',//wait、playing、end,
+            state: 'wait',//wait、playing、next、end,
             recode: [],
             gameType: 'majiang',//‘jinhua’
             game: {},//正在进行的游戏
@@ -34,7 +34,10 @@ class Room {
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
-        let self = this;
+        this.initGame();
+    }
+    initGame() {
+        const self = this;
         this.gameType = "majiang";
         this.game = new Majiang();
         this.game.setSendMsg(function (content) {
@@ -45,9 +48,13 @@ class Room {
             //监听单局游戏结束，进入下一局
             if (self.gameTime > 0) {
                 //单局开始
+                self.state = 'wait';
+                self.gamers.forEach((gamer) => { gamer.state = 'wait'; });
                 self.gameTime--;
-                self.state = 'playing';
-                self.singleGameBegin();
+                //发送房间信息
+                self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
+                //self.state = 'playing';
+                //self.singleGameBegin();
             } else {
                 self.state = 'end';
                 self.end();//所有局数结束，房间结束
@@ -75,11 +82,10 @@ class Room {
         this.state = state
     }
     setUserState(uid, state) {
-        const roomState = 'playing';
+        //const roomState = 'playing';
         const self = this;
         this.gamers.forEach((gamer) => {
             if (gamer.uid === uid) gamer.state = state;
-            //if (gamer.state === 'wait' && roomState === 'playing') roomState = 'wait';
         });
     }
     singleGameBegin(scoket) {
@@ -87,11 +93,14 @@ class Room {
         //注册游戏客户端动作
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
+        this.initGame();
         this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, catcher: index == 0 ? true : false } }));
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {
         const self = this;
+        this.sendForRoom = sendForRoom;
+        this.sendForUser = sendForUser;
         this.setSendMsg(function (content) {
             //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
             self.gamers.forEach(gamer => {
@@ -105,10 +114,10 @@ class Room {
                                 result['user_' + userState.uid].cards = userState.cards.length;
                             }
                         }
-
                         return result;
                     })(),
-                    remainCardNumber: content.remainCardNumber
+                    remainCardNumber: content.remainCardNumber,
+                    isOver: (content.isOver ? true : false)
                 }
                 sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
             });

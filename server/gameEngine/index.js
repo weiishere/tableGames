@@ -85,7 +85,12 @@ module.exports = (io, scoket) => {
                     console.log(data.user.name + '加入房间ID:' + room.roomId);
                     room.gamerJoin(data.user);
                     //为用户注册scoket事件
-                    room.game.regAction(scoket, room);
+                    //room.game.regAction(scoket, room);
+                    room.game.regAction().forEach(item => {
+                        scoket.on(item.actionName, function (data) {
+                            item.actionFn.call(room.game,data);
+                        })
+                    })
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
@@ -121,7 +126,12 @@ module.exports = (io, scoket) => {
                 scoket.user = data.user;
                 console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
                 //为用户注册scoket事件
-                room.game.regAction(scoket);
+                //room.game.regAction(scoket);
+                room.game.regAction().forEach(item => {
+                    scoket.on(item.actionName, function (data) {
+                        item.actionFn.call(room.game,data);
+                    })
+                })
                 setTimeout(() => {
                     sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                     setTimeout(() => {
@@ -137,15 +147,17 @@ module.exports = (io, scoket) => {
             if (room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber) {
                 //准备人数等于规定人数，游戏开始
                 room.state = 'playing';
-                room.setEnd(function () {
-
-                });
+                //room.setEnd(function () { });
                 room.begin(scoket, sendForRoom, sendForUser);
+            } else {
+                if (room.game.isOver) {
+                    sendForUser(data.user.uid, `{"type":"gameData","content":""} `);//重置gameData
+                }
             }
             setTimeout(() => {
                 //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                 sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-            }, 100);
+            }, 50);
         }
         //注册游戏客户端动作
         // regAction: (scoket) => {

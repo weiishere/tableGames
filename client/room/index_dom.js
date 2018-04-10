@@ -63,7 +63,6 @@ class Room extends Component {
                     log.push(data.content);
                     self.setState({ roomLog: log });
                     break;
-
                 case 'error':
                     break;
             }
@@ -179,11 +178,11 @@ class Room extends Component {
             </span>
         </div>
         //const showCard = <button className={this.state.activeCard ? 'active' : 'hide'} onClick={this.showCard}>出牌</button>;
-        const btuStyle={margin:'0 .2rem'}
+        const btuStyle = { margin: '0 .2rem' }
         const showCard = <button onClick={this.showCard}>出牌</button>;
         const meetBtu = <button style={btuStyle} key='meet' onClick={() => this.actionHandler('meet')}>碰</button>;
         const fullMeetBtu = <button style={btuStyle} key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
-        const winBtu = <button style={btuStyle} key='winning' onClick={() => this.actionHandler('win')}>胡牌</button>;
+        const winBtu = <button style={btuStyle} key='winning' onClick={() => this.actionHandler('winning')}>胡牌</button>;
         const passBtu = <button style={btuStyle} key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
         const fatchCard = this.state.game && this.state.game.gameState['user_' + me.uid].fatchCard;
 
@@ -300,6 +299,15 @@ class Room extends Component {
                 <div className='dockTop'>
                     {otherGamers[2] ? <div><span>{otherGamers[2].name}</span> | <span>{getStateStr(otherGamers[2].state)}</span></div> : '...'}
                 </div>
+                {this.state.game && this.state.game.isOver && <div className='singleGameInfo'>
+                    <div className='header'>结算信息</div>
+                    <p>{`玩家${me.name}:${this.state.game.gameState['user_' + me.uid].increase}`}</p>
+                    {leftGamer && <p>{`玩家${leftGamer.name}:${this.state.game.gameState['user_' + leftGamer.uid].increase}`}</p>}
+                    {topGamer && <p>{`玩家${topGamer.name}:${this.state.game.gameState['user_' + topGamer.uid].increase}`}</p>}
+                    {rightGamer && <p>{`玩家${rightGamer.name}:${this.state.game.gameState['user_' + rightGamer.uid].increase}`}</p>}
+                    <div style={{ textAlign: 'center', marginTop: 10 }}>{ready}</div>
+                </div>}
+
             </div> : 'loading'
     }
 }
