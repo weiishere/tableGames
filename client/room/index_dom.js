@@ -161,18 +161,7 @@ class Room extends Component {
         };
         this.isLack = this.state.game && this.concatCard().filter(card => card.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack).length === 0 ? true : false;
         if (this.state.room) {
-            // let _gamer = this.state.room.gamers;
-            // let gamerCount = _gamer.length;
-            // let gamerTemp = [];
-            // me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
-            // debugger
-            // gamerTemp.push(me);
-            // const otherGamer = _gamer.filter(gamer => gamer.uid !== this.state.user.uid);
-            // otherGamer.forEach(gamer => {
-            //     gamerTemp.push(gamer);
-            // });
-            // [me, leftGamer, topGamer, rightGamer] = gamerTemp;
-            // console.log(gamerTemp);
+            //这里差点把我的脑子整爆，看似简单的一个玩家对号入位却相当复杂，因为要考虑玩家数小于等于4的时候，给的数据可能也是小于等于4的，如何选出当前玩家，顺时针安顿其他玩家，整惨了，用了2个多小时才搞定
             let _gamer = this.state.room.gamers;
             me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
             let meIndex = _gamer.indexOf(me);
@@ -183,45 +172,12 @@ class Room extends Component {
                 if (index < meIndex) { frontGamer.push(gamer); }
                 if (index > meIndex) { behindGamer.push(gamer); }
             });
-            //如果behindGamer有值、或者frontGamer有3个值，那么就肯定有leftGamer
-
             leftGamer = behindGamer[0];
             topGamer = behindGamer[1];
             rightGamer = behindGamer[2];
-
             if (!rightGamer) rightGamer = frontGamer[frontGamer.length - 1];
             if (!topGamer) topGamer = frontGamer[frontGamer.length - 2];
             if (!leftGamer) leftGamer = frontGamer[frontGamer.length - 3];
-
-            
-
-            // if (meIndex !== _gamer.length - 2) {
-            //     //只要我不是倒数第二个,那么下一个的下一个肯定就是leftGamer
-            //     topGamer === _gamer[meIndex + 2];
-            // } else {
-            //     topGamer === _gamer[1];
-            // }
-
-            // leftGamer = meIndex !== _gamer.length - 1 ? _gamer[meIndex + 1] : _gamer[0];
-            // topGamer = meIndex !== _gamer.length - 2 ? _gamer[meIndex + 2] : _gamer[1];
-            // rightGamer = meIndex !== _gamer.length - 3 ? _gamer[meIndex + 3] : _gamer[2];
-
-            // let _gamer = this.state.room.gamers;
-            // me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
-            // let meIndex = _gamer.indexOf(me);console.log(meIndex);
-            // leftGamer = _gamer[(meIndex + 1 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 1) : meIndex + 1)];
-            // console.log((meIndex + 1 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 1) : meIndex + 1));
-            // topGamer = _gamer[(meIndex + 2 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 2) : meIndex + 2)];
-            // console.log((meIndex + 2 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 2) : meIndex + 2));
-            // rightGamer = _gamer[(meIndex + 3 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 3) : meIndex + 3)];
-            // console.log((meIndex + 3 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 3) : meIndex + 3));
-
-            // console.log('----------');
-            // console.log(leftGamer);
-            // console.log(topGamer);
-            // console.log(rightGamer);
-            // console.log('----------////');
-            // console.log('----------////');
         }
         const ready = <button onClick={() => this.ready('ready')}>准备开始</button>;
         const cancleReady = <button onClick={() => this.ready('wait')}>取消开始</button>;
