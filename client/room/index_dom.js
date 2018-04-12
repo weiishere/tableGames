@@ -42,7 +42,7 @@ class Room extends Component {
                 user: self.state.user,
                 roomId: self.state.roomId,
                 option: {
-                    gamerNumber: 2,
+                    gamerNumber: 4,
                     mulriple: 1,//倍数
                     score: 100,//底分
                     gameTime: 8
@@ -129,7 +129,7 @@ class Room extends Component {
         return allCards;
     }
     render() {
-        let me, otherGamers = [], getStateStr = (state) => {
+        let me, leftGamer, topGamer, rightGamer, getStateStr = (state) => {
             if (this.state.room.state !== 'wait') return '';
             switch (state) {
                 case 'wait': return ''; break;
@@ -158,14 +158,70 @@ class Room extends Component {
                 _class += ' gray'
             }
             return _class;
-        }, leftGamer, topGamer, rightGamer;
+        };
         this.isLack = this.state.game && this.concatCard().filter(card => card.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack).length === 0 ? true : false;
         if (this.state.room) {
-            me = this.state.room.gamers.filter(gamer => gamer.uid === this.state.user.uid)[0];
-            otherGamers = this.state.room.gamers.filter(gamer => gamer.uid !== this.state.user.uid);
-            leftGamer = otherGamers.length == 1 && otherGamers[0];
-            topGamer = otherGamers.length == 2 && otherGamers[1];
-            rightGamer = otherGamers.length == 3 && otherGamers[2];
+            // let _gamer = this.state.room.gamers;
+            // let gamerCount = _gamer.length;
+            // let gamerTemp = [];
+            // me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
+            // debugger
+            // gamerTemp.push(me);
+            // const otherGamer = _gamer.filter(gamer => gamer.uid !== this.state.user.uid);
+            // otherGamer.forEach(gamer => {
+            //     gamerTemp.push(gamer);
+            // });
+            // [me, leftGamer, topGamer, rightGamer] = gamerTemp;
+            // console.log(gamerTemp);
+            let _gamer = this.state.room.gamers;
+            me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
+            let meIndex = _gamer.indexOf(me);
+            //先取得me前面和后面的gamer
+            let frontGamer = [];
+            let behindGamer = [];
+            _gamer.forEach((gamer, index) => {
+                if (index < meIndex) { frontGamer.push(gamer); }
+                if (index > meIndex) { behindGamer.push(gamer); }
+            });
+            //如果behindGamer有值、或者frontGamer有3个值，那么就肯定有leftGamer
+
+            leftGamer = behindGamer[0];
+            topGamer = behindGamer[1];
+            rightGamer = behindGamer[2];
+
+            if (!rightGamer) rightGamer = frontGamer[frontGamer.length - 1];
+            if (!topGamer) topGamer = frontGamer[frontGamer.length - 2];
+            if (!leftGamer) leftGamer = frontGamer[frontGamer.length - 3];
+
+            
+
+            // if (meIndex !== _gamer.length - 2) {
+            //     //只要我不是倒数第二个,那么下一个的下一个肯定就是leftGamer
+            //     topGamer === _gamer[meIndex + 2];
+            // } else {
+            //     topGamer === _gamer[1];
+            // }
+
+            // leftGamer = meIndex !== _gamer.length - 1 ? _gamer[meIndex + 1] : _gamer[0];
+            // topGamer = meIndex !== _gamer.length - 2 ? _gamer[meIndex + 2] : _gamer[1];
+            // rightGamer = meIndex !== _gamer.length - 3 ? _gamer[meIndex + 3] : _gamer[2];
+
+            // let _gamer = this.state.room.gamers;
+            // me = _gamer.find(gamer => gamer.uid === this.state.user.uid);
+            // let meIndex = _gamer.indexOf(me);console.log(meIndex);
+            // leftGamer = _gamer[(meIndex + 1 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 1) : meIndex + 1)];
+            // console.log((meIndex + 1 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 1) : meIndex + 1));
+            // topGamer = _gamer[(meIndex + 2 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 2) : meIndex + 2)];
+            // console.log((meIndex + 2 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 2) : meIndex + 2));
+            // rightGamer = _gamer[(meIndex + 3 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 3) : meIndex + 3)];
+            // console.log((meIndex + 3 >= _gamer.length ? Math.abs(_gamer.length - meIndex - 3) : meIndex + 3));
+
+            // console.log('----------');
+            // console.log(leftGamer);
+            // console.log(topGamer);
+            // console.log(rightGamer);
+            // console.log('----------////');
+            // console.log('----------////');
         }
         const ready = <button onClick={() => this.ready('ready')}>准备开始</button>;
         const cancleReady = <button onClick={() => this.ready('wait')}>取消开始</button>;
@@ -220,16 +276,14 @@ class Room extends Component {
                             title={getColorName(fatchCard.number, fatchCard.color)}></span> : ''}
 
                         {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.meet.map((group, index) =>
-                            <div key={'group1_' + index} className='groupCardWrap'>{group.map(_meet => <span
-                                key={_meet.key}
+                            <div key={'group1_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
                                 style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
-                            </span>)}</div>
+                            </span></div>)}</div>
                         )}
                         {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.fullMeet.map((group, index) =>
-                            <div key={'group2_' + index} className='groupCardWrap'>{group.map(_meet => <span
-                                key={_meet.key}
+                            <div key={'group2_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
                                 style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
-                            </span>)}</div>
+                            </span></div>)}</div>
                         )}
 
                     </div> : ''}
@@ -250,11 +304,10 @@ class Room extends Component {
                     </div>
                     <div className='outCardsWrap'>
                         {this.state.game ? this.state.game.gameState['user_' + me.uid].outCards.map(item =>
-                            <span
+                            <div key={`out_${item.key}`}><span
                                 style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
-                                key={`out_${item.key}`}
                                 title={getColorName(item.number, item.color)}>
-                            </span>) : ''}
+                            </span></div>) : ''}
                     </div>
                     {this.state.game &&
                         (this.state.game.gameState['user_' + me.uid].colorLack ?
@@ -290,22 +343,30 @@ class Room extends Component {
                 </div>
                 <div className='dockCenter'>
                     <div>
-                        {this.state.room.state === 'wait' && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)}
+                        {this.state.room.state === 'wait' && !this.state.game && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)}
                     </div>
                 </div>
-                <div className='dockRight'>
-                    {otherGamers[1] ? <div><span>{otherGamers[1].name}</span> | <span>{getStateStr(otherGamers[1].state)}</span></div> : '...'}
-                </div>
                 <div className='dockTop'>
-                    {otherGamers[2] ? <div><span>{otherGamers[2].name}</span> | <span>{getStateStr(otherGamers[2].state)}</span></div> : '...'}
+                    {topGamer ? <div><span>{topGamer.name}</span> | <span>{getStateStr(topGamer.state)}</span></div> : '...'}
+                </div>
+                <div className='dockRight'>
+                    {rightGamer ? <div><span>{rightGamer.name}</span> | <span>{getStateStr(rightGamer.state)}</span></div> : '...'}
                 </div>
                 {this.state.game && this.state.game.isOver && <div className='singleGameInfo'>
                     <div className='header'>结算信息</div>
-                    <p>{`玩家${me.name}:${this.state.game.gameState['user_' + me.uid].increase}`}</p>
-                    {leftGamer && <p>{`玩家${leftGamer.name}:${this.state.game.gameState['user_' + leftGamer.uid].increase}`}</p>}
-                    {topGamer && <p>{`玩家${topGamer.name}:${this.state.game.gameState['user_' + topGamer.uid].increase}`}</p>}
-                    {rightGamer && <p>{`玩家${rightGamer.name}:${this.state.game.gameState['user_' + rightGamer.uid].increase}`}</p>}
-                    <div style={{ textAlign: 'center', marginTop: 10 }}>{ready}</div>
+                    <p>{`玩家${me.name}：`}<b className={this.state.game.gameState['user_' + me.uid].increase < 0 ? 'lose' : ''}>
+                        {this.state.game.gameState['user_' + me.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + me.uid].increase}</b>
+                    </p>
+                    {leftGamer && <p>{`玩家${leftGamer.name}：`}<b className={this.state.game.gameState['user_' + leftGamer.uid].increase < 0 ? 'lose' : ''}>
+                        {this.state.game.gameState['user_' + leftGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + leftGamer.uid].increase}</b>
+                    </p>}
+                    {topGamer && <p>{`玩家${topGamer.name}：`}<b className={this.state.game.gameState['user_' + topGamer.uid].increase < 0 ? 'lose' : ''}>
+                        {this.state.game.gameState['user_' + topGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + topGamer.uid].increase}</b>
+                    </p>}
+                    {rightGamer && <p>{`玩家${rightGamer.name}：`}<b className={this.state.game.gameState['user_' + rightGamer.uid].increase < 0 ? 'lose' : ''}>
+                        {this.state.game.gameState['user_' + rightGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + rightGamer.uid].increase}</b>
+                    </p>}
+                    <div style={{ textAlign: 'center', marginTop: 10 }}><div>下一局（2/6）</div>{ready}</div>
                 </div>}
 
             </div> : 'loading'
