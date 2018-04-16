@@ -4,7 +4,7 @@ const clone = require('clone');
 
 class Room {
     constructor(option) {
-        const _option = Object.assign({
+        this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
             gamers: [
                 {
@@ -31,15 +31,16 @@ class Room {
             gameType: 'majiang',//‘jinhua’
             game: {},//正在进行的游戏
         }, option);
-        Object.keys(_option).forEach((item) => {
-            this[item] = _option[item];
+        this.allTime = this.gameTime = this.optionSet.gameTime;//可以玩的次数，备份下，用于显示
+        Object.keys(this.optionSet).forEach((item) => {
+            this[item] = this.optionSet[item];
         });
         this.initGame();
     }
     initGame() {
         const self = this;
         this.gameType = "majiang";
-        this.game = new Majiang();
+        this.game = new Majiang({ colorType: this.optionSet.colorType });
         this.game.setSendMsg(function (content) {
             //监听游戏发出的任何信息
             self.sendMsg && self.sendMsg(content);
@@ -64,6 +65,7 @@ class Room {
     getSimplyData() {
         const dataClone = clone(this);
         delete dataClone.game;
+        delete dataClone.optionSet;
         return dataClone;
     }
     gamerJoin(user) {

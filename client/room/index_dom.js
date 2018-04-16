@@ -25,6 +25,7 @@ class Room extends Component {
             room: null,
             game: null,
             activeCard: '',
+            buttonVisible: true
         }
         //const roomId = getQueryString('roomId');
         this.isLack = false;
@@ -43,6 +44,7 @@ class Room extends Component {
                 roomId: self.state.roomId,
                 option: {
                     gamerNumber: 4,
+                    colorType: 2,//表示两黄牌还是三黄牌
                     mulriple: 1,//倍数
                     score: 100,//底分
                     gameTime: 8
@@ -56,7 +58,8 @@ class Room extends Component {
                     self.setState({ room: data.content });
                     break;
                 case 'gameData':
-                    self.setState({ game: data.content });
+                    const _fatchCard = data.content.gameState['user_' + self.state.user.uid].fatchCard;
+                    self.setState({ game: data.content, buttonVisible: true, activeCard: _fatchCard ? _fatchCard.key : '' });
                     break;
                 case 'notified':
                     const log = self.state.roomLog;
@@ -86,9 +89,16 @@ class Room extends Component {
         }));
     }
     showCard() {
-        const _showCard = this.concatCard().filter(card => card.key === this.state.activeCard)[0];
+        const _me = this.state.game.gameState['user_' + this.state.user.uid];
+        const _concatCard = this.concatCard();
+        const _isLack = _concatCard.filter(card => card.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack).length === 0 ? true : false;
+        const _showCard = _concatCard.find(card => card.key === this.state.activeCard);
+        if (!_me.catcher || (_me.colorLack !== _showCard.color && !_isLack)) {
+            this.setState({ activeCard: '' });
+            return false;
+        }
         //必须在打缺了的情况下，或者打的缺花色的牌，才通过
-        if (_showCard.color === this.state.game.gameState['user_' + this.state.user.uid].colorLack || this.isLack) {
+        if (_showCard.color === _me.colorLack || this.isLack) {
             this.ws.emit('showCard', JSON.stringify({
                 roomId: this.state.roomId,
                 uid: this.state.user.uid,
@@ -109,6 +119,10 @@ class Room extends Component {
     }
     //动作
     actionHandler(type) {
+        //点击了就马上隐藏按钮，免得再多生事端
+        this.setState({
+            buttonVisible: false
+        });
         this.ws.emit('action', JSON.stringify({
             roomId: this.state.roomId,
             uid: this.state.user.uid,
@@ -190,7 +204,7 @@ class Room extends Component {
             </span>
         </div>
         //const showCard = <button className={this.state.activeCard ? 'active' : 'hide'} onClick={this.showCard}>出牌</button>;
-        const btuStyle = { margin: '0 .2rem' }
+        const btuStyle = { margin: '0 .2rem', display: this.state.buttonVisible ? 'inline-block' : 'none' }
         const showCard = <button onClick={this.showCard}>出牌</button>;
         const meetBtu = <button style={btuStyle} key='meet' onClick={() => this.actionHandler('meet')}>碰</button>;
         const fullMeetBtu = <button style={btuStyle} key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
@@ -198,7 +212,26 @@ class Room extends Component {
         const passBtu = <button style={btuStyle} key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
         const fatchCard = this.state.game && this.state.game.gameState['user_' + me.uid].fatchCard;
 
-
+        //获取组牌和胡的牌
+        const getGroupCard = (gamer) => {
+            const _meet = gamer.groupCards.meet.map((group, index) =>
+                <div key={'group1_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
+                    style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
+                </span></div>)}</div>);
+            const _fullMeet = gamer.groupCards.fullMeet.map((group, index) =>
+                <div key={'group2_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
+                    style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
+                </span></div>)}</div>);
+            const winCard = gamer.groupCards.winCard &&
+                <div className='groupCardWrap'>
+                    <div key={gamer.groupCards.winCard.key}>
+                        <span
+                            style={{ background: `url(/images/games/majiang/cards/${gamer.groupCards.winCard.color}${gamer.groupCards.winCard.number}.png)` }}>
+                        </span>
+                    </div>
+                </div>
+            return [winCard, _meet, _fullMeet]
+        }
 
         return this.state.room ?
             <div className='wrapper'>
@@ -207,15 +240,21 @@ class Room extends Component {
                         <img src='/images/games/majiang/head.jpg' />
                         <div>{me.name}</div>
                     </div>
-                    {this.state.game ? <div className='cardsListWrap'>
+                    {this.state.game && <div className='cardsListWrap'>
                         {this.state.game.gameState['user_' + me.uid].cards.map(item =>
                             <span
                                 style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
                                 key={item.key}
                                 onClick={(e) => {
+                                    if (e.target.className.indexOf('gray') == -1) {
+                                        if (this.state.activeCard === item.key) {
+                                            this.showCard();
+                                        } else {
+                                            //this.setState({ activeCard: (this.state.activeCard === item.key ? '' : item.key) });
+                                            this.setState({ activeCard: item.key });
+                                        }
+                                    }
 
-                                    if (e.target.className.indexOf('gray') == -1)
-                                        this.setState({ activeCard: (this.state.activeCard === item.key ? '' : item.key) })
                                 }}
                                 className={getCardClass(item)}
                                 title={getColorName(item.number, item.color)}>
@@ -225,29 +264,25 @@ class Room extends Component {
                             key={fatchCard.key}
                             onClick={(e) => {
 
-                                if (e.target.className.indexOf('gray') == -1)
-                                    this.setState({ activeCard: (this.state.activeCard === fatchCard.key ? '' : fatchCard.key) })
+                                if (e.target.className.indexOf('gray') == -1) {
+                                    if (this.state.activeCard === fatchCard.key) {
+                                        this.showCard();
+                                    } else {
+                                        //this.setState({ activeCard: (this.state.activeCard === item.key ? '' : item.key) });
+                                        this.setState({ activeCard: fatchCard.key });
+                                    }
+                                }
+                                //this.setState({ activeCard: (this.state.activeCard === fatchCard.key ? '' : fatchCard.key) })
                             }}
                             className={getCardClass(fatchCard)}
                             title={getColorName(fatchCard.number, fatchCard.color)}></span> : ''}
-
-                        {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.meet.map((group, index) =>
-                            <div key={'group1_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
-                                style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
-                            </span></div>)}</div>
-                        )}
-                        {this.state.game && this.state.game.gameState['user_' + me.uid].groupCards.fullMeet.map((group, index) =>
-                            <div key={'group2_' + index} className='groupCardWrap'>{group.map(_meet => <div key={_meet.key}><span
-                                style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
-                            </span></div>)}</div>
-                        )}
-
-                    </div> : ''}
+                        {this.state.game && getGroupCard(this.state.game.gameState['user_' + me.uid])}
+                    </div>}
 
 
                     <div className='operateWrap'>
                         {this.state.game ? '' : (me.state == 'wait' ? ready : cancleReady)}
-                        {this.state.activeCard && this.state.game.gameState['user_' + me.uid].catcher ? showCard : ''}
+                        {this.state.activeCard && this.state.game.gameState['user_' + me.uid].colorLack && this.state.game.gameState['user_' + me.uid].catcher ? showCard : ''}
                         {this.state.game && !this.state.game.gameState['user_' + me.uid].colorLack && lackColorChoose}
                         {
                             this.state.game && this.state.game.gameState['user_' + me.uid].actionCode.map(action => {
@@ -270,13 +305,13 @@ class Room extends Component {
                             <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + me.uid].colorLack })}</span> : '')}
                 </div>
                 <div className='dockLeft'>
-                    {leftGamer ?
+                    {leftGamer &&
                         <div className='userDock'>
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{leftGamer.name}</div>
                             <div>{getStateStr(leftGamer.state)}</div>
-                        </div> : '...'}
-                    {leftGamer && this.state.game ? <div className='cardsListWrap'>
+                        </div>}
+                    {leftGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
                             let result = [];
                             for (let i = 0; i < +this.state.game.gameState['user_' + leftGamer.uid].cards; i++) {
@@ -284,15 +319,16 @@ class Room extends Component {
                             }
                             return result;
                         })()}
-                    </div> : ''}
+                        {getGroupCard(this.state.game.gameState['user_' + leftGamer.uid])}
+                    </div>}
                     <div className='outCardsWrap'>
                         {leftGamer && this.state.game ? this.state.game.gameState['user_' + leftGamer.uid].outCards.map(item =>
-                            <span
+                            <div key={`out_${item.key}`}><span
                                 style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
-                                key={`out_${item.key}`}
                                 title={getColorName(item.number, item.color)}>
-                            </span>) : ''}
+                            </span></div>) : ''}
                     </div>
+
                     {(leftGamer && this.state.game) &&
                         (this.state.game.gameState['user_' + leftGamer.uid].colorLack ?
                             <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + leftGamer.uid].colorLack })}</span> : '')}
@@ -303,26 +339,77 @@ class Room extends Component {
                     </div>
                 </div>
                 <div className='dockTop'>
-                    {topGamer ? <div><span>{topGamer.name}</span> | <span>{getStateStr(topGamer.state)}</span></div> : '...'}
+                    {topGamer ?
+                        <div className='userDock'>
+                            <img src='/images/games/majiang/head.jpg' />
+                            <div>{topGamer.name}</div>
+                            <div>{getStateStr(topGamer.state)}</div>
+                        </div> : '...'}
+                    {topGamer && this.state.game ? <div className='cardsListWrap'>
+                        {(() => {
+                            let result = [];
+                            for (let i = 0; i < +this.state.game.gameState['user_' + topGamer.uid].cards; i++) {
+                                result.push(<span key={i} style={{ background: `url(/images/games/majiang/cards/backSide.png)` }}></span>)
+                            }
+                            return result;
+                        })()}
+                        {getGroupCard(this.state.game.gameState['user_' + topGamer.uid])}
+                    </div> : ''}
+                    <div className='outCardsWrap'>
+                        {topGamer && this.state.game && this.state.game.gameState['user_' + topGamer.uid].outCards.map(item =>
+                            <span
+                                key={`out_${item.key}`}
+                                style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
+                                title={getColorName(item.number, item.color)}>
+                            </span>)}
+                    </div>
+                    {(topGamer && this.state.game) &&
+                        (this.state.game.gameState['user_' + topGamer.uid].colorLack ?
+                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + topGamer.uid].colorLack })}</span> : '')}
                 </div>
-                <div className='dockRight'>
-                    {rightGamer ? <div><span>{rightGamer.name}</span> | <span>{getStateStr(rightGamer.state)}</span></div> : '...'}
+                <div className='dockLeft dockRight'>
+                    {rightGamer &&
+                        <div className='userDock'>
+                            <img src='/images/games/majiang/head.jpg' />
+                            <div>{rightGamer.name}</div>
+                            <div>{getStateStr(rightGamer.state)}</div>
+                        </div>}
+                    {rightGamer && this.state.game && <div className='cardsListWrap'>
+                        {(() => {
+                            let result = [];
+                            for (let i = 0; i < +this.state.game.gameState['user_' + rightGamer.uid].cards; i++) {
+                                result.push(<span key={i} style={{ background: `url(/images/games/majiang/cards/side.png)` }}></span>)
+                            }
+                            return result;
+                        })()}
+                        {getGroupCard(this.state.game.gameState['user_' + rightGamer.uid])}
+                    </div>}
+                    <div className='outCardsWrap'>
+                        {rightGamer && this.state.game && this.state.game.gameState['user_' + rightGamer.uid].outCards.map(item =>
+                            <div key={`out_${item.key}`}><span
+                                style={{ background: `url(/images/games/majiang/cards/${item.color}${item.number}.png)` }}
+                                title={getColorName(item.number, item.color)}>
+                            </span></div>)}
+                    </div>
+                    {(rightGamer && this.state.game) &&
+                        (this.state.game.gameState['user_' + rightGamer.uid].colorLack ?
+                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + rightGamer.uid].colorLack })}</span> : '')}
                 </div>
                 {this.state.game && this.state.game.isOver && <div className='singleGameInfo'>
                     <div className='header'>结算信息</div>
                     <p>{`玩家${me.name}：`}<b className={this.state.game.gameState['user_' + me.uid].increase < 0 ? 'lose' : ''}>
-                        {this.state.game.gameState['user_' + me.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + me.uid].increase}</b>
+                        {this.state.game.gameState['user_' + me.uid].increase < 0 ? '' : '+'}{this.state.game.gameState['user_' + me.uid].increase}</b>
                     </p>
                     {leftGamer && <p>{`玩家${leftGamer.name}：`}<b className={this.state.game.gameState['user_' + leftGamer.uid].increase < 0 ? 'lose' : ''}>
-                        {this.state.game.gameState['user_' + leftGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + leftGamer.uid].increase}</b>
+                        {this.state.game.gameState['user_' + leftGamer.uid].increase < 0 ? '' : '+'}{this.state.game.gameState['user_' + leftGamer.uid].increase}</b>
                     </p>}
                     {topGamer && <p>{`玩家${topGamer.name}：`}<b className={this.state.game.gameState['user_' + topGamer.uid].increase < 0 ? 'lose' : ''}>
-                        {this.state.game.gameState['user_' + topGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + topGamer.uid].increase}</b>
+                        {this.state.game.gameState['user_' + topGamer.uid].increase < 0 ? '' : '+'}{this.state.game.gameState['user_' + topGamer.uid].increase}</b>
                     </p>}
                     {rightGamer && <p>{`玩家${rightGamer.name}：`}<b className={this.state.game.gameState['user_' + rightGamer.uid].increase < 0 ? 'lose' : ''}>
-                        {this.state.game.gameState['user_' + rightGamer.uid].increase < 0 ? '-' : '+'}{this.state.game.gameState['user_' + rightGamer.uid].increase}</b>
+                        {this.state.game.gameState['user_' + rightGamer.uid].increase < 0 ? '' : '+'}{this.state.game.gameState['user_' + rightGamer.uid].increase}</b>
                     </p>}
-                    <div style={{ textAlign: 'center', marginTop: 10 }}><div>下一局（2/6）</div>{ready}</div>
+                    <div style={{ textAlign: 'center', marginTop: 10 }}><div>下一局（{`${this.state.room.gameTime}/${this.state.room.allTime}`}）</div>{ready}</div>
                 </div>}
 
             </div> : 'loading'

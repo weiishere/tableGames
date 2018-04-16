@@ -37,7 +37,9 @@ button{
     box-sizing: border-box;
     border:solid 0px #eee;
 }
-
+.userDock{
+    div{font-size: 14px;}
+}
 .wrapper {
     position: relative;
     width: 100%;
@@ -129,22 +131,22 @@ button{
             position:absolute;
             width: 18rem;
             height: 4rem;
-            top:-4rem;
+            top:-4.5rem;
             left:0;
             right: 0;
             margin:0 auto;
             div{
                 display:inline-block;
-                width:1.8rem;
-                height: 2.5rem;
+                width:1.5rem;
+                height: 2.1rem;
                 background: url('/images/games/majiang/cards/sleep2.png');
                 background-size: cover;
                 text-align: center;
             }
             span{
                 color:#333;
-                width:1.3rem;
-                height: 1.7rem;
+                width:1rem;
+                height: 1.4rem;
                 display: inline-block;
                 ._transition;
                 margin-top: .2rem;
@@ -188,7 +190,8 @@ button{
             text-align: center;
             margin-left: 2rem;
             margin-top: 7rem;
-            span{
+            
+            &>span{
                 margin-top: -.6rem;
                 color:#333;
                 width:.7rem;
@@ -198,23 +201,65 @@ button{
                 background-size: 100% 100% !important;
                 ._transition;
                 -webkit-transform: rotate(180deg);
+                box-shadow: -0.4rem 0rem .6rem #000;
+            }
+            .groupCardWrap{
+                display: inline-block;
+                margin-top: .3rem;
+                div{
+                    float: left;
+                    width:1.65rem;
+                    height: 1.2rem;
+                    background: url('/images/games/majiang/cards/sleep3.png');
+                    background-size: cover;
+                    margin-top: -.18rem;
+                }
+                span{
+                    //-webkit-transform: rotate(180deg) skewX(-10deg);
+                    -webkit-transform: rotate(90deg);
+                    float: initial;
+                    display: inline-block;
+                    width:.8em;
+                    height: 1rem;
+                    background-position: -.1rem -.25rem !important;
+                    background-size: 130% 130% !important;
+                }
             }
         }
         .outCardsWrap{
             position:absolute;
-            width: 13rem;
-            top:8.5rem;
+            width: 11.5rem;
+            top:9rem;
             height: 4rem;
-            right:-8.5rem;
+            right:-8rem;
             margin:0 auto;
             -webkit-transform: rotate(90deg);
+            // span{
+            //     color:#333;
+            //     width:1.3rem;
+            //     height: 1.8rem;
+            //     display: inline-block;
+            //     background-size: 100% 100% !important;
+            //     ._transition;
+            // }
+            div{
+                float: left;
+                width:1.2rem;
+                height: 1.6rem;
+                background: url('/images/games/majiang/cards/sleep4.png');
+                background-size: cover;
+                margin-left: -.18rem;
+                
+            }
             span{
-                color:#333;
-                width:1.3rem;
-                height: 1.8rem;
+                //-webkit-transform: rotate(180deg) skewX(-10deg);
+                float: initial;
                 display: inline-block;
-                background-size: 100% 100% !important;
-                ._transition;
+                width:.8em;
+                height: 1rem;
+                margin: .3rem auto auto .1rem;
+                background-position: -.1rem -.25rem !important;
+                background-size: 130% 130% !important;
             }
         }
         .colorLack{
@@ -230,12 +275,12 @@ button{
     .dockCenter{
         .dockBar;
         width: 70%;
-        height: 60%;
+        height: 55%;
         left: 15%;
         right: 15%;
-        top:15%;
+        top:20%;
         bottom: 25%;
-        background: rgba(212, 212, 212,0.3);
+        background: rgba(212, 212, 212,0.1);
         p{font-size:.5rem;}
     }
     .dockRight {
@@ -244,16 +289,149 @@ button{
         height: 75%;
         top: 0;
         right: 0;
+        left: auto;
         margin:auto 0;
+        .cardsListWrap{
+            span{
+                -webkit-transform: rotate(0deg);
+                box-shadow: -.3rem 0rem 0.6rem #000;
+            }
+            div{
+                span{
+                    box-shadow: none;
+                }
+            }
+        }
+        .outCardsWrap{
+            right: auto;
+            left: -8rem;
+            -webkit-transform: rotate(270deg);
+            div{
+                background: url('/images/games/majiang/cards/sleep5.png');
+                float: right;
+                width:1.2rem;
+                height: 1.6rem;
+                background-size: cover;
+                margin-left: -.25rem;
+                // &:first-child{
+                //     background: url('/images/games/majiang/cards/sleep5.png');
+                //     background-size: cover;
+                //     margin-left: 0;
+                // }
+            }
+            span{
+                float: initial;
+                display: inline-block;
+                width:.8em;
+                height: 1rem;
+                background-position: -.1rem -.25rem !important;
+                background-size: 130% 130% !important;
+                margin: .35rem auto auto .4rem
+            }
+        }
+        .colorLack{
+            right: 1rem;
+            bottom: auto;
+            top: 5rem;
+        }
     }
     .dockTop {
         .dockBar;
         width: 70%;
-        height: 15%;
+        height: 20%;
         top: 0;
         left: 0;
         right: 0;
         margin: 0 auto;
+        .userDock{
+            position: absolute;
+            //width: 100%;
+            left: .5rem;
+            top:1.5rem;
+            text-align: center;
+            div{
+                display: inline-block;
+                vertical-align: middle
+            }
+            img{width: 2rem;
+                height: 2rem;
+                border:solid .2rem #99602d;
+                border-radius: 2rem;
+                box-shadow: 0.05rem 0.05rem 0.3rem #000
+            }
+        }
+        .cardsListWrap{
+            width: 100%;
+            text-align: center;
+            margin-top: 1.7rem;
+            
+            .groupCardWrap{
+                display: inline-block;
+                margin-left: .3rem;
+                div{
+                    display:inline-block;
+                    width:1.8rem;
+                    height: 2.5rem;
+                    background: url('/images/games/majiang/cards/sleep2.png');
+                    background-size: cover;
+                }
+                span{
+                    //-webkit-transform: rotate(180deg) skewX(-10deg);
+                    -webkit-transform: rotate(180deg);
+                    margin-top: .1rem;
+                    width:1.3rem;
+                    height: 1.8rem;
+                    background-position: center -.5rem !important;
+                    background-size: 130% 130% !important;
+                    box-shadow: none;
+                }
+            }
+            span{
+                position: relative;
+                color:#333;
+                width:1.2rem;
+                height: 1.8rem;
+                display: inline-block;
+                box-shadow: .2rem .1rem .3rem #000;
+                //background: url(/images/games/majiang/cards3.png);// .2rem .1rem;
+                background-size: 100% 100% !important;
+                ._transition;
+                &:hover{
+                    //transform: translate3d(0,-.5rem,0);
+                }
+                &.active{
+                    transform: translate3d(0,-.5rem,0);
+                }
+            }
+        }
+        .outCardsWrap{
+            position:absolute;
+            width: 18rem;
+            height: 4rem;
+            bottom:-4rem;
+            left:0;
+            right: 0;
+            margin:0 auto;
+            -webkit-transform: rotate(180deg);
+            span{
+                color:#333;
+                width:1.3rem;
+                height: 1.7rem;
+                display: inline-block;
+                ._transition;
+                margin-top: .2rem;
+                    background-size: cover !important;
+            }
+        }
+        .colorLack{
+            position: absolute;
+            right: .2rem;
+            bottom: .2rem;
+            padding: 0 .2rem;
+            border:solid 1px #f5e47f;
+            border-radius: .3rem;
+            color: #f5e47f
+        }
     }
     .singleGameInfo{
         position: absolute;

@@ -3,6 +3,7 @@ const clone = require('clone');
 module.exports = (cards) => {
     let copy_cards = [];
     let isWin = false;
+    //先做一个对象，分别记录每一张牌出现的次数
     let group = {};
     cards.forEach(card => {
         if (group[card.color + card.number]) {
@@ -15,6 +16,14 @@ module.exports = (cards) => {
             group[card.color + card.number] = obj;
         }
     });
+    let singleNumber = 0;
+    for (let item in group) {
+        if (group[item].count === 1) singleNumber++;
+    }
+    //如果手上已经都没有单牌了，那么直接胡牌
+    if (singleNumber === 0) {
+        return true;
+    }
     //2和和3个的开始计算
     const outCard = (_card, number) => {
         let num = 0;

@@ -49,6 +49,7 @@ module.exports = (io, scoket) => {
         },
         disconnect: () => {
             //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
+            if (!scoket.user) return;
             const room = findUserInRoom(scoket.user.uid);
             if (room) {
                 room.gamerLeave(scoket.user.uid);
@@ -88,7 +89,7 @@ module.exports = (io, scoket) => {
                     //room.game.regAction(scoket, room);
                     room.game.regAction().forEach(item => {
                         scoket.on(item.actionName, function (data) {
-                            item.actionFn.call(room.game,data);
+                            item.actionFn.call(room.game, data);
                         })
                     })
                     setTimeout(() => {
@@ -119,7 +120,8 @@ module.exports = (io, scoket) => {
                     score: data.option.score,//底分
                     gameTime: data.option.gameTime,
                     state: 'wait',
-                    gameType: 'majiang'
+                    gameType: 'majiang',
+                    colorType: data.option.colorType || 3
                 });
                 rooms.push(room);
                 //data.user['catcher'] = true;
@@ -129,7 +131,7 @@ module.exports = (io, scoket) => {
                 //room.game.regAction(scoket);
                 room.game.regAction().forEach(item => {
                     scoket.on(item.actionName, function (data) {
-                        item.actionFn.call(room.game,data);
+                        item.actionFn.call(room.game, data);
                     })
                 })
                 setTimeout(() => {
