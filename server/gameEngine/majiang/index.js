@@ -73,11 +73,13 @@ class Majiang {
             }
         });
         const _length = _cards.length;
+        this.lastShowCardUserState = this.gameState.find(item => item.catcher === true);//默认是第一个人
         getRedomCard();
     }
     //根据当前玩家获取到下一个取牌的玩家（不能根据上次抓牌的玩家，因为碰杠胡都可能会打乱顺序）
     getNaxtCacher(thisUid) {
-        const remainState = this.gameState.filter(state => state.isWin === false);//未胡牌的玩家
+        const remainState = !thisUid ? this.gameState.filter(state => state.isWin === false) : this.gameState.filter(state => state.isWin === false || state.uid === thisUid)
+        //未胡牌的玩家（如果指定了是谁之后，那么这个人也可能是赢家，那么不能排除，不然找不到起始对象）
         let nextCatcher, nextIndex = 0, _l = remainState.length;
         //thisGamer = remainState.find(item => item.uid === thisUid);
         //this.lastShowCardUserState = thisGamer;//本次出牌人或者本次操作了的人
@@ -218,6 +220,14 @@ class Majiang {
                     } else {
                         this.setGamerCacher();//都设置为false
                         //暂停，等待玩家做出动作，有动作的话
+                        let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
+                        if (winners.length !== 0) {
+                            //说明有玩家有胡牌，那么需要暂时禁用掉其他有动作玩家的非胡牌操作
+                            let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
+                            others.forEach(item => {
+                                item.isPause = true;
+                            });
+                        }
                     }
                     this.lastShowCard = showCard;
                     userState.fatchCard = undefined;//清空玩家刚刚抓到的牌
@@ -245,13 +255,35 @@ class Majiang {
                 actionFn: function (_data) {
                     const data = JSON.parse(_data);
                     const userState = this.gameState.find(item => item.uid === data.uid);
+                    let isMineAction = userState.fatchCard ? true : false;//是否是自己
                     if (data.actionType === 'pass') {
-                        const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
-                        this.setGamerCacher(next);
-                        this.fatchCard();//找打下一个人并摸牌
+                        //检查是否同时有其他杠、碰、胡
+                        userState.actionCode = [];
+                        if (this.gameState.filter(item => item.actionCode.length !== 0).length === 0) {
+                            //没有其他玩家有动作了，正常走
+                            if (!isMineAction) {
+                                //如果不是自摸才下一个，不然还要出牌
+                                const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
+                                this.setGamerCacher(next);
+                                this.fatchCard();//找打下一个人并摸牌
+                            }
+                        } else {
+                            //先检查是否还有胡牌的玩家
+                            //如果所有的胡牌玩家都过，那么才处理其他玩家的动作
+                            let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
+                            if (winners.length === 0) {
+                                //解开其他玩家的动作
+                                let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
+                                others.forEach(item => {
+                                    item.isPause = false;
+                                });
+                            } else {
+                                //还有没做决定的胡牌玩家，那么继续走
+                            }
+                        }
                     } else {
                         //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
-                        let isMineAction = userState.fatchCard ? true : false;
+
                         const doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
                         if (data.actionType === 'meet' && !isMineAction) {
                             //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
@@ -352,22 +384,30 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 7)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5),
-        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
-        // ].sort(objectArraySort('key'));
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
+        ].sort(objectArraySort('key'));
+        this.gameState[2].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 7), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3),
+            this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 9)
+        ].sort(objectArraySort('key'));
+
         if (this.colorType === 2) {
             //如果是两黄牌的话就直接发牌
             this.fatchCard();

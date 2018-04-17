@@ -43,7 +43,7 @@ class Room extends Component {
                 user: self.state.user,
                 roomId: self.state.roomId,
                 option: {
-                    gamerNumber: 4,
+                    gamerNumber: 3,
                     colorType: 2,//表示两黄牌还是三黄牌
                     mulriple: 1,//倍数
                     score: 100,//底分
@@ -58,8 +58,13 @@ class Room extends Component {
                     self.setState({ room: data.content });
                     break;
                 case 'gameData':
-                    const _fatchCard = data.content.gameState['user_' + self.state.user.uid].fatchCard;
-                    self.setState({ game: data.content, buttonVisible: true, activeCard: _fatchCard ? _fatchCard.key : '' });
+                    if (data.content) {
+                        const _fatchCard = data.content.gameState['user_' + self.state.user.uid].fatchCard;
+                        self.setState({ game: data.content, buttonVisible: true, activeCard: _fatchCard ? _fatchCard.key : '' });
+                    } else {
+                        self.setState({ game: undefined });
+                    }
+
                     break;
                 case 'notified':
                     const log = self.state.roomLog;
@@ -285,13 +290,14 @@ class Room extends Component {
                         {this.state.activeCard && this.state.game.gameState['user_' + me.uid].colorLack && this.state.game.gameState['user_' + me.uid].catcher ? showCard : ''}
                         {this.state.game && !this.state.game.gameState['user_' + me.uid].colorLack && lackColorChoose}
                         {
-                            this.state.game && this.state.game.gameState['user_' + me.uid].actionCode.map(action => {
+                            //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
+                            this.state.game && !this.state.game.gameState['user_' + me.uid].isPause && this.state.game.gameState['user_' + me.uid].actionCode.map(action => {
                                 if (action === 'meet') return meetBtu;
                                 if (action === 'fullMeet') return fullMeetBtu;
                                 if (action === 'winning') return winBtu;
                             })
                         }
-                        {this.state.game && this.state.game.gameState['user_' + me.uid].actionCode.length !== 0 && passBtu}
+                        {this.state.game && !this.state.game.gameState['user_' + me.uid].isPause && this.state.game.gameState['user_' + me.uid].actionCode.length !== 0 && passBtu}
                     </div>
                     <div className='outCardsWrap'>
                         {this.state.game ? this.state.game.gameState['user_' + me.uid].outCards.map(item =>
