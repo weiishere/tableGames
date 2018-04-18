@@ -96,7 +96,7 @@ class Room {
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
         this.initGame();
-        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, catcher: index == 0 ? true : false } }));
+        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, catcher: index === 0 ? true : false } }));
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {

@@ -33,7 +33,7 @@ class Room extends Component {
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
         this.concatCard = this.concatCard.bind(this);
-        this.ws = io('ws://localhost:3300/');
+        this.ws = io('ws://192.168.31.222:3300/');
 
     }
     componentDidMount() {
@@ -43,7 +43,7 @@ class Room extends Component {
                 user: self.state.user,
                 roomId: self.state.roomId,
                 option: {
-                    gamerNumber: 3,
+                    gamerNumber: 4,
                     colorType: 2,//表示两黄牌还是三黄牌
                     mulriple: 1,//倍数
                     score: 100,//底分
@@ -215,7 +215,7 @@ class Room extends Component {
         const fullMeetBtu = <button style={btuStyle} key='fullMeet' onClick={() => this.actionHandler('fullMeet')}>杠</button>;
         const winBtu = <button style={btuStyle} key='winning' onClick={() => this.actionHandler('winning')}>胡牌</button>;
         const passBtu = <button style={btuStyle} key='pass' onClick={() => this.actionHandler('pass')}>过</button>;
-        const fatchCard = this.state.game && this.state.game.gameState['user_' + me.uid].fatchCard;
+        const fatchCard = this.state.game && this.state.game.gameState['user_' + this.state.user.uid].fatchCard;
 
         //获取组牌和胡的牌
         const getGroupCard = (gamer) => {
@@ -228,7 +228,7 @@ class Room extends Component {
                     style={{ background: `url(/images/games/majiang/cards/${_meet.color}${_meet.number}.png)` }}>
                 </span></div>)}</div>);
             const winCard = gamer.groupCards.winCard &&
-                <div className='groupCardWrap'>
+                <div className='groupCardWrap' key='winCard'>
                     <div key={gamer.groupCards.winCard.key}>
                         <span
                             style={{ background: `url(/images/games/majiang/cards/${gamer.groupCards.winCard.color}${gamer.groupCards.winCard.number}.png)` }}>
