@@ -1,4 +1,20 @@
+@import '//at.alicdn.com/t/font_381140_hq27gs22yv6lxr.css';
 ._transition{-webkit-transition: all 0.1s ease-out;}
+.ellipsis{
+    overflow: hidden;
+    text-overflow:ellipsis;
+    white-space: nowrap;
+}
+.Lackdock{
+    position: absolute;
+    right: -.5rem;
+    top: -.5rem;
+    padding: 0 .2rem;
+    border:solid 1px #ab9a38;
+    border-radius: 1rem;
+    color: #efd645;
+    background: #3f6cc1
+}
 button{
     margin: 0;
     padding: 0;
@@ -126,6 +142,9 @@ button{
                 border-radius: 2rem;
                 box-shadow: 0.05rem 0.05rem 0.3rem #000
             }
+            .colorLack{
+                .Lackdock;
+            }
         }
         .outCardsWrap{
             position:absolute;
@@ -154,15 +173,7 @@ button{
                     background-size: 130% 130% !important;
             }
         }
-        .colorLack{
-            position: absolute;
-            right: 1.2rem;
-            bottom: 1.2rem;
-            padding: 0 .2rem;
-            border:solid 1px #f5e47f;
-            border-radius: .3rem;
-            color: #f5e47f
-        }
+        
     }
     .dockLeft {
         .dockBar;
@@ -182,6 +193,9 @@ button{
                 border:solid .2rem #99602d;
                 border-radius: 2rem;
                 box-shadow: 0.05rem 0.05rem 0.3rem #000
+            }
+            .colorLack{
+                .Lackdock;
             }
         }
         .cardsListWrap{
@@ -262,15 +276,7 @@ button{
                 background-size: 130% 130% !important;
             }
         }
-        .colorLack{
-            position: absolute;
-            right: .2rem;
-            bottom: .2rem;
-            padding: 0 .2rem;
-            border:solid 1px #f5e47f;
-            border-radius: .3rem;
-            color: #f5e47f
-        }
+        
     }
     .dockCenter{
         .dockBar;
@@ -330,9 +336,7 @@ button{
             }
         }
         .colorLack{
-            right: 1rem;
-            bottom: auto;
-            top: 5rem;
+            .Lackdock;
         }
     }
     .dockTop {
@@ -358,6 +362,11 @@ button{
                 border:solid .2rem #99602d;
                 border-radius: 2rem;
                 box-shadow: 0.05rem 0.05rem 0.3rem #000
+            }
+            .colorLack{
+                .Lackdock;
+                right:auto;
+                left: -.5rem;;
             }
         }
         .cardsListWrap{
@@ -423,14 +432,65 @@ button{
                     background-size: cover !important;
             }
         }
-        .colorLack{
+        
+    }
+    .topInfoBar{
+        position: absolute;
+        top:-6.5rem;
+        left: 0;
+        right: 0;
+        margin: auto;
+        width: 25rem;
+        height: 8rem;
+        background: #995f2dc0;
+        border: solid .3rem #7c400b;
+        border-top: 0;
+        border-radius: 0 0 1rem 1rem;
+        box-shadow: 0 0 1rem #000 inset;
+        -webkit-transition: all 0.3s ease-out;
+        color: #ddd;
+        &>div{
+            height: 6rem;
+            overflow: auto;
+            margin-top: .5rem;
+            table{
+                width: 100%;
+                border-spacing:0;
+                th{
+                    padding-top: 1rem;
+                    span{
+                        .ellipsis;
+                        display: inline-block;
+                        width:5rem
+                    }
+                }   
+                td{
+                    border-top: solid 1px #918171;
+                    text-align: center;
+                    div{
+                        width: 100%;
+                        text-align: left;
+                        height: 1.5rem;
+                        i{
+                            margin: auto .2rem;
+                            font-size:.8rem;
+                            line-height: 1.5rem
+                        }
+                    }
+                }    
+                border-bottom: solid 1px #918171;
+            }
+        }
+        .triggleBar{
             position: absolute;
-            right: .2rem;
-            bottom: .2rem;
-            padding: 0 .2rem;
-            border:solid 1px #f5e47f;
-            border-radius: .3rem;
-            color: #f5e47f
+            bottom: 0;
+            height: 1.5rem;
+            line-height: 1.5rem;
+            width:100%;
+            text-align: center;
+        }
+        &.active{
+            transform: translate3d(0,6rem,0);
         }
     }
     .singleGameInfo{

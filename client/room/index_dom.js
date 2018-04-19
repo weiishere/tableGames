@@ -19,6 +19,7 @@ class Room extends Component {
                 avatar: '/images/games/majiang/head.jpg',
                 state: 'wait',
             },
+            triggerTopBar: 'active',
             //allowColor: 'none',//t、b、w、none、all
             roomId: getQueryString('roomId'),
             roomLog: [],
@@ -34,28 +35,35 @@ class Room extends Component {
         this.chooseColor = this.chooseColor.bind(this);
         this.concatCard = this.concatCard.bind(this);
         this.ws = io('ws://192.168.31.222:3300/');
-
+        this.option = {
+            gamerNumber: 4,
+            colorType: 2,//表示两黄牌还是三黄牌
+            mulriple: 1,//倍数
+            score: 100,//底分
+            gameTime: 8
+        }
     }
     componentDidMount() {
         const self = this;
+        let once = true;
         this.ws.on('connect', function () {
             self.ws.emit('checkin', JSON.stringify({
                 user: self.state.user,
                 roomId: self.state.roomId,
-                option: {
-                    gamerNumber: 4,
-                    colorType: 2,//表示两黄牌还是三黄牌
-                    mulriple: 1,//倍数
-                    score: 100,//底分
-                    gameTime: 8
-                }
+                option: self.option
             }));
         });
+
         this.ws.on('message', function (msg) {
             const data = JSON.parse(msg);
             switch (data.type) {
                 case 'roomData':
                     self.setState({ room: data.content });
+                    if (data.content && data.content.gamers.length === self.option.gamerNumber) {
+                        self.setState({ triggerTopBar: '' });
+                    } else {
+                        self.setState({ triggerTopBar: 'active' });
+                    }
                     break;
                 case 'gameData':
                     if (data.content) {
@@ -77,6 +85,9 @@ class Room extends Component {
             console.log(data.content);
         });
 
+
+    }
+    componentWillReceiveProps() {
 
     }
     componentWillUpdate() {
@@ -244,6 +255,9 @@ class Room extends Component {
                     <div className='userDock'>
                         <img src='/images/games/majiang/head.jpg' />
                         <div>{me.name}</div>
+                        {this.state.game && this.state.room.state === 'playing' &&
+                            (this.state.game.gameState['user_' + me.uid].colorLack ?
+                                <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + me.uid].colorLack })}</span> : '')}
                     </div>
                     {this.state.game && <div className='cardsListWrap'>
                         {this.state.game.gameState['user_' + me.uid].cards.map(item =>
@@ -306,9 +320,7 @@ class Room extends Component {
                                 title={getColorName(item.number, item.color)}>
                             </span></div>) : ''}
                     </div>
-                    {this.state.game &&
-                        (this.state.game.gameState['user_' + me.uid].colorLack ?
-                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + me.uid].colorLack })}</span> : '')}
+
                 </div>
                 <div className='dockLeft'>
                     {leftGamer &&
@@ -316,6 +328,9 @@ class Room extends Component {
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{leftGamer.name}</div>
                             <div>{getStateStr(leftGamer.state)}</div>
+                            {(leftGamer && this.state.game) && this.state.room.state === 'playing' &&
+                                (this.state.game.gameState['user_' + leftGamer.uid].colorLack ?
+                                    <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + leftGamer.uid].colorLack })}</span> : '空缺中')}
                         </div>}
                     {leftGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
@@ -335,13 +350,11 @@ class Room extends Component {
                             </span></div>) : ''}
                     </div>
 
-                    {(leftGamer && this.state.game) &&
-                        (this.state.game.gameState['user_' + leftGamer.uid].colorLack ?
-                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + leftGamer.uid].colorLack })}</span> : '')}
+
                 </div>
                 <div className='dockCenter'>
                     <div>
-                        {this.state.room.state === 'wait' && !this.state.game && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)}
+                        {/* {this.state.room.state === 'wait' && !this.state.game && this.state.roomLog.map((log, i) => <p key={i}>{log}</p>)} */}
                     </div>
                 </div>
                 <div className='dockTop'>
@@ -350,7 +363,10 @@ class Room extends Component {
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{topGamer.name}</div>
                             <div>{getStateStr(topGamer.state)}</div>
-                        </div> : '...'}
+                            {(topGamer && this.state.game) && this.state.room.state === 'playing' &&
+                                (this.state.game.gameState['user_' + topGamer.uid].colorLack ?
+                                    <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + topGamer.uid].colorLack })}</span> : '')}
+                        </div> : '空缺中'}
                     {topGamer && this.state.game ? <div className='cardsListWrap'>
                         {(() => {
                             let result = [];
@@ -369,9 +385,7 @@ class Room extends Component {
                                 title={getColorName(item.number, item.color)}>
                             </span>)}
                     </div>
-                    {(topGamer && this.state.game) &&
-                        (this.state.game.gameState['user_' + topGamer.uid].colorLack ?
-                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + topGamer.uid].colorLack })}</span> : '')}
+
                 </div>
                 <div className='dockLeft dockRight'>
                     {rightGamer &&
@@ -379,6 +393,9 @@ class Room extends Component {
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{rightGamer.name}</div>
                             <div>{getStateStr(rightGamer.state)}</div>
+                            {(rightGamer && this.state.game) && this.state.room.state === 'playing' &&
+                                (this.state.game.gameState['user_' + rightGamer.uid].colorLack ?
+                                    <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + rightGamer.uid].colorLack })}</span> : '')}
                         </div>}
                     {rightGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
@@ -397,10 +414,48 @@ class Room extends Component {
                                 title={getColorName(item.number, item.color)}>
                             </span></div>)}
                     </div>
-                    {(rightGamer && this.state.game) &&
-                        (this.state.game.gameState['user_' + rightGamer.uid].colorLack ?
-                            <span className='colorLack'>缺{getColorName({ color: this.state.game.gameState['user_' + rightGamer.uid].colorLack })}</span> : '')}
+
                 </div>
+                {<div className={`topInfoBar ${this.state.triggerTopBar}`} onClick={() => {
+                    this.setState({ triggerTopBar: !this.state.triggerTopBar ? 'active' : '' })
+                }}>
+                    <div>
+                        {
+                            this.state.room.state === 'wait' && !this.state.game ? <table>
+                                <tbody>{this.state.roomLog.filter((item, index) => this.state.roomLog.length - index <= 4).map((log, i) => <tr key={i}><td><div><i className='iconfont icon-message'></i>{log}</div></td></tr>)}</tbody>
+                            </table> : <table>
+                                <tbody>
+                                    <tr>
+                                        <th>牌局记录</th><th><span>userName1userName1userName1userName1</span></th><th><span>userName2</span></th><th><span>userName2</span></th><th><span>userName3</span></th>
+                                    </tr>
+                                </tbody>
+                                </table>
+                        }
+                        {/* <table>
+                                <tr>
+                                    <th>牌局记录</th><th><span>userName1userName1userName1userName1</span></th><th><span>userName2</span></th><th><span>userName2</span></th><th><span>userName3</span></th>
+                                </tr>
+                                <tr>
+                                    <td>1</td><td>-100</td><td>-300</td><td>+200</td><td>+200</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td><td>-100</td><td>-300</td><td>+200</td><td>+200</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td><td>-100</td><td>-300</td><td>+200</td><td>+200</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td><td>-100</td><td>-300</td><td>+200</td><td>+200</td>
+                                </tr>
+                                <tr>
+                                    <td>1</td><td>-100</td><td>-300</td><td>+200</td><td>+200</td>
+                                </tr>
+                        </table> */}
+                    </div>
+                    <span className='triggleBar'>
+                        第2/8局
+                    </span>
+                </div>}
                 {this.state.game && this.state.game.isOver && <div className='singleGameInfo'>
                     <div className='header'>结算信息</div>
                     <p>{`玩家${me.name}：`}<b className={this.state.game.gameState['user_' + me.uid].increase < 0 ? 'lose' : ''}>
