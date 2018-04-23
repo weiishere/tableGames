@@ -1,0 +1,637 @@
+.ellipsis{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+}
+._transition{-webkit-transition: all 0.1s ease-out;}
+.clearfix{
+    &:after{
+        content:"";
+        height:0;
+        line-height:0;
+        display:block;
+        visibility:hidden;
+        clear:both
+    }
+}
+.MainTable {
+    width: 100%;
+    margin: 0;
+    height: 100%;
+    background: url('/images/games/majiang2/bg_1.jpg');
+    background-size: 100% 100%;
+    position: relative;
+    .mask{
+        position: absolute;
+        z-index: 99;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background:rgba(0, 0, 0, 0.3);
+    }
+    .gameInfo{
+        position: absolute;
+        z-index: 88;
+        width: 10rem;
+        height: 2rem;
+        right: 0;
+        top:0;
+        border-left: solid .1rem #ac5618;
+        border-bottom: solid .1rem #ac5618;
+        border-radius: 0 0 0 1rem;
+        background: #d4ab7f;
+        box-shadow: -0.2rem 0.2rem 0.6rem #000;
+        line-height: 2rem;
+        color: #edf397;
+        font-size: 1.2rem;
+        text-align: center;
+        text-shadow: 1px 1px 1px #333;
+    }
+    .GameInfo{
+        position: absolute;
+        z-index: 100;
+        width: 90%;
+        height: 90%;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        background: -webkit-linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.2));
+        border:solid .1rem #fff;
+        box-shadow: 0 0 .2rem #fff inset;
+        border-radius: 2rem;
+        &>header{
+            background: url('/images/games/majiang2/endTitle.png') no-repeat center;
+            position: absolute;
+            top: -1.5rem;
+            height: 4rem;
+            width: 100%;
+            background-size: contain
+        }
+        .contentWrap{
+            height: 21rem;
+            margin-top: 3rem;
+            display: flex;
+            .content{
+                height: 19rem;
+                box-sizing: border-box;
+                flex: 1;
+                &>div{
+                    margin: 1rem;
+                    border:solid .3rem #d4ab7f;
+                    height: 16rem;
+                    background: #fcfaed;
+                    border-radius: 1rem;
+                    overflow: hidden;
+                    header{
+                        height: 3rem;
+                        background: #e7d1a8;
+                        text-align: center;
+                        line-height: 3rem;
+                        font-weight: bold;
+                        color: #b2510c;
+                        border-bottom: solid 1px #d4ab7f;
+                    }
+                    ul{
+                        list-style: none;
+                        margin: 0;
+                        height: 10rem;
+                        overflow: auto;
+                        li{
+                            color: #a4723d;
+                            line-height: 2rem;
+                            text-align: left;
+                            margin: 0 auto;
+                            padding-left: 1rem;
+                            &:nth-child(2n){
+                                background: #f1d8c5;
+                            }
+                        }
+                    }
+                    footer{
+                        height: 3rem;
+                        background: #e7d1a8;
+                        text-align: center;
+                        line-height: 3rem;
+                        font-weight: bold;
+                        span{
+                            font-size: 1.4rem;
+                            color: #ac5618;
+                            text-shadow: 0px 1px 2px #000;
+                        }
+                    }
+                }
+            }
+        }
+        &>footer{
+            position: absolute;
+            bottom: 0;
+            height: 4rem;
+            width: 100%;
+            text-align: center;
+        }
+    }
+    .tableCenter{
+        position: absolute;
+        width: 8rem;
+        height: 8rem;
+        top: 11.4rem;
+        left: 26rem;
+        background: url('/images/games/majiang2/center.png');
+        background-size: 100% 100%;
+        .center{
+            position: absolute;
+            left: 0;right: 0;top: 0;bottom: 0;
+            margin: auto;
+            width: 4rem;
+            height: 4rem;
+            color: #d1cf69;
+            text-align: center;
+            line-height: 4rem;
+            font-size: 1.5rem;
+        }
+        .bottom{
+            background: url('/images/games/majiang2/center_bottom.png');
+            position: absolute;
+            bottom: -1.3rem;
+            height: 50%;
+            left: .5rem;
+            width: 100%;
+            background-size: 100% 100%;
+        }
+        .left{
+            background: url('/images/games/majiang2/center_left.png');
+            position: absolute;
+            bottom: .5rem;
+            height: 100%;
+            left: -1.3rem;
+            width: 50%;
+            background-size: 100% 100%;
+        }
+        .right{
+            background: url('/images/games/majiang2/center_right.png');
+            position: absolute;
+            bottom: .5rem;
+            height: 100%;
+            right: -1.3rem;
+            width: 50%;
+            background-size: 100% 100%;
+        }
+        .top{
+            background: url('/images/games/majiang2/center_top.png');
+            position: absolute;
+            top: -1.3rem;
+            height: 50%;
+            left: .4rem;
+            width: 100%;
+            background-size: 100% 100%;
+        }
+    }
+    &.hideLackIcon{
+        .colorLack{display: none}
+    }
+}
+
+.userDock {
+    position: absolute;
+    left: 1rem;top:0;bottom: 0;margin: auto;
+    width: 5rem;
+    height: 6.2rem;
+    padding-top: .5rem;
+    color: #ddd;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0.3rem #000;
+    border-radius: .4rem;
+    .nameWrap{
+        .ellipsis;
+        text-shadow: 1px 1px 2px #333;
+    }
+    .score{
+        color: #ccc
+    }
+    &>img {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 3rem;
+        border:solid .2rem rgb(117, 94, 17);
+    }
+    .ready_ok{
+        position: absolute;
+        top:0;
+        right: -1rem;
+        width: 1.5rem;
+        height: 2rem;
+        background: url('/images/games/majiang/ok.png');
+        background-size: cover;
+    }
+    .colorLack{
+        position: absolute;
+        top:0;
+        right: -1rem;
+        width: 2rem;
+        height: 2rem;
+        img{
+            width: 100%;
+            height: 100%;
+        }
+    }
+}
+
+.gamerWrap_mine {
+    position: absolute;
+    width: 100%;
+    height: 8rem;
+    //border: solid 1px #fff;
+    left: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    // .userInfoWrap {
+    //     .userDock;
+    // }
+    .cardListWrap{
+        .clearfix;
+        position: absolute;
+        right: 2rem;
+        top:0;bottom: 0;margin: auto;
+        //background: rgba(255, 255, 255, 0.1);
+        width: 90%;
+        height: 5rem;
+        text-align: center;
+        .group{
+            text-align: left;
+            display: inline-block;
+            margin: 0 .5rem;
+            &.meet{
+                //width:15%;
+                span:last-child{
+                    margin-left:-5rem;
+                    transform:translate3d(0,-1.1rem,0);
+                }
+            }
+            &.fullmeet{
+                //width: 20%;
+                span:last-child{
+                    margin-left:-6.6rem;
+                    transform:translate3d(0,-1.1rem,0);
+                }
+            }
+            
+        }
+        .fetchCard{
+            display: inline-block;
+        }
+    }
+    .outCardListWrap{
+        //background: rgba(255, 255, 255, 0.5);
+        position: absolute;
+        width: 20rem;
+        height: 6rem;
+        left: 0;right: 0;
+        margin: auto;
+        top:-6rem;
+    }
+    .operateWrap{
+        position: absolute;
+        width:100%;
+        top:-3rem;
+        height: 3rem;
+        text-align: center;
+    }
+    
+}
+
+.gamerWrap_left{
+    position: absolute; 
+    width: 10rem;
+    //border: solid 1px #fff;
+    left: 0;
+    top: 5rem;
+    bottom: 8rem;
+    box-sizing: border-box;
+    .userDock{
+        left: 0;
+    }
+    .cardListWrap{
+        .clearfix;
+        position: absolute;
+        top:0rem;right: 1rem;
+        bottom: 0;
+        margin: auto;
+        //height: 14.5rem;
+        width: 1.6rem;
+        text-align: center;
+        .fetchCard{
+            float: left;
+        }
+        .group{
+            margin-bottom: .2rem;
+            .clearfix;
+        }
+        .card_group{
+            background-image: url('/images/games/majiang2/sideCard2.png');
+            width: 2rem;height: 1.8rem;
+            margin-left: -.1rem;
+            float: left;
+            margin-top: -.6rem;
+            img{
+                -webkit-transform:translate3d(.1rem,-.1rem,0) rotate(90deg);
+                width: 70%;
+                height: 90%;
+                
+            }
+        }
+    }
+    .outCardListWrap{
+        //background: rgba(255, 255, 255, 0.5);
+        position: absolute;
+        width: 7.8rem;
+        top: 3rem;
+        bottom: 3rem;
+        margin: auto;
+        left:100%;
+    }
+}
+.gamerWrap_right{
+    position: absolute; 
+    width: 10rem;
+    //border: solid 1px #fff;
+    right: 0;
+    top: 5rem;
+    bottom: 8rem;
+    box-sizing: border-box;
+    .userDock{
+        right: 1rem;
+        left: auto;
+    }
+    .cardListWrap{
+        .clearfix;
+        position: absolute;
+        top:-2rem;left: 1rem;
+        bottom: 0;
+        margin: auto;
+        height: 14.5rem;
+        width: 1.6rem;
+        text-align: center;
+        .card_side_gamer_main{
+            transform: rotate(0deg)
+        }
+        .fetchCard{
+            float: left;
+        }
+        .group{
+            margin-bottom: .2rem;
+            .clearfix;
+        }
+        .card_group{
+            background-image: url('/images/games/majiang2/sideCard2.png');
+            width: 2rem;height: 1.8rem;
+            margin-left: -.1rem;
+            float: left;
+            margin-top: -.6rem;
+            img{
+                -webkit-transform:translate3d(-.1rem,-.1rem,0) rotate(-90deg);
+                width: 70%;
+                height: 90%;
+                
+            }
+        }
+    }
+    .outCardListWrap{
+        //background: rgba(255, 255, 255, 0.5);
+        position: absolute;
+        width: 7.8rem;
+        top: 3rem;
+        bottom: 3rem;
+        margin: auto;
+        right:100%;
+    }
+}
+
+.gamerWrap_top{
+    position: absolute; 
+    width: 49rem;
+    height: 5rem;
+    //border: solid 1px #fff;
+    left: 0;
+    top: 0;
+    box-sizing: border-box;
+    .userDock{
+        top:2rem;
+    }
+    .cardListWrap{
+        .clearfix;
+        position: absolute;
+        top:1.5rem;
+        left: 10rem;
+        right: 1rem;
+        margin: auto;
+        bottom: 0;
+        margin: auto;
+        height: 5rem;
+        text-align: center;
+        .card_side_gamer_main{
+            transform: rotate(0deg)
+        }
+        .fetchCard{
+            margin-left: .5rem;
+            float: left;
+        }
+        .group{
+            margin-left: .2rem;
+            .clearfix;
+            float: left;
+        }
+        .card_group{
+            width: 2.5rem;height: 3.3rem;
+            img{
+                -webkit-transform:rotate(180deg);
+                margin-top: .3rem
+            }
+        }
+    }
+    .outCardListWrap{
+        //background: rgba(255, 255, 255, 0.5);
+        position: absolute;
+        width: 20rem;
+        height: 6rem;
+        left: 11rem;right: .5rem;
+        margin: auto;
+        bottom:-6rem;
+    }
+}
+.btu{
+    ._transition;
+    display: inline-block;
+    background-size: 100% 100%;
+    &.showCard{
+        width: 5.5rem;
+        height: 3rem;
+        background-image: url('/images/games/majiang2/showCard.png');
+        opacity: 0;
+        transform: translate3d(0,0rem,0);
+        &.active{
+            opacity: 1;
+            transform: translate3d(0,-.6rem,0);
+        }
+    }
+    &.meet{
+        width: 5rem;
+        height: 4rem;
+        background-image: url('/images/games/majiang2/meet.png');
+    }
+    &.fullmeet{
+        width: 5rem;
+        height: 4rem;
+        background-image: url('/images/games/majiang2/fullmeet.png');
+    }
+    &.win{
+        width: 5rem;
+        height: 4rem;
+        background-image: url('/images/games/majiang2/win.png');
+    }
+    &.pass{
+        width: 5rem;
+        height: 4rem;
+        background-image: url('/images/games/majiang2/pass.png');
+    }
+    &:active{
+        transform: scale(.9,.9);
+    }
+    &.ready{
+        width: 5.5rem;
+        height: 3rem;
+        background-image: url('/images/games/majiang2/ready.png');
+        margin-bottom: -7rem;
+    }
+    &.chooseColor{
+        width: 5rem;
+        height: 5rem;
+        margin: 0 1rem;
+        ._transition;
+        &.active{
+            transform: scale(.8,.8);
+        }
+    }
+    &.chooseB{
+        background-image: url('/images/games/majiang2/chooseB.png');
+    }
+    &.chooseT{
+        background-image: url('/images/games/majiang2/chooseT.png');
+    }
+    &.chooseW{
+        background-image: url('/images/games/majiang2/chooseW.png');
+    }
+}
+.card{
+    display: inline-block;
+    background-size: 100% 100%;
+    text-align: center;
+    position: relative;
+    ._transition;
+    &.gray { 
+        -webkit-filter: grayscale(100%);
+        filter: grayscale(100%);
+        filter: gray;
+        
+        &:after{
+            position: absolute;
+            content: '';
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border-radius: .4rem;
+            background: rgba(0, 0, 0, 0.3);
+        }
+    }
+    &.mark{
+        &:after{
+            position: absolute;
+            content: '';
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border-radius: .4rem;
+            background: rgba(226, 29, 29, 0.3);
+            -webkit-animation: effect_mark 1s infinite linear;
+        }
+    }
+    &.active{
+        -webkit-transform: translate3d(0,-.7rem,0);
+    }
+    &.stress{
+        border:solid .1rem #59f1b2;
+        border-radius:.5rem;
+        //-webkit-animation: effect1 1s infinite linear;
+    }
+    img{
+        width: 85%;
+        height: 85%;
+    }
+    &.card_face_gamer_main{
+        background-image: url('/images/games/majiang2/faceCard.png');
+        width: 2.5rem;height: 3.6rem;
+        margin-left: -.2rem;
+        float: left;
+        &.stress{
+            border-radius:.2rem;
+        }
+    }
+    &.card_side_gamer_main{
+        background-image: url('/images/games/majiang2/sideCard.png');
+        width: 1rem;height: 2.1rem;
+        margin-left: -.1rem;
+        transform: rotate(180deg);
+        margin-top:-1.1rem;
+        float: left;
+        &.stress{
+            border-radius:.2rem;
+        }
+    }
+    &.card_mine_main{
+        background-image: url('/images/games/majiang2/mainCard.png');
+        width: 3.4rem;height: 4.5rem;
+        margin-left: -.1rem;
+        img{margin-top: .4rem;}
+    }
+    &.card_mine_main_out{
+        background-image: url('/images/games/majiang2/mainCard_group.png');
+        width: 2rem;height: 2.6rem;
+        margin-left: -.1rem;
+        img{
+            width: 70%;
+            height: 70%;
+        }
+    }
+    &.card_group{
+        background-image: url('/images/games/majiang2/mainCard_group.png');
+        width: 3.4rem;height: 4.5rem;
+        margin-left: -.1rem;
+        img{
+            width: 70%;
+            height: 70%;
+        }
+    }
+    &.card_mine_fetch{
+        background-image: url('/images/games/majiang2/mainCard.png');
+        width: 3.4rem;height: 4.5rem;
+        margin-left: .5rem;
+        
+        img{margin-top: .4rem;}
+    }
+}
+@-webkit-keyframes effect1 {
+    0% { border:solid .1rem #59f1b2;}
+    50% { border:solid .3rem #59f1b2; }
+    100% { border:solid .1rem #59f1b2;}
+}
+@-webkit-keyframes effect_mark {
+    0% {background: rgba(226, 29, 29, 0.3);}
+    50% {background: rgba(226, 29, 29, 0);}
+    100% {background: rgba(226, 29, 29, 0.3);}
+}
+//-webkit-animation: stress 1s infinite linear;

@@ -52,16 +52,20 @@ module.exports = (io, scoket) => {
             if (!scoket.user) return;
             const room = findUserInRoom(scoket.user.uid);
             if (room) {
-                room.gamerLeave(scoket.user.uid);
-                if (room.gamers.length === 0) {
-                    //如果人全部都离开了，清除room数据
-                    rooms = rooms.filter(_room => _room.id !== room.id);
+                if (room.state === 'playing') {
+                    //正在进行的游戏
                 } else {
-                    setTimeout(() => {
-                        console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                        sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                        sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                    }, 500);
+                    room.gamerLeave(scoket.user.uid);
+                    if (room.gamers.length === 0) {
+                        //如果人全部都离开了，清除room数据
+                        rooms = rooms.filter(_room => _room.id !== room.id);
+                    } else {
+                        setTimeout(() => {
+                            console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                            sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                            sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                        }, 50);
+                    }
                 }
             }
         },
@@ -70,8 +74,9 @@ module.exports = (io, scoket) => {
             const otherRoom = findUserInRoom(data.user.uid);
             if (otherRoom && otherRoom.roomId !== data.roomId) {
                 setTimeout(() => {
+                    console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                     scoket.emit('message', `{"type":"notified","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                }, 1000);
+                }, 50);
                 return;
             }
             const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
@@ -81,33 +86,45 @@ module.exports = (io, scoket) => {
                 const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
                 //data.user['catcher'] = false;
                 scoket.user = data.user;
+
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
+                    //如果人满了或者正在游戏中，拒绝加入
+                    if (room.gamers.length === room.game.gamerNumber) {
+                        console.log(`房间人数已满~`);
+                        scoket.emit('message', `{"type":"notified","content":"房间人数已满~"}`);
+                        return;
+                    }
                     console.log(data.user.name + '加入房间ID:' + room.roomId);
                     room.gamerJoin(data.user);
                     //为用户注册scoket事件
                     //room.game.regAction(scoket, room);
-                    room.game.regAction().forEach(item => {
-                        scoket.on(item.actionName, function (data) {
-                            item.actionFn.call(room.game, data);
-                        })
-                    })
+                    
+                    if (room.game) {
+
+                    }
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
                             sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}"}`);
-                        }, 100);
-                    }, 500);
+                        }, 50);
+                    }, 1000);
                 } else {
+                    //如果用户还在这个房间，说明房间肯定是在游戏中（因为如果在游戏中退出，不会清理用户数据）
                     setTimeout(() => {
                         //sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}很装神，刷新了页面"}`);
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
                             //可能还在游戏中，发一个游戏状态
-                            room.game.sendData()
-                        }, 200);
-                    }, 200);
+                            room.game.sendData();
+                        }, 50);
+                    }, 1000);
                 }
+                room.game.regAction().forEach(item => {
+                    scoket.on(item.actionName, function (data) {
+                        item.actionFn.call(room.game, data);
+                    })
+                })
             } else {
                 //走建房流程
                 data.user.point = 1000;

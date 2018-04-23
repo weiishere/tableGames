@@ -53,9 +53,10 @@ class Majiang {
                 },
                 catcher: state.catcher
             }
-        }).sort(function (a, b) {
-            return +a.uid - +b.uid;
-        });
+        })
+        // .sort(function (a, b) {
+        //     return +a.uid - +b.uid;
+        // });
         const cardColors = ['t', 'w', 'b'].splice(0, this.colorType), _cards = [],
             getRedomCard = () => {
                 //const cardsLength = _cards.length;
@@ -256,6 +257,7 @@ class Majiang {
                     const data = JSON.parse(_data);
                     const userState = this.gameState.find(item => item.uid === data.uid);
                     let isMineAction = userState.fatchCard ? true : false;//是否是自己
+                    let isFatchCard = false;//动作执行之后是否有摸牌，主要是为了处理摸了牌之后玩家可能又有动作，那么就不清空actionCode(此场景目前一般是杠了再摸牌)
                     if (data.actionType === 'pass') {
                         //检查是否同时有其他杠、碰、胡
                         userState.actionCode = [];
@@ -328,10 +330,10 @@ class Majiang {
                             //userState.catcher = true;//把自己设置为下一个出牌的人
                             this.setGamerCacher(userState);
                             this.fatchCard(data.uid);//自己再摸一张牌
+                            isFatchCard = true;
                         } else if (data.actionType === 'winning') {
                             //胡牌
                             //let next;
-
                             if (isMineAction) {
                                 //自摸
                                 this.castAccounts(userState, 'all', 100);
@@ -359,7 +361,7 @@ class Majiang {
                         //如果是别人打的牌，需要置空outCards里的那张牌
                         this.lastShowCardUserState.outCards = this.lastShowCardUserState.outCards.filter(card => card.key !== doCard.key);
                     }
-                    userState.actionCode = [];
+                    if (!isFatchCard) userState.actionCode = [];
                     setTimeout(() => { this.sendData(); }, 10);
                 }
             }

@@ -30,8 +30,8 @@ const webpackConfig = {
   // 入口文件 让webpack用哪个文件作为项目的入口
   entry: {
     // app: ['./client/app', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
-    home: ['./client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
-    room: ['./client/room/index_dom', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
+    //home: ['./client/home/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
+    room: ['./client/room/index', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
 

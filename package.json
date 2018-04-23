@@ -5,7 +5,7 @@
   "main": "./server/app.js",
   "scripts": {
     "start": "pm2 start process.prod.json --no-daemon",
-    "build": "",
+    "build": "webpack",
     "dev": "nodemon --config nodemon.json ./server/app.js"
   },
   "author": "Jason",

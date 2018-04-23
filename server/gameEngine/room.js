@@ -1,4 +1,4 @@
-const UUID = require('../util/UUID');
+const UUID = require('../util/uuid');
 const Majiang = require('./majiang');
 const clone = require('clone');
 
@@ -71,6 +71,9 @@ class Room {
     gamerJoin(user) {
         if (this.gamers.length < this.gamerNumber) {
             this.gamers.push(user);
+            // this.gamers = this.gamers.sort(function (a, b) {
+            //     return +a.uid - +b.uid;
+            // });
             return true;
         } else {
             //拒绝加入
@@ -118,6 +121,7 @@ class Room {
                         }
                         return result;
                     })(),
+                    lastShowCard: content.lastShowCard,
                     remainCardNumber: content.remainCardNumber,
                     isOver: (content.isOver ? true : false)
                 }

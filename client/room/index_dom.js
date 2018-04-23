@@ -34,7 +34,7 @@ class Room extends Component {
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
         this.concatCard = this.concatCard.bind(this);
-        this.ws = io('ws://192.168.31.222:3300/');
+        this.ws = io('ws://localhost:3300/');
         this.option = {
             gamerNumber: 4,
             colorType: 2,//表示两黄牌还是三黄牌
@@ -323,7 +323,7 @@ class Room extends Component {
 
                 </div>
                 <div className='dockLeft'>
-                    {leftGamer &&
+                    {leftGamer ?
                         <div className='userDock'>
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{leftGamer.name}</div>
@@ -331,7 +331,7 @@ class Room extends Component {
                             {(leftGamer && this.state.game) && this.state.room.state === 'playing' &&
                                 (this.state.game.gameState['user_' + leftGamer.uid].colorLack ?
                                     <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + leftGamer.uid].colorLack })}</span> : '空缺中')}
-                        </div>}
+                        </div> : '空缺中'}
                     {leftGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
                             let result = [];
@@ -388,7 +388,7 @@ class Room extends Component {
 
                 </div>
                 <div className='dockLeft dockRight'>
-                    {rightGamer &&
+                    {rightGamer ?
                         <div className='userDock'>
                             <img src='/images/games/majiang/head.jpg' />
                             <div>{rightGamer.name}</div>
@@ -396,7 +396,7 @@ class Room extends Component {
                             {(rightGamer && this.state.game) && this.state.room.state === 'playing' &&
                                 (this.state.game.gameState['user_' + rightGamer.uid].colorLack ?
                                     <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + rightGamer.uid].colorLack })}</span> : '')}
-                        </div>}
+                        </div>:'空缺中'}
                     {rightGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
                             let result = [];
@@ -424,11 +424,11 @@ class Room extends Component {
                             this.state.room.state === 'wait' && !this.state.game ? <table>
                                 <tbody>{this.state.roomLog.filter((item, index) => this.state.roomLog.length - index <= 4).map((log, i) => <tr key={i}><td><div><i className='iconfont icon-message'></i>{log}</div></td></tr>)}</tbody>
                             </table> : <table>
-                                <tbody>
-                                    <tr>
-                                        <th>牌局记录</th><th><span>userName1userName1userName1userName1</span></th><th><span>userName2</span></th><th><span>userName2</span></th><th><span>userName3</span></th>
-                                    </tr>
-                                </tbody>
+                                    <tbody>
+                                        <tr>
+                                            <th>牌局记录</th><th><span>userName1userName1userName1userName1</span></th><th><span>userName2</span></th><th><span>userName2</span></th><th><span>userName3</span></th>
+                                        </tr>
+                                    </tbody>
                                 </table>
                         }
                         {/* <table>
@@ -473,7 +473,7 @@ class Room extends Component {
                     <div style={{ textAlign: 'center', marginTop: 10 }}><div>下一局（{`${this.state.room.gameTime}/${this.state.room.allTime}`}）</div>{ready}</div>
                 </div>}
 
-            </div> : 'loading'
+            </div> : '数据处理中'
     }
 }
 render(
