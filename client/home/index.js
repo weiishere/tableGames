@@ -1,3 +1,6 @@
+import React, { Component } from 'react';
+import { render } from 'react-dom';
+import QueueAnim from 'rc-queue-anim';
 /*const mess = document.getElementById("mess");
 let time = 1;
 if (window.WebSocket) {
@@ -22,28 +25,42 @@ if (window.WebSocket) {
     }, false);
 }*/
 
-var ws = io('ws://localhost:3300/');
+// var ws = io('ws://localhost:3300/');
 
-ws.on('connect', function () {
-    console.log("连接服务器");
-    // let nickname = 'userName-' + parseInt(Math.random() * 1000000);
-    // ws.emit('setName', nickname);
-});
-ws.on('message', function (data) {
-    document.getElementById('contents').innerHTML += data;
-});
-ws.on('disconnect', function () {
-    console.log("与服务其断开");
-});
+// ws.on('connect', function () {
+//     console.log("连接服务器");
+//     // let nickname = 'userName-' + parseInt(Math.random() * 1000000);
+//     // ws.emit('setName', nickname);
+// });
+// ws.on('message', function (data) {
+//     document.getElementById('contents').innerHTML += data;
+// });
+// ws.on('disconnect', function () {
+//     console.log("与服务其断开");
+// });
 
-document.getElementById('btn1').addEventListener('click', function (e) {
-    //alert('已设置' + document.getElementById('setNameInput').value);
-    ws.emit('setName', document.getElementById('setNameInput').value);
-}, false);
-document.getElementById('btn2').addEventListener('click', function (e) {
-    ws.emit('sayTo', {
-        from: document.getElementById('setNameInput').value,
-        to: document.getElementById('toNameInput').value,
-        msg: document.getElementById('sendMes').value
-    });
-}, false);
+// document.getElementById('btn1').addEventListener('click', function (e) {
+//     //alert('已设置' + document.getElementById('setNameInput').value);
+//     ws.emit('setName', document.getElementById('setNameInput').value);
+// }, false);
+// document.getElementById('btn2').addEventListener('click', function (e) {
+//     ws.emit('sayTo', {
+//         from: document.getElementById('setNameInput').value,
+//         to: document.getElementById('toNameInput').value,
+//         msg: document.getElementById('sendMes').value
+//     });
+// }, false);
+
+
+
+
+render(
+    <QueueAnim delay={300} className="queue-simple">
+        <div key="a">依次进场</div>
+        <div key="b">依次进场</div>
+        <div key="c">依次进场</div>
+        <div key="d">依次进场</div>
+    </QueueAnim>,
+    document.getElementById('layout')
+)
+

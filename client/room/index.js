@@ -4,6 +4,11 @@ import url from 'url';
 import '../reset.less';
 import './style2.less';
 import { getQueryString, getColorName, concatCard } from '../util';
+import loadImage from 'image-promise';
+import QueueAnim from 'rc-queue-anim';
+
+
+let isBegin = false;
 
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 const ws = io('ws://192.168.31.222:3300/');
@@ -36,11 +41,12 @@ class Table extends Component {
             game: null,
             activeCard: null,
             newState: true,
+            isBegin: false
             //countdown: 20
         }
         this.option = {
             gamerNumber: 4,
-            colorType: 3,//表示两黄牌还是三黄牌
+            colorType: 2,//表示两黄牌还是三黄牌
             mulriple: 1,//倍数
             score: 100,//底分
             gameTime: 8
@@ -92,6 +98,12 @@ class Table extends Component {
             }
             console.log(data.content);
         });
+        const timerforBegin = window.setInterval(() => {
+            if (isBegin === true) {
+                window.clearInterval(timerforBegin);
+                this.setState({ isBegin: true });
+            }
+        }, 50);
     }
 
     render() {
@@ -125,28 +137,32 @@ class Table extends Component {
                 }
             }
         }
-        const meGameState = this.state.game ? this.state.game.gameState['user_' + me.uid] : null;
-        const rightGameState = this.state.game ? this.state.game.gameState['user_' + rightGamer.uid] : null;
-        const leftGameState = this.state.game ? this.state.game.gameState['user_' + leftGamer.uid] : null;
-        const topGameState = this.state.game ? this.state.game.gameState['user_' + topGamer.uid] : null;
-        return <div className={`MainTable ${isAllcolorLack}`}>
-            {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-            {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-            {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-            {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-            {this.state.game && <div className='gameInfo'>
-                <span>剩余：{this.state.game.remainCardNumber}</span>
-            </div>}
-            {this.state.game && <div className='tableCenter'>
-                <Countdown time={20} />
-                {/* <div className='center'>{this.state.countdown}</div> */}
-                {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
-                {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
-                {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
-                {topGameState && <div className={`${topGameState.catcher && 'top'}`}></div>}
-            </div>}
-            {this.state.game && this.state.game.isOver && <GameInfo user={me} room={this.state.room} game={this.state.game} />}
-        </div>
+        const meGameState = this.state.game && me ? this.state.game.gameState['user_' + me.uid] : null;
+        const rightGameState = this.state.game && rightGamer ? this.state.game.gameState['user_' + rightGamer.uid] : null;
+        const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
+        const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
+
+        return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
+            { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
+        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
+                {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {this.state.game && <div className='gameInfo'>
+                    <span>剩余:{this.state.game.remainCardNumber}</span>&nbsp;&nbsp;
+                <span>第1/8局</span>
+                </div>}
+                {this.state.game && <div className='tableCenter'>
+                    <Countdown time={20} />
+                    {/* <div className='center'>{this.state.countdown}</div> */}
+                    {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
+                    {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
+                    {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
+                    {topGameState && <div className={`${topGameState.catcher && 'top'}`}></div>}
+                </div>}
+                {this.state.game && this.state.game.isOver && <GameInfo user={me} room={this.state.room} game={this.state.game} />}
+            </div></QueueAnim>
     }
 }
 class Countdown extends Component {
@@ -308,33 +324,36 @@ class Gamer_mine extends Component {
         //this.props.userState && console.log(this.props.userState);
         return <div className='gamerWrap_mine'>
             <GamerDock class_name='' {...this.props.user} room={this.props.room} userState={this.props.userState} />
-            {this.props.userState && <div className='cardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='cardListWrap' leaveReverse>
+                {/* <QueueAnim delay={300} duration={800} animConfig={[
+            { opacity: [1, 0], scale: [(1,1), (0.8,0.8)] }
+          ]} style={{height:'100%'}}> */}
                 {this.props.userState.groupCards.winCard && <div key='win_card' className='group'>
                     <Card type='group' card={this.props.userState.groupCards.winCard} ></Card>
                 </div>}
-                {this.props.userState.groupCards.meet.map((group, index) => <div key={index} className='group meet'>
+                {this.props.userState.groupCards.meet.map((group, index) => <div key={`meets_${index}`} className='group meet'>
                     {group.map(card =>
                         <Card key={`meet_${card.key}`} type='group' card={card}></Card>)
                     }
                 </div>)}
-                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={index} className='group fullmeet'>
+                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={`fullmeets_${index}`} className='group fullmeet'>
                     {group.map(card =>
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
                 </div>)}
                 {this.props.userState.cards.map(card =>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key={`card_${card.key}`} type={`mine_main ${!this.isLack && this.props.userState.colorLack !== card.color ? 'gray' : ''}`} card={card}></Card>)
+                    <div style={{ display: 'inline-block' }} key={`card_${card.key}`}><Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} type={`mine_main ${!this.isLack && this.props.userState.colorLack !== card.color ? 'gray' : ''}`} card={card}></Card></div>)
                 }
 
-                {this.props.userState.fatchCard && <div className='fetchCard'>
+                {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
                     <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard' type='mine_fetch stress' card={this.props.userState.fatchCard}></Card>
                 </div>}
-            </div>}
-            {this.props.userState && <div className='outCardListWrap'>
+            </QueueAnim>}
+            {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
-                    <Card key={`out_${card.key}`} type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card>)
+                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
-            </div>}
+            </QueueAnim>}
             {!this.state.buttonVisible && <div className='operateWrap'>
                 {this.props.user.state === 'wait' && !this.props.userState && ready}
                 {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
@@ -363,12 +382,12 @@ class Gamer_right extends Component {
                 {this.props.userState.groupCards.winCard && <div key='win_card' className='group'>
                     <Card type='group' card={this.props.userState.groupCards.winCard} ></Card>
                 </div>}
-                {this.props.userState.groupCards.meet.map((group, index) => <div key={index} className='group meet'>
+                {this.props.userState.groupCards.meet.map((group, index) => <div key={`meets_${index}`} className='group meet'>
                     {group.map(card =>
                         <Card key={`meet_${card.key}`} type='group' card={card}></Card>)
                     }
                 </div>)}
-                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={index} className='group fullmeet'>
+                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={`fullmeets_${index}`} className='group fullmeet'>
                     {group.map(card =>
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
@@ -386,11 +405,11 @@ class Gamer_right extends Component {
                 </div>}
 
             </div>}
-            {this.props.userState && <div className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
-                    <Card key={`out_${card.key}`} type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card>)
+                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
-            </div>}
+            </QueueAnim>}
         </div>
     }
 }
@@ -402,12 +421,12 @@ class Gamer_top extends Component {
         return <div className='gamerWrap_top'>
             <GamerDock class_name='' {...this.props.user} room={this.props.room} userState={this.props.userState} />
             {this.props.userState && <div className='cardListWrap'>
-                {this.props.userState.groupCards.meet.map((group, index) => <div key={index} className='group meet'>
+                {this.props.userState.groupCards.meet.map((group, index) => <div key={`meets_${index}`} className='group meet'>
                     {group.map(card =>
                         <Card key={`meet_${card.key}`} type='group' card={card}></Card>)
                     }
                 </div>)}
-                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={index} className='group fullmeet'>
+                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={`fullmeets_${index}`} className='group fullmeet'>
                     {group.map(card =>
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
@@ -427,11 +446,11 @@ class Gamer_top extends Component {
                 </div>}
 
             </div>}
-            {this.props.userState && <div className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
-                    <Card key={`out_${card.key}`} type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card>)
+                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
-            </div>}
+            </QueueAnim>}
         </div>
     }
 }
@@ -446,12 +465,12 @@ class Gamer_left extends Component {
                 {this.props.userState.groupCards.winCard && <div key='win_card' className='group'>
                     <Card type='group' card={this.props.userState.groupCards.winCard} ></Card>
                 </div>}
-                {this.props.userState.groupCards.meet.map((group, index) => <div key={index} className='group meet'>
+                {this.props.userState.groupCards.meet.map((group, index) => <div key={`meets_${index}`} className='group meet'>
                     {group.map(card =>
                         <Card key={`meet_${card.key}`} type='group' card={card}></Card>)
                     }
                 </div>)}
-                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={index} className='group fullmeet'>
+                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={`fullmeets_${index}`} className='group fullmeet'>
                     {group.map(card =>
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
@@ -469,11 +488,11 @@ class Gamer_left extends Component {
                 </div>}
 
             </div>}
-            {this.props.userState && <div className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
-                    <Card key={`out_${card.key}`} type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card>)
+                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
-            </div>}
+            </QueueAnim>}
         </div>
     }
 }
@@ -548,7 +567,85 @@ class GameInfo extends Component {
         </div>
     }
 }
+
+class ImgLoader extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { percent: 0 };
+        this.loadedCount = 0;
+        this.imgList = [
+            { key: "b", url: "/images/games/majiang2/b.png" },
+            { key: "bg_1", url: "/images/games/majiang2/bg_1.jpg" },
+            { key: "bg_default", url: "/images/games/majiang2/bg_default.jpg" },
+            { key: "center", url: "/images/games/majiang2/center.png" },
+            { key: "center_bottom", url: "/images/games/majiang2/center_bottom.png" },
+            { key: "center_left", url: "/images/games/majiang2/center_left.png" },
+            { key: "center_right", url: "/images/games/majiang2/center_right.png" },
+            { key: "center_top", url: "/images/games/majiang2/center_top.png" },
+            { key: "chooseB", url: "/images/games/majiang2/chooseB.png" },
+            { key: "chooseT", url: "/images/games/majiang2/chooseT.png" },
+            { key: "chooseW", url: "/images/games/majiang2/chooseW.png" },
+            { key: "endTitle", url: "/images/games/majiang2/endTitle.png" },
+            { key: "faceCard", url: "/images/games/majiang2/faceCard.png" },
+            { key: "fullmeet", url: "/images/games/majiang2/fullmeet.png" },
+            { key: "mainCard", url: "/images/games/majiang2/mainCard.png" },
+            { key: "mainCard_group", url: "/images/games/majiang2/mainCard_group.png" },
+            { key: "meet", url: "/images/games/majiang2/meet.png" },
+            { key: "pass", url: "/images/games/majiang2/pass.png" },
+            { key: "ready", url: "/images/games/majiang2/ready.png" },
+            { key: "showCard", url: "/images/games/majiang2/showCard.png" },
+            { key: "sideCard", url: "/images/games/majiang2/sideCard.png" },
+            { key: "sideCard2", url: "/images/games/majiang2/sideCard2.png" },
+            { key: "t", url: "/images/games/majiang2/t.png" },
+            { key: "w", url: "/images/games/majiang2/w.png" },
+            { key: "win", url: "/images/games/majiang2/win.png" }
+        ];
+        const cardColor = ['b', 't', 'w']; let cardArr = [];
+        for (let i = 1; i <= 9; i++) {
+            cardArr = cardArr.concat(cardColor.map(color => {
+                return { key: color + i, url: "/images/games/majiang2/cards/" + (color + i) + ".png" };
+            }));
+        }
+        this.imgList = this.imgList.concat(cardArr);
+    }
+    componentDidMount() {
+        this.imgList.forEach(item => {
+            loadImage(item.url).then((img) => {
+                this.loadedCount++;
+                //console.log(((loadedCount / imgList.length) * 100) + "%");
+                //console.log(this.loadedCount + '---' + this.imgList.length);
+                if (this.loadedCount === this.imgList.length) {
+                    isBegin = true;
+                }
+                this.setState({
+                    percent: ((this.loadedCount / this.imgList.length) * 100)
+                })
+            });
+        });
+    }
+    render() {
+        // const result = (this.loadedCount === this.imgList.length ? <Table /> : <div className='loadWrap'>
+        //     <div><span style={{ width: `${this.state.percent}%` }}>{parseInt(this.state.percent)}%</span>
+        //         <h3>游戏资源加载中，请稍候...</h3>
+        //     </div>
+        // </div>);
+        return <div className='loadWrap'>
+            <div><span style={{ width: `${this.state.percent}%` }}>{parseInt(this.state.percent)}%</span>
+                <h3>游戏资源加载中，请稍候...</h3>
+            </div>
+        </div>;
+    }
+}
+
+
 render(
     <Table />,
     document.getElementById('layout')
 )
+// render(
+//     <QueueAnim delay={300} style={{height:'100%'}} className="queue-simple">
+//         <Table key='a' />
+//     </QueueAnim>,
+//     document.getElementById('layout')
+// )
+

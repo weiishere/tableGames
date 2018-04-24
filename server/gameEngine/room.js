@@ -6,22 +6,23 @@ class Room {
     constructor(option) {
         this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
-            gamers: [
-                {
-                    uid: 1,
-                    name: '葛大爷',
-                    avatar: '',
-                    point: 1000,
-                    state: 'wait'//ready
-                },
-                {
-                    uid: 2,
-                    name: '董卓',
-                    avatar: '',
-                    point: 1000,
-                    state: 'wait'//ready
-                }
-            ],//玩家
+            gamer: [],
+            // gamers: [
+            //     {
+            //         uid: 1,
+            //         name: '葛大爷',
+            //         avatar: '',
+            //         point: 1000,
+            //         state: 'wait'//ready
+            //     },
+            //     {
+            //         uid: 2,
+            //         name: '董卓',
+            //         avatar: '',
+            //         point: 1000,
+            //         state: 'wait'//ready
+            //     }
+            // ],//玩家
             gamerNumber: 4,
             mulriple: 1,//倍数
             score: 100,//底分
@@ -47,6 +48,7 @@ class Room {
         })
         this.game.setOverHander(function () {
             //监听单局游戏结束，进入下一局
+            self.settlement();
             if (self.gameTime > 0) {
                 //单局开始
                 self.state = 'wait';
@@ -99,7 +101,7 @@ class Room {
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
         this.initGame();
-        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, catcher: index === 0 ? true : false } }));
+        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: index === 0 ? true : false } }));
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {
@@ -137,21 +139,26 @@ class Room {
         this.endHandler && this.endHandler();
     }
     //单局结算
-    settlement(result) {
+    settlement() {
         // const _result = [
         //     { uid: 1, niceName: 'userName1', increase: 100 * this.mulriple },
         //     { uid: 2, niceName: 'userName2', increase: -200 * this.mulriple },
         //     { uid: 3, niceName: 'userName3', increase: 400 * this.mulriple },
         //     { uid: 4, niceName: 'userName4', increase: -300 * this.mulriple }
         // ]
-        this.recode += result;
-        this.gamers.forEach((gamer) => {
-            this.result.forEach((_result) => {
-                if (gamer.uid === _result.uid) {
-                    gamer.point += _result.increase;
-                }
-            });
-        });
+        // this.recode += result;
+        // this.gamers.forEach((gamer) => {
+        //     this.result.forEach((_result) => {
+        //         if (gamer.uid === _result.uid) {
+        //             gamer.point += _result.increase;
+        //         }
+        //     });
+        // });
+        this.recode.push(this.game.gameState.map(item => {
+            return {
+                uid: item.uid, name: item.name, point: item.point
+            }
+        }));
     }
     setSendMsg(fn) {
         this.sendMsg = fn;

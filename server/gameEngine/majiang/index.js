@@ -3,6 +3,7 @@ const UUID = require('../../util/uuid');
 const winCore = require('./winCore');
 const clone = require('clone');
 
+
 //用于对牌组排序
 const objectArraySort = function (keyName) {
     return function (objectN, objectM) {
@@ -35,12 +36,13 @@ class Majiang {
         this.isOver = false;
     }
     init(gameState) {
-        //需要为state做一个排序，用于之后顺序摸牌
+        //需要为state做一个排序，用于之后顺序摸牌(不排了)
         this.gameState = gameState.map(state => {
             return {
                 uid: state.uid,
+                name: state.name,
                 isWin: false,
-                increase: 0,
+                point: 0,
                 cards: [],
                 colorLack: this.colorType === 2 ? 'b' : '',//缺的花色(如果是两黄牌的话，就直接缺b)
                 outCards: [],
@@ -163,13 +165,13 @@ class Majiang {
         if (loser === 'all') {
             this.gameState.forEach(state => {
                 if (state.uid !== winner.uid && !state.isWin) {
-                    winner.increase += score;
-                    state.increase -= score;
+                    winner.point += score;
+                    state.point -= score;
                 }
             })
         } else {
-            winner.increase += score;
-            loser.increase -= score;
+            winner.point += score;
+            loser.point -= score;
         }
     }
     regAction() {
@@ -217,7 +219,12 @@ class Majiang {
                         //this.setGamerCacher(nextCatcher);
                         const next = this.getNaxtCacher(userState.uid);
                         this.setGamerCacher(next);
-                        this.fatchCard();//发牌
+                        if (this.cards.length === 0) {
+                            //如果总牌数为0了，则结束游戏
+                            this.overHandler.call(this);
+                        }else{
+                            this.fatchCard();//发牌
+                        }
                     } else {
                         this.setGamerCacher();//都设置为false
                         //暂停，等待玩家做出动作，有动作的话
@@ -267,7 +274,12 @@ class Majiang {
                                 //如果不是自摸才下一个，不然还要出牌
                                 const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
                                 this.setGamerCacher(next);
-                                this.fatchCard();//找打下一个人并摸牌
+                                if (this.cards.length === 0) {
+                                    //如果总牌数为0了，则结束游戏
+                                    this.overHandler.call(this);
+                                }else{
+                                    this.fatchCard();//找打下一个人并摸牌
+                                }
                             }
                         } else {
                             //先检查是否还有胡牌的玩家
@@ -353,7 +365,6 @@ class Majiang {
                             userState.groupCards.winCard = doCard;
                             if (this.gameState.filter(item => item.isWin === false).length === 1) {
                                 this.overHandler.call(this);
-                                this.isOver = true;
                             }
                         }
                         //如果是自己摸的牌，因为已经clone了，这里要处理掉
@@ -418,12 +429,6 @@ class Majiang {
     }
     //抓牌
     fatchCard(uid) {
-        if (this.cards.length === 0) {
-            //如果总牌数为0了，则结束游戏
-            this.overHandler.call(this);
-            this.isOver = true;
-            return false;
-        }
         const _uid = !uid ? this.gameState.find(item => item.catcher === true).uid : uid;
         const userState = this.gameState.find(item => item.uid === _uid);
         const cardByCatch = this.cards.splice(0, 1)[0];
@@ -446,6 +451,7 @@ class Majiang {
         this.beginHandler = fn;
     }
     setOverHander(fn) {
+        this.isOver = true;
         this.overHandler = fn;
     }
     setSendMsg(fn) {

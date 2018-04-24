@@ -127,7 +127,7 @@ module.exports = (io, scoket) => {
                 })
             } else {
                 //走建房流程
-                data.user.point = 1000;
+                data.user.point = 0;
                 data.user.state = 'wait';
                 const room = new Room({
                     roomId: data.roomId,
