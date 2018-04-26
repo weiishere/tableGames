@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
 import url from 'url';
+import clone from 'clone';
 import '../reset.less';
 import './style2.less';
 import { getQueryString, getColorName, concatCard } from '../util';
@@ -41,16 +42,20 @@ class Table extends Component {
             game: null,
             activeCard: null,
             newState: true,
-            isBegin: false
+            isBegin: false,
+            showRecore: false
             //countdown: 20
         }
         this.option = {
-            gamerNumber: 4,
+            gamerNumber: 2,
             colorType: 2,//表示两黄牌还是三黄牌
             mulriple: 1,//倍数
             score: 100,//底分
-            gameTime: 8
+            gameTime: 4
         }
+        this.gameInfoCloseHandle = this.gameInfoCloseHandle.bind(this);
+        this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
+        this.readyCallback = this.readyCallback.bind(this);
     }
     componentDidMount() {
         const self = this;
@@ -67,15 +72,15 @@ class Table extends Component {
             switch (data.type) {
                 case 'roomData':
                     self.setState({ room: data.content });
-                    // if (data.content && data.content.gamers.length === self.option.gamerNumber) {
-                    //     self.setState({ triggerTopBar: '' });
-                    // } else {
-                    //     self.setState({ triggerTopBar: 'active' });
-                    // }
                     break;
                 case 'gameData':
                     if (data.content) {
-                        self.setState({ game: data.content, newState: true });
+                        if (data.content.isOver) {
+                            self.setState({ game: data.content, showRecore: true });
+                        } else {
+                            self.setState({ game: data.content });
+                        }
+
                         // self.setState({ countdown: 20 });
                         // let timer = window.setInterval(() => {
                         //     if (self.state.countdown === 0) {
@@ -93,7 +98,9 @@ class Table extends Component {
                     log.push(data.content);
                     self.setState({ roomLog: log });
                     break;
-                case 'error':
+                case 'errorInfo':
+                    alert(data.content);
+                    history.back();
                     break;
             }
             console.log(data.content);
@@ -105,7 +112,24 @@ class Table extends Component {
             }
         }, 50);
     }
-
+    gameInfoCloseHandle() {
+        if (this.state.game.isOver) {
+            //关闭连接
+            ws.emit('disconnect');
+        }
+        this.setState({ showRecore: false });
+    }
+    gameInfoOpenHandle() {
+        this.setState({ showRecore: true });
+    }
+    readyCallback() {
+        // if (this.state.game) {
+        //     let gameCopy = clone(this.state.game);
+        //     gameCopy.gameState[`user_${this.state.user.uid}`].cards = [];
+        //     this.setState({ game: gameCopy });
+        // }
+        this.setState({ game: null });
+    }
     render() {
         let me, leftGamer, topGamer, rightGamer;
         if (this.state.room) {
@@ -145,13 +169,13 @@ class Table extends Component {
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
-                {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-                {this.state.game && <div className='gameInfo'>
-                    <span>剩余:{this.state.game.remainCardNumber}</span>&nbsp;&nbsp;
-                <span>第1/8局</span>
+                {this.state.game && <div className='gameInfoBar'>
+                    <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>
+                    <button onClick={this.gameInfoOpenHandle}></button>
                 </div>}
                 {this.state.game && <div className='tableCenter'>
                     <Countdown time={20} />
@@ -161,7 +185,11 @@ class Table extends Component {
                     {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
                     {topGameState && <div className={`${topGameState.catcher && 'top'}`}></div>}
                 </div>}
-                {this.state.game && this.state.game.isOver && <GameInfo user={me} room={this.state.room} game={this.state.game} />}
+                <QueueAnim delay={100} duration={400} animConfig={[
+                    { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
+                ]}>{this.state.game && this.state.showRecore &&
+                    <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.state.room} game={this.state.game} />}
+                </QueueAnim>
             </div></QueueAnim>
     }
 }
@@ -172,6 +200,9 @@ class Countdown extends Component {
             countdown: 20
         }
         this.timer = undefined;
+    }
+    componentWillUnmount(){
+        window.clearInterval(this.timer);
     }
     componentWillReceiveProps() {
         this.setState({ countdown: this.props.time });
@@ -213,13 +244,19 @@ class Countdown extends Component {
 class GamerDock extends Component {
     constructor(props) {
         super(props);
+        this.getTotal = this.getTotal.bind(this);
+    }
+    getTotal() {
+        let total = 0;
+        this.props.room.recode.map(item => total += item.find(user => this.props.uid === user.uid).point);
+        return (total > 0 ? '+' : '') + total;
     }
     render() {
         return <div className={`userDock ${this.props.class_name}`}>
             <img src='/images/games/majiang/head.jpg' />
             <div className='nameWrap'>{this.props.name}</div>
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
-            <div className='score'>5500</div>
+            <div className='score'>{this.getTotal()}</div>
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
         </div>
@@ -241,11 +278,14 @@ class Gamer_mine extends Component {
     }
     ready() {
         const self = this;
-        ws.emit('ready', JSON.stringify({
-            user: self.props.user,
-            roomId: this.props.room.roomId,
-            state: 'ready'
-        }));
+        this.props.readyCallback();
+        window.setTimeout(() => {
+            ws.emit('ready', JSON.stringify({
+                user: self.props.user,
+                roomId: this.props.room.roomId,
+                state: 'ready'
+            }));
+        }, 50);
     }
     componentWillReceiveProps(nextProps) {
         this.setState({ buttonVisible: false, activeCard: nextProps.userState && nextProps.userState.fatchCard || {} });
@@ -310,16 +350,16 @@ class Gamer_mine extends Component {
             this.addConcatCard = concatCard(this.props.userState);
             this.isLack = this.addConcatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
         }
-        const ready = <div onClick={this.ready} className='btu ready'></div>
-        const btu_showCard = <div onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>
-        const btu_meet = <div onClick={() => this.actionHandler('meet')} className='btu meet' key='meet'></div>;//碰
-        const btu_fullMeet = <div onClick={() => this.actionHandler('fullMeet')} className='btu fullmeet' key='fullMeet'></div>;//杠
-        const btu_win = <div onClick={() => this.actionHandler('winning')} className='btu win' key='winning'></div>;//胡牌
-        const btu_pass = <div onClick={() => this.actionHandler('pass')} className='btu pass' key='pass'></div>;//过
-        const lackColorChoose = <div>
-            <div className='btu chooseColor chooseB' onClick={() => this.chooseColor('b')}></div>
-            <div className='btu chooseColor chooseT' onClick={() => this.chooseColor('t')}></div>
-            <div className='btu chooseColor chooseW' onClick={() => this.chooseColor('w')}></div>
+        const ready = <div key='ready' onClick={this.ready} className='btu ready'></div>
+        const btu_showCard = <div key='showCard' onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>
+        const btu_meet = <div key='meet' onClick={() => this.actionHandler('meet')} className='btu meet'></div>;//碰
+        const btu_fullMeet = <div key='fullMeet' onClick={() => this.actionHandler('fullMeet')} className='btu fullmeet'></div>;//杠
+        const btu_win = <div key='winning' onClick={() => this.actionHandler('winning')} className='btu win'></div>;//胡牌
+        const btu_pass = <div key='pass' onClick={() => this.actionHandler('pass')} className='btu pass' ></div>;//过
+        const lackColorChoose = <div key='ColorChoose'>
+            <div key='b' className='btu chooseColor chooseB' onClick={() => this.chooseColor('b')}></div>
+            <div key='t' className='btu chooseColor chooseT' onClick={() => this.chooseColor('t')}></div>
+            <div key='w' className='btu chooseColor chooseW' onClick={() => this.chooseColor('w')}></div>
         </div>
         //this.props.userState && console.log(this.props.userState);
         return <div className='gamerWrap_mine'>
@@ -354,10 +394,15 @@ class Gamer_mine extends Component {
                     <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
             </QueueAnim>}
-            {!this.state.buttonVisible && <div className='operateWrap'>
-                {this.props.user.state === 'wait' && !this.props.userState && ready}
+            {!this.state.buttonVisible && <QueueAnim className='operateWrap' duration={300} animConfig={[
+                { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
+            ]}>
+                {/* <QueueAnim delay={0} duration={300} animConfig={[
+                    { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
+                ]}> */}
+                {this.props.user.state === 'wait' && ready}
                 {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
-                {this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && btu_showCard}
+                {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && <span key='showCard'>{btu_showCard}</span>}
                 {
                     //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
                     this.props.userState && this.props.userState.actionCode.map(action => {
@@ -367,7 +412,8 @@ class Gamer_mine extends Component {
                     })
                 }
                 {this.props.userState && !this.props.userState.isPause && this.props.userState.actionCode.length !== 0 && btu_pass}
-            </div>}
+                {/* </QueueAnim> */}
+            </QueueAnim>}
         </div>
     }
 }
@@ -526,42 +572,46 @@ class GameInfo extends Component {
     constructor(props) {
         super(props);
     }
-    ready() {
-        const self = this;
-        ws.emit('ready', JSON.stringify({
-            user: self.props.user,
-            roomId: this.props.room.roomId,
-            state: 'ready'
-        }));
+    // ready() {
+    //     const self = this;
+    //     ws.emit('ready', JSON.stringify({
+    //         user: self.props.user,
+    //         roomId: this.props.room.roomId,
+    //         state: 'ready'
+    //     }));
+    // }
+    getTotal(uid) {
+        let total = 0;
+        this.props.room.recode.map(item => total += item.find(user => uid === user.uid).point);
+        return (total > 0 ? '+' : '') + total;
     }
     render() {
         return <div className='mask'>
-            <div className='GameInfo'>
+            <div className='gameInfoPanel'>
                 <header></header>
                 <div className='contentWrap'>
-                    <div className='content'>
-                        <div>
-                            <header>nameName</header>
-                            <ul className='list'>
-                                <li>1：-300</li>
-                                <li>2：-300</li>
-                                <li>3：-300</li>
-                                <li>4：-300</li>
-                                <li>5：-300</li>
-                                <li>6：-300</li>
-                                <li>7：-300</li>
-                            </ul>
-                            <footer>
-                                总成绩：<span>-1300</span>
-                            </footer>
-                        </div>
-                    </div>
-                    <div className='content'></div>
-                    <div className='content'></div>
-                    <div className='content'></div>
+                    {
+                        this.props.room.gamers.map((gamer, index) => <div key={index} className='content'>
+                            <div>
+                                <header>
+                                    <img src={`${gamer.avatar}`} />
+                                    <span>{gamer.name}</span>
+                                </header>
+                                <ul className='list'>
+                                    {
+                                        this.props.room.recode.map((item, _index) => <li key={`li_${_index}`}>第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}{item.find(user => user.uid === gamer.uid).point}</li>)
+                                    }
+                                </ul>
+                                <footer>
+                                    总成绩：<span>{this.getTotal(gamer.uid)}</span>
+                                </footer>
+                            </div>
+                        </div>)
+                    }
                 </div>
                 <footer>
-                    <div style={{ marginBottom: 0 }} onClick={this.ready} className='btu'>关闭</div>
+                    {this.props.room.isOver && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你来战！</div>}
+                    <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
                 </footer>
             </div>
         </div>
@@ -598,7 +648,12 @@ class ImgLoader extends Component {
             { key: "sideCard2", url: "/images/games/majiang2/sideCard2.png" },
             { key: "t", url: "/images/games/majiang2/t.png" },
             { key: "w", url: "/images/games/majiang2/w.png" },
-            { key: "win", url: "/images/games/majiang2/win.png" }
+            { key: "win", url: "/images/games/majiang2/win.png" },
+            { key: "winner", url: "/images/games/majiang2/winner.png" },
+            { key: "remain", url: "/images/games/majiang2/remain.png" },
+            { key: "record", url: "/images/games/majiang2/record.png" },
+            { key: "close_btu", url: "/images/games/majiang2/close_btu.png" },
+            { key: "msg", url: "/images/games/majiang2/msg.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {
@@ -615,7 +670,9 @@ class ImgLoader extends Component {
                 //console.log(((loadedCount / imgList.length) * 100) + "%");
                 //console.log(this.loadedCount + '---' + this.imgList.length);
                 if (this.loadedCount === this.imgList.length) {
-                    isBegin = true;
+                    window.setTimeout(function () {
+                        isBegin = true;
+                    }, 1000);
                 }
                 this.setState({
                     percent: ((this.loadedCount / this.imgList.length) * 100)
@@ -631,7 +688,7 @@ class ImgLoader extends Component {
         // </div>);
         return <div className='loadWrap'>
             <div><span style={{ width: `${this.state.percent}%` }}>{parseInt(this.state.percent)}%</span>
-                <h3>游戏资源加载中，请稍候...</h3>
+                <h3>资源加载中，请稍候...</h3>
             </div>
         </div>;
     }

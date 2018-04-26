@@ -221,8 +221,9 @@ class Majiang {
                         this.setGamerCacher(next);
                         if (this.cards.length === 0) {
                             //如果总牌数为0了，则结束游戏
+                            //this.isOver = true;
                             this.overHandler.call(this);
-                        }else{
+                        } else {
                             this.fatchCard();//发牌
                         }
                     } else {
@@ -276,8 +277,9 @@ class Majiang {
                                 this.setGamerCacher(next);
                                 if (this.cards.length === 0) {
                                     //如果总牌数为0了，则结束游戏
+                                    //this.isOver = true;
                                     this.overHandler.call(this);
-                                }else{
+                                } else {
                                     this.fatchCard();//找打下一个人并摸牌
                                 }
                             }
@@ -358,13 +360,15 @@ class Majiang {
                                 this.castAccounts(userState, this.lastShowCardUserState, 100);
                                 //next = this.getNaxtCacher(this.lastShowCardUserState.uid);//
                             }
-                            //找到下一个人并摸牌
-                            const next = this.getNaxtCacher(userState.uid);
-                            this.setGamerCacher(next);
-                            this.fatchCard();
                             userState.groupCards.winCard = doCard;
                             if (this.gameState.filter(item => item.isWin === false).length === 1) {
+                                //this.isOver = true;
                                 this.overHandler.call(this);
+                            } else {
+                                this.fatchCard();
+                                //找到下一个人并摸牌
+                                const next = this.getNaxtCacher(userState.uid);
+                                this.setGamerCacher(next);
                             }
                         }
                         //如果是自己摸的牌，因为已经clone了，这里要处理掉
@@ -397,22 +401,22 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
-        // ].sort(objectArraySort('key'));
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
+        ].sort(objectArraySort('key'));
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
         //     this.getSpecifiedCard('t', 7), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
@@ -451,7 +455,7 @@ class Majiang {
         this.beginHandler = fn;
     }
     setOverHander(fn) {
-        this.isOver = true;
+
         this.overHandler = fn;
     }
     setSendMsg(fn) {

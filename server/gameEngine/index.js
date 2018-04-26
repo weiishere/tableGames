@@ -7,7 +7,7 @@ module.exports = (io, scoket) => {
         for (let i in io.sockets.sockets) {
             const item = io.sockets.sockets[i];
             if (item.user && item.user.uid === uid) {
-                console.log(`发送消息给${item.user.name}：${content}`);
+                //console.log(`发送消息给${item.user.name}：${content}`);
                 item.emit('message', content);
                 return;
             }
@@ -75,7 +75,8 @@ module.exports = (io, scoket) => {
             if (otherRoom && otherRoom.roomId !== data.roomId) {
                 setTimeout(() => {
                     console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                    scoket.emit('message', `{"type":"notified","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                    scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                    //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                 }, 50);
                 return;
             }
@@ -86,23 +87,20 @@ module.exports = (io, scoket) => {
                 const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
                 //data.user['catcher'] = false;
                 scoket.user = data.user;
-
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
                     //如果人满了或者正在游戏中，拒绝加入
-                    if (room.gamers.length === room.game.gamerNumber) {
+                    if (room.gamers.length === room.gamerNumber) {
                         console.log(`房间人数已满~`);
-                        scoket.emit('message', `{"type":"notified","content":"房间人数已满~"}`);
+                        setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 1000);
+                        //scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`);
                         return;
                     }
                     console.log(data.user.name + '加入房间ID:' + room.roomId);
                     room.gamerJoin(data.user);
                     //为用户注册scoket事件
                     //room.game.regAction(scoket, room);
-                    
-                    if (room.game) {
 
-                    }
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {

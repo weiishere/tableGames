@@ -6,7 +6,7 @@ class Room {
     constructor(option) {
         this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
-            gamer: [],
+            gamers: [],
             // gamers: [
             //     {
             //         uid: 1,
@@ -36,6 +36,7 @@ class Room {
         Object.keys(this.optionSet).forEach((item) => {
             this[item] = this.optionSet[item];
         });
+        this.gameTime--;
         this.initGame();
     }
     initGame() {
@@ -48,20 +49,21 @@ class Room {
         })
         this.game.setOverHander(function () {
             //监听单局游戏结束，进入下一局
+            self.game.isOver = true;
             self.settlement();
             if (self.gameTime > 0) {
                 //单局开始
+                self.gameTime--;
                 self.state = 'wait';
                 self.gamers.forEach((gamer) => { gamer.state = 'wait'; });
-                self.gameTime--;
-                //发送房间信息
-                self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
                 //self.state = 'playing';
                 //self.singleGameBegin();
             } else {
                 self.state = 'end';
                 self.end();//所有局数结束，房间结束
             }
+            //发送房间信息
+            self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
         });
     }
     getSimplyData() {

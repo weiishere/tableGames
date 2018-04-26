@@ -54,7 +54,12 @@
         }
     }
 }
-
+button{
+    outline: none;
+    &:active{
+        transform: translate3d(0,.2rem,0)
+    }
+}
 
 .MainTable {
     width: 100%;
@@ -72,25 +77,50 @@
         height: 100%;
         background:rgba(0, 0, 0, 0.3);
     }
-    .gameInfo{
+    .gameInfoBar{
         position: absolute;
         z-index: 88;
-        width: 10rem;
+        width: 15rem;
         height: 2rem;
         right: 0;
         top:0;
-        border-left: solid .1rem #ac5618;
-        border-bottom: solid .1rem #ac5618;
-        border-radius: 0 0 0 1rem;
-        background: #d4ab7f;
-        box-shadow: -0.2rem 0.2rem 0.6rem #000;
+        // border-left: solid .1rem #ac5618;
+        // border-bottom: solid .1rem #ac5618;
+        // border-radius: 0 0 0 1rem;
+        //background: #d4ab7fbf;
+        //box-shadow: -0.2rem 0.2rem 0.6rem #000;
         line-height: 2rem;
-        color: #edf397;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         text-align: center;
         text-shadow: 1px 1px 1px #333;
+        .remain{
+            //background: url('/images/games/majiang2/remain.png');
+            width: 11rem;
+            height: 1.7rem;
+            background-size: 100% 100%;
+            float: left;
+            margin: .15rem 0 0 .5rem;
+            background: #0F6A4B;
+            border-radius: 1.7rem;
+            color: #6EDB97;
+            line-height: 1.7rem;
+            b{
+                margin: 0 .1rem;
+                font-weight: normal;
+                color: #edf397;
+            }
+        }
+        button{
+            width: 2rem;
+            height: 2rem;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: url('/images/games/majiang2/record.png');
+            background-size: 100% 100%;
+        }
     }
-    .GameInfo{
+    .gameInfoPanel{
         position: absolute;
         z-index: 100;
         width: 90%;
@@ -117,13 +147,13 @@
             margin-top: 3rem;
             display: flex;
             .content{
-                height: 19rem;
+                height: 21rem;
                 box-sizing: border-box;
                 flex: 1;
                 &>div{
                     margin: 1rem;
                     border:solid .3rem #d4ab7f;
-                    height: 16rem;
+                    height: 18rem;
                     background: #fcfaed;
                     border-radius: 1rem;
                     overflow: hidden;
@@ -135,11 +165,13 @@
                         font-weight: bold;
                         color: #b2510c;
                         border-bottom: solid 1px #d4ab7f;
+                        img{width: 1.8rem;height: 1.8rem;border-radius: .9rem;overflow: hidden;;margin-right: .2rem}
+                        span{ }
                     }
                     ul{
                         list-style: none;
                         margin: 0;
-                        height: 10rem;
+                        height: 12rem;
                         overflow: auto;
                         li{
                             color: #a4723d;
@@ -173,6 +205,30 @@
             height: 4rem;
             width: 100%;
             text-align: center;
+            .overWeak{
+                position: absolute;
+                top:-2.5rem;
+                text-align: center;
+                left: 0;
+                right: 0;
+                margin: auto;
+                width: 22rem;
+                background: rgba(0, 0, 0, 0.4);
+                border-radius: 1rem;
+                color: #e7fc46;
+                img{
+                    vertical-align: middle
+                }
+            }
+            .closeBtu{
+                background: url('/images/games/majiang2/close_btu.png');
+                height: 3rem;
+                width: 6.2rem;
+                background-size: cover;
+                border: 0;
+                padding: 0;
+                
+            }
         }
     }
     .tableCenter{
@@ -330,7 +386,10 @@
             
         }
         .fetchCard{
-            display: inline-block;
+            //display: inline-block;
+            position: absolute;
+            right: 0;
+            top: 0;
         }
         // &>div{
         //     ._transition
@@ -369,8 +428,7 @@
     .cardListWrap{
         .clearfix;
         position: absolute;
-        top:0rem;right: 1rem;
-        bottom: 0;
+        right: 1rem;
         margin: auto;
         //height: 14.5rem;
         width: 1.6rem;
@@ -556,7 +614,7 @@
         width: 5.5rem;
         height: 3rem;
         background-image: url('/images/games/majiang2/ready.png');
-        margin-bottom: -7rem;
+        margin-bottom: -5rem;
     }
     &.chooseColor{
         width: 5rem;
