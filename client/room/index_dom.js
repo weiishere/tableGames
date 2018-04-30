@@ -39,7 +39,7 @@ class Room extends Component {
             gamerNumber: 4,
             colorType: 2,//表示两黄牌还是三黄牌
             mulriple: 1,//倍数
-            score: 100,//底分
+            score: 0,//底分
             gameTime: 8
         }
     }
@@ -396,7 +396,7 @@ class Room extends Component {
                             {(rightGamer && this.state.game) && this.state.room.state === 'playing' &&
                                 (this.state.game.gameState['user_' + rightGamer.uid].colorLack ?
                                     <span className='colorLack'>{getColorName({ color: this.state.game.gameState['user_' + rightGamer.uid].colorLack })}</span> : '')}
-                        </div>:'空缺中'}
+                        </div> : '空缺中'}
                     {rightGamer && this.state.game && <div className='cardsListWrap'>
                         {(() => {
                             let result = [];

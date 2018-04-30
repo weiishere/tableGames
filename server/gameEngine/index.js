@@ -75,9 +75,9 @@ module.exports = (io, scoket) => {
             if (otherRoom && otherRoom.roomId !== data.roomId) {
                 setTimeout(() => {
                     console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                    scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                    scoket.emit('message', `{"type":"errorInfo","content":"您已经在其他房间（ID:${otherRoom.roomId}）中，退出之前不能再加入其他房间"}`);
                     //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                }, 50);
+                }, 2000);
                 return;
             }
             const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
@@ -92,7 +92,7 @@ module.exports = (io, scoket) => {
                     //如果人满了或者正在游戏中，拒绝加入
                     if (room.gamers.length === room.gamerNumber) {
                         console.log(`房间人数已满~`);
-                        setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 1000);
+                        setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
                         //scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`);
                         return;
                     }

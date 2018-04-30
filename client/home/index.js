@@ -1,66 +1,204 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import QueueAnim from 'rc-queue-anim';
-/*const mess = document.getElementById("mess");
-let time = 1;
-if (window.WebSocket) {
-    var wsServer = new WebSocket('ws://localhost:3300');
-    wsServer.onopen = function (e) {
-        console.log("连接服务器成功");
-        //(typeof e == 'string') && wsServer.send(e);//向后台发送数据
-    };
-    wsServer.onclose = function (e) {//当链接关闭的时候触发
-        console.log("服务器关闭");
-    };
-    wsServer.onmessage = function (e) {//后台返回消息的时候触发
-        console.log(e);
-    };
-    wsServer.onerror = function (e) {//错误情况触发
-        console.log("连接出错", e);
+import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button } from 'antd-mobile';
+import url from 'url';
+import clone from 'clone';
+import '../reset.less';
+import './style.less';
+import { getQueryString, getColorName, concatCard, getRedom } from '../util';
+import $ from 'jquery';
+const axios = require('axios');
+const Item = Popover.Item;
+
+class LayOut extends Component {
+    constructor(props) {
+        super(props);
+
     }
-    document.getElementById('btn').addEventListener('click', function (e) {
-        console.log("send");
-        e.preventDefault();
-        wsServer.send(time++);
-    }, false);
-}*/
+    componentDidMount() {
+        const openId = 12345;
+        const uaerName = 'weishere';
+        axios.post('/api/login', {
+            openId: openId
+        }).then(function (response) {
+            if (!response.data) {
+                //未注册
+                axios.post('/api/reg', {
+                    openId: openId,
+                    username: uaerName
+                }).then(function (response) {
+                    console.log(response);
+                });
+            } else {
+                //已注册
+            }
+        }).catch(function (error) {
+            console.log(error);
+        });
+    }
+    render() {
+        return <div>loading</div>
+    }
+}
+class NewRoom extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            roomCard: 1,
+            visible: false,
+            modal_visible: false,
+            modal_title: '',
+            modal_details: '',
+            role: ['chengdu'],
+            mulriple: 1,
+            colorType: [3],
+            timeLimit: [20]
+        }
+    }
 
-// var ws = io('ws://localhost:3300/');
-
-// ws.on('connect', function () {
-//     console.log("连接服务器");
-//     // let nickname = 'userName-' + parseInt(Math.random() * 1000000);
-//     // ws.emit('setName', nickname);
-// });
-// ws.on('message', function (data) {
-//     document.getElementById('contents').innerHTML += data;
-// });
-// ws.on('disconnect', function () {
-//     console.log("与服务其断开");
-// });
-
-// document.getElementById('btn1').addEventListener('click', function (e) {
-//     //alert('已设置' + document.getElementById('setNameInput').value);
-//     ws.emit('setName', document.getElementById('setNameInput').value);
-// }, false);
-// document.getElementById('btn2').addEventListener('click', function (e) {
-//     ws.emit('sayTo', {
-//         from: document.getElementById('setNameInput').value,
-//         to: document.getElementById('toNameInput').value,
-//         msg: document.getElementById('sendMes').value
-//     });
-// }, false);
-
-
-
+    render() {
+        return <div className='flex-container'>
+            <div className="sub-title">
+                <img src='/images/games/majiang2/roomCheckin.png' />
+            </div>
+            <WingBlank size="lg">
+                <WhiteSpace size="lg" />
+                <Card>
+                    <Card.Header
+                        title="房间配置"
+                        thumb='/images/games/majiang2/roomCard.png'
+                        extra={<span>checkin</span>}
+                    />
+                    <Card.Body>
+                        <List>
+                            <List.Item>
+                                <InputItem
+                                    value={this.state.roomCard}
+                                    maxLength={2}
+                                    type='number'
+                                    placeholder="一张房卡4局"
+                                    onChange={v => this.setState({ roomCard: v })}
+                                >使用房卡:</InputItem>
+                                <div className='iconFloat'>
+                                    <Icon type='ellipsis' onClick={() => {
+                                        this.setState({
+                                            modal_visible: true,
+                                            modal_title: '房卡使用',
+                                            modal_details: '你可用多张房卡，最多不能超过你所持的房卡数，一张房卡为4局，请合理配置'
+                                        })
+                                    }} />
+                                </div>
+                            </List.Item>
+                            <List.Item>
+                                <Picker data={[
+                                    { value: 'chengdu', label: '成都麻将' },
+                                    { value: 'guangan', label: '广安麻将' }
+                                ]} cols={1}
+                                    value={this.state.role}
+                                    onChange={v => this.setState({ role: v })}
+                                    onOk={v => this.setState({ role: v })}>
+                                    <List.Item arrow="horizontal">规则</List.Item>
+                                </Picker>
+                                <div className='iconFloat'>
+                                    <Icon type='ellipsis' onClick={() => {
+                                        this.setState({
+                                            modal_visible: true,
+                                            modal_title: '规则配置',
+                                            modal_details: '由于麻将游戏具有地域性的特点，系统根据不同的地域配置了规则组，更多的规则组会逐步添加，您也可以自定义规则'
+                                        })
+                                    }} />
+                                </div>
+                            </List.Item>
+                            <List.Item>
+                                <InputItem
+                                    value={this.state.mulriple}
+                                    type='number'
+                                    placeholder="虚拟分数的倍数"
+                                    onChange={v => this.setState({ mulriple: v })}
+                                >倍数:</InputItem>
+                                <div className='iconFloat'>
+                                    <Icon type='ellipsis' onClick={() => {
+                                        this.setState({
+                                            modal_visible: true,
+                                            modal_title: '倍数',
+                                            modal_details: '此为游戏正常结算规则的基础上乘以的倍数，初始的倍数为1倍，你可以为其设置其他的多倍数'
+                                        })
+                                    }} />
+                                </div>
+                            </List.Item>
+                            <List.Item>
+                                <Picker data={[
+                                    { value: 3, label: '三门牌' },
+                                    { value: 2, label: '两门牌' }
+                                ]} cols={1}
+                                    value={this.state.colorType}
+                                    onChange={v => this.setState({ colorType: v })}
+                                    onOk={v => this.setState({ colorType: v })}>
+                                    <List.Item arrow="horizontal">门数选择</List.Item>
+                                </Picker>
+                                <div className='iconFloat'>
+                                    <Icon type='ellipsis' onClick={() => {
+                                        this.setState({
+                                            modal_visible: true,
+                                            modal_title: '门数选择',
+                                            modal_details: '若是三门牌您需要打缺一门才能胡牌，两门牌只有两幅牌（默认缺少筒），您无须打缺，节奏体现的会更快'
+                                        })
+                                    }} />
+                                </div>
+                            </List.Item>
+                            <List.Item>
+                                <Picker data={[
+                                    { value: 10, label: '10S' }, { value: 20, label: '20S' },
+                                    { value: 30, label: '30S' }, { value: 40, label: '40S' },
+                                    { value: 50, label: '50S' }, { value: 60, label: '60S' }
+                                ]} cols={1}
+                                    value={this.state.timeLimit}
+                                    onChange={v => this.setState({ timeLimit: v })}
+                                    onOk={v => this.setState({ timeLimit: v })}>
+                                    <List.Item arrow="horizontal">时间限制(秒)</List.Item>
+                                </Picker>
+                                <div className='iconFloat'>
+                                    <Icon type='ellipsis' onClick={() => {
+                                        this.setState({
+                                            modal_visible: true,
+                                            modal_title: '出牌时间限制',
+                                            modal_details: '规定玩家操作（出牌、碰、杠、胡）的最长时间，若玩家在规定时内未完成操作，系统将根据情况自动进行处理，请根据玩家反应及游戏水平做出合理配置'
+                                        })
+                                    }} />
+                                </div>
+                            </List.Item>
+                            <List.Item>
+                                <Button type="primary">确认建房</Button>
+                            </List.Item>
+                        </List>
+                    </Card.Body>
+                    <Card.Footer content="持有房卡：20" extra={<div>积分：5263</div>} />
+                </Card>
+                <WhiteSpace size="lg" />
+            </WingBlank>
+            <Modal
+                visible={this.state.modal_visible}
+                transparent
+                maskClosable={true}
+                title="操作说明"
+                animationType='slide-down'
+                footer={[{ text: '知道了', onPress: () => { this.setState({ modal_visible: false }) } }]}
+            >
+                <div style={{ textAlign: 'left' }}>{this.state.modal_details}</div>
+            </Modal>
+            {/* <Modal
+                popup={true}
+                visible={this.state.modal_visible}
+                onClose={() => { this.setState({ modal_visible: false }) }}
+                
+            >
+                {this.state.modal_details}
+            </Modal> */}
+        </div>
+    }
+}
 
 render(
-    <QueueAnim delay={300} className="queue-simple">
-        <div key="a">依次进场</div>
-        <div key="b">依次进场</div>
-        <div key="c">依次进场</div>
-        <div key="d">依次进场</div>
-    </QueueAnim>,
+    <LayOut />,
     document.getElementById('layout')
 )
-

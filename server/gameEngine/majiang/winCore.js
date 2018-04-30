@@ -19,6 +19,7 @@ module.exports = (cards) => {
     let singleNumber = 0;
     for (let item in group) {
         if (group[item].count === 1) singleNumber++;
+        if (group[item].count >= 5) return false;//用于查觉，因为是列出所有可以查的牌，如果手牌已经有4个，这里又验证它，那么肯定是不合法的，直接return false；
     }
     //如果手上已经都没有单牌了，那么直接胡牌
     if (singleNumber === 0) {

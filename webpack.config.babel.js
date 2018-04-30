@@ -49,8 +49,11 @@ const webpackConfig = {
       test: /\.(js|jsx)$/,
       loader: 'babel-loader?cacheDirectory=true',
       exclude: /(node_modules|bower_components)/,
+      // query: {
+      //   presets: ['es2015']
+      // }
       query: {
-        presets: ['es2015']
+        plugins: [["import", { libraryName: "antd-mobile", style: true }]]
       }
     }, {
       test: /\.(css)$/,
@@ -67,6 +70,7 @@ const webpackConfig = {
           }
         }, {
           loader: 'less-loader'
+          
         }]
       })
     }, {
@@ -76,7 +80,8 @@ const webpackConfig = {
       }, {
         loader: "css-loader"
       }, {
-        loader: "less-loader"
+        loader: "less-loader",
+        options: { javascriptEnabled: true }
       }]
     }, {
       test: /\.(ico|png|gif|jpg|jpeg)$/,

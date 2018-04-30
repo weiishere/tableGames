@@ -1,0 +1,58 @@
+#layout {
+    background: #6fc4a7;
+    background: url('/images/games/majiang2/bg_1.jpg');
+    -webkit-animation: effect 80s infinite linear;
+    background-size: cover;
+}
+.am-card{
+    box-shadow: 0 0 1.5rem #000;
+}
+.am-card-header-content {
+    img {
+        width: 2.5rem;
+    }
+}
+
+.flex-container {
+    margin: 0 15px;
+}
+
+.sub-title {
+    color: #888;
+    font-size: 14px;
+    padding: 10px 0 11px 0;
+}
+
+.iconFloat {
+    position: absolute;
+    top: 1rem;
+    right: 0;
+    i {
+        &:active {
+            svg: red;
+        }
+    }
+}
+
+.weakInfo {
+    padding: 1rem;
+    width: 15rem;
+}
+
+@-webkit-keyframes effect {
+    0% {
+        background-position: 0 0;
+    }
+    25% {
+        background-position: 50% 0;
+    }
+    50% {
+        background-position: 100% 0;
+    }
+    75% {
+        background-position: 50% 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}

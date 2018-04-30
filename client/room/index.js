@@ -4,15 +4,17 @@ import url from 'url';
 import clone from 'clone';
 import '../reset.less';
 import './style2.less';
-import { getQueryString, getColorName, concatCard } from '../util';
+import { getQueryString, getColorName, concatCard, getRedom, isRealNum } from '../util';
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
+import { isNumber } from 'util';
 
 
 let isBegin = false;
 
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-const ws = io('ws://192.168.31.222:3300/');
+//const ws = io('ws://192.168.31.222:3300/');
+const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
 window.addEventListener("orientationchange", function () {
@@ -47,15 +49,17 @@ class Table extends Component {
             //countdown: 20
         }
         this.option = {
-            gamerNumber: 2,
+            gamerNumber: 4,
             colorType: 2,//表示两黄牌还是三黄牌
             mulriple: 1,//倍数
-            score: 100,//底分
-            gameTime: 4
+            score: 0,//底分
+            gameTime: 4,
+            countdown: 20
         }
         this.gameInfoCloseHandle = this.gameInfoCloseHandle.bind(this);
         this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
         this.readyCallback = this.readyCallback.bind(this);
+        this.showCardAuto = this.showCardAuto.bind(this);
     }
     componentDidMount() {
         const self = this;
@@ -80,15 +84,6 @@ class Table extends Component {
                         } else {
                             self.setState({ game: data.content });
                         }
-
-                        // self.setState({ countdown: 20 });
-                        // let timer = window.setInterval(() => {
-                        //     if (self.state.countdown === 0) {
-                        //         window.clearInterval(timer);
-                        //     }else{
-                        //         self.setState({ countdown: --self.state.countdown });
-                        //     }
-                        // }, 1000);
                     } else {
                         self.setState({ game: undefined });
                     }
@@ -113,7 +108,7 @@ class Table extends Component {
         }, 50);
     }
     gameInfoCloseHandle() {
-        if (this.state.game.isOver) {
+        if (this.state.room.state === 'end') {
             //关闭连接
             ws.emit('disconnect');
         }
@@ -129,6 +124,36 @@ class Table extends Component {
         //     this.setState({ game: gameCopy });
         // }
         this.setState({ game: null });
+    }
+    //玩家时间到，自动为其出牌
+    showCardAuto() {
+        //获取应该出牌的玩家
+        const catcher = this.state.game.gameState['user_' + this.state.user.uid];
+        if (catcher.colorLack === '') {
+            //选花色
+            ws.emit('chooseColor', JSON.stringify({
+                roomId: this.props.room.roomId,
+                uid: catcher.uid,
+                color: ['b', 't', 'w'][getRedom(0, 2)]
+            }));
+        } else if (catcher.actionCode.length !== 0) {
+            //如果有胡，就胡，不然默认过
+            ws.emit('action', JSON.stringify({
+                roomId: this.state.room.roomId,
+                uid: catcher.uid,
+                actionType: catcher.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
+            }));
+        } else {
+            //随便抽一张牌（优先抽摸到的牌）
+            const redomCard = catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedom(0, catcher.cards - 1)];
+            if (redomCard) {
+                ws.emit('showCard', JSON.stringify({
+                    roomId: this.state.room.roomId,
+                    uid: catcher.uid,
+                    cardKey: redomCard.key
+                }));
+            }
+        }
     }
     render() {
         let me, leftGamer, topGamer, rightGamer;
@@ -178,8 +203,7 @@ class Table extends Component {
                     <button onClick={this.gameInfoOpenHandle}></button>
                 </div>}
                 {this.state.game && <div className='tableCenter'>
-                    <Countdown time={20} />
-                    {/* <div className='center'>{this.state.countdown}</div> */}
+                    <Countdown time={this.state.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
                     {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
                     {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
                     {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
@@ -199,21 +223,34 @@ class Countdown extends Component {
         this.state = {
             countdown: 20
         }
+        this.isEnd = false;
         this.timer = undefined;
     }
-    componentWillUnmount(){
+    componentWillUnmount() {
         window.clearInterval(this.timer);
     }
     componentWillReceiveProps() {
-        this.setState({ countdown: this.props.time });
-        if (this.timer) { return; }
-        this.timer = window.setInterval(() => {
-            if (this.state.countdown === 0) {
-                window.clearInterval(this.timer);
+        if (this.props.isOver) {
+            window.clearInterval(this.timer);
+        } else {
+            if (this.props.roomState === 'playing') {
+                this.setState({ countdown: this.props.time }, () => {
+                    window.clearInterval(this.timer);
+                    this.timer = window.setInterval(() => {
+                        if (this.state.countdown === 0) {
+                            this.props.timeOverHander();
+                            window.clearInterval(this.timer);
+                        } else {
+                            this.setState({ countdown: --this.state.countdown });
+                        }
+                    }, 1000);
+                });
             } else {
-                this.setState({ countdown: --this.state.countdown });
+                this.setState({ countdown: this.props.time });
+                window.clearInterval(this.timer);
             }
-        }, 1000);
+        }
+        //if (this.timer) { return; }
     }
     render() {
         return <div className='center'>{this.state.countdown}</div>
@@ -252,7 +289,7 @@ class GamerDock extends Component {
         return (total > 0 ? '+' : '') + total;
     }
     render() {
-        return <div className={`userDock ${this.props.class_name}`}>
+        return <div className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
             <img src='/images/games/majiang/head.jpg' />
             <div className='nameWrap'>{this.props.name}</div>
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
@@ -269,6 +306,7 @@ class Gamer_mine extends Component {
             activeCard: {},
             buttonVisible: false
         }
+        this.cardHandler = false;
         this.isLack = false;
         this.addConcatCard = [];
         this.ready = this.ready.bind(this);
@@ -277,6 +315,8 @@ class Gamer_mine extends Component {
         this.chooseColor = this.chooseColor.bind(this);
     }
     ready() {
+        if (this.cardHandler) return;
+        this.cardHandler = true;
         const self = this;
         this.props.readyCallback();
         window.setTimeout(() => {
@@ -288,28 +328,47 @@ class Gamer_mine extends Component {
         }, 50);
     }
     componentWillReceiveProps(nextProps) {
+        this.cardHandler = false;
         this.setState({ buttonVisible: false, activeCard: nextProps.userState && nextProps.userState.fatchCard || {} });
+
+
+        let timer;
+        //------------------------------------------------------测试自动打牌，自动准备--------------------------------------------------
+        if (this.props.user.state === 'wait') {
+            timer = window.setTimeout(() => {
+                this.ready();
+            }, 15000);
+        } else {
+            window.clearTimeout(timer);
+        }
     }
     showCard() {
+        if (this.cardHandler) return;
+        this.cardHandler = true;
+        this.setState({ buttonVisible: true });
         //const _concatCard = concatCard(this.props.userState);
         const _isLack = this.addConcatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
         const _showCard = this.addConcatCard.find(card => card.key === this.state.activeCard.key);
 
         if (!this.props.userState.catcher || (this.props.userState.colorLack !== _showCard.color && !_isLack)) {
-            this.setState({ activeCard: {} });
+            this.setState({ activeCard: {}, buttonVisible: false });
+            this.cardHandler = false;
             return false;
         }
         //必须在打缺了的情况下，或者打的缺花色的牌，才通过
         if (_showCard.color === this.props.userState.colorLack || this.isLack) {
+            this.setState({ activeCard: {} });
+            this.cardHandler = false;
             ws.emit('showCard', JSON.stringify({
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
                 cardKey: this.state.activeCard.key
             }));
-            this.setState({ activeCard: {} });
         }
     }
     actionHandler(type) {
+        if (this.cardHandler) return;
+        this.cardHandler = true;
         //点击了就马上隐藏按钮，免得再多生事端
         this.setState({ buttonVisible: true });
         ws.emit('action', JSON.stringify({
@@ -331,14 +390,15 @@ class Gamer_mine extends Component {
             //this.setState({ activeCard: {} });
         } else {
             if (card.key === this.state.activeCard.key) {
-                //this.showCard();
-                this.setState({ activeCard: {} });
+                this.showCard();
+                //this.setState({ activeCard: {} });
             } else {
                 this.setState({ activeCard: card });
             }
         }
     }
     chooseColor(color) {
+        this.setState({ buttonVisible: true });
         ws.emit('chooseColor', JSON.stringify({
             roomId: this.props.room.roomId,
             uid: this.props.user.uid,
@@ -386,34 +446,34 @@ class Gamer_mine extends Component {
                 }
 
                 {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard' type='mine_fetch stress' card={this.props.userState.fatchCard}></Card>
+                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard' type={`mine_main ${!this.isLack && this.props.userState.colorLack !== this.props.userState.fatchCard.color ? 'gray' : ''} stress`} card={this.props.userState.fatchCard}></Card>
                 </div>}
+                <div className='winDesc'>{this.props.userState.winDesc}</div>
             </QueueAnim>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
                     <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
             </QueueAnim>}
-            {!this.state.buttonVisible && <QueueAnim className='operateWrap' duration={300} animConfig={[
+            <QueueAnim className='operateWrap' duration={300} animConfig={[
                 { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
             ]}>
-                {/* <QueueAnim delay={0} duration={300} animConfig={[
-                    { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-                ]}> */}
-                {this.props.user.state === 'wait' && ready}
-                {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
-                {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && <span key='showCard'>{btu_showCard}</span>}
-                {
-                    //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
-                    this.props.userState && this.props.userState.actionCode.map(action => {
-                        if (action === 'meet' && !this.props.userState.isPause) return btu_meet;
-                        if (action === 'fullMeet' && !this.props.userState.isPause) return btu_fullMeet;
-                        if (action === 'winning') return btu_win;
-                    })
-                }
-                {this.props.userState && !this.props.userState.isPause && this.props.userState.actionCode.length !== 0 && btu_pass}
-                {/* </QueueAnim> */}
-            </QueueAnim>}
+                {!this.state.buttonVisible ? <div key='opeat'>
+                    {this.props.user.state === 'wait' && ready}
+                    {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
+                    {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && this.state.activeCard.key && btu_showCard}
+                    {
+                        //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
+                        this.props.userState && this.props.userState.actionCode.map(action => {
+                            if (action === 'meet' && !this.props.userState.isPause) return btu_meet;
+                            if (action === 'fullMeet' && !this.props.userState.isPause) return btu_fullMeet;
+                            if (action === 'winning') return btu_win;
+                        })
+                    }
+                    {this.props.userState && !this.props.userState.isPause && this.props.userState.actionCode.length !== 0 && btu_pass}
+                </div> : ''}
+                {<div className={`loadingPanel ${this.state.buttonVisible && 'action'}`}>loading</div>}
+            </QueueAnim>
         </div>
     }
 }
@@ -439,11 +499,15 @@ class Gamer_right extends Component {
                     }
                 </div>)}
                 {(() => {
-                    let result = [];
-                    for (let i = 0; i < +this.props.userState.cards; i++) {
-                        result.push(<Card key={i} type='side_gamer_main'></Card>)
+                    if (isRealNum(this.props.userState.cards)) {
+                        let result = [];
+                        for (let i = 0; i < +this.props.userState.cards; i++) {
+                            result.push(<Card key={i} type='side_gamer_main'></Card>)
+                        }
+                        return result;
+                    } else {
+                        return this.props.userState.cards.map(card => <Card key={`card_${card.key}`} type='group' card={card} ></Card>)
                     }
-                    return result;
                 })()}
 
                 {this.props.userState.fatchCard && <div className='fetchCard'>
@@ -478,11 +542,15 @@ class Gamer_top extends Component {
                     }
                 </div>)}
                 {(() => {
-                    let result = [];
-                    for (let i = 0; i < +this.props.userState.cards; i++) {
-                        result.push(<Card key={i} type='face_gamer_main'></Card>)
+                    if (isRealNum(this.props.userState.cards)) {
+                        let result = [];
+                        for (let i = 0; i < +this.props.userState.cards; i++) {
+                            result.push(<Card key={i} type='face_gamer_main'></Card>)
+                        }
+                        return result;
+                    } else {
+                        return this.props.userState.cards.map(card => <Card key={`card_${card.key}`} type='group' card={card} ></Card>)
                     }
-                    return result;
                 })()}
                 {this.props.userState.groupCards.winCard && <div key='win_card' className='group'>
                     <Card type='group' card={this.props.userState.groupCards.winCard} ></Card>
@@ -522,11 +590,15 @@ class Gamer_left extends Component {
                     }
                 </div>)}
                 {(() => {
-                    let result = [];
-                    for (let i = 0; i < +this.props.userState.cards; i++) {
-                        result.push(<Card key={i} type='side_gamer_main'></Card>)
+                    if (isRealNum(this.props.userState.cards)) {
+                        let result = [];
+                        for (let i = 0; i < +this.props.userState.cards; i++) {
+                            result.push(<Card key={i} type='side_gamer_main'></Card>)
+                        }
+                        return result;
+                    } else {
+                        return this.props.userState.cards.map(card => <Card key={`card_${card.key}`} type='group' card={card} ></Card>)
                     }
-                    return result;
                 })()}
 
                 {this.props.userState.fatchCard && <div className='fetchCard'>
@@ -592,14 +664,19 @@ class GameInfo extends Component {
                 <div className='contentWrap'>
                     {
                         this.props.room.gamers.map((gamer, index) => <div key={index} className='content'>
-                            <div>
+                            <div className={gamer.uid === this.props.user.uid ? `self` : ''}>
                                 <header>
                                     <img src={`${gamer.avatar}`} />
                                     <span>{gamer.name}</span>
                                 </header>
                                 <ul className='list'>
                                     {
-                                        this.props.room.recode.map((item, _index) => <li key={`li_${_index}`}>第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}{item.find(user => user.uid === gamer.uid).point}</li>)
+                                        this.props.room.recode.map((item, _index) =>
+                                            <li key={`li_${_index}`}>
+                                                第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
+                                                {item.find(user => user.uid === gamer.uid).point}
+                                                <div><i>-{item.find(user => user.uid === gamer.uid).winDesc}-</i></div>
+                                            </li>)
                                     }
                                 </ul>
                                 <footer>
@@ -607,10 +684,12 @@ class GameInfo extends Component {
                                 </footer>
                             </div>
                         </div>)
+
+
                     }
                 </div>
                 <footer>
-                    {this.props.room.isOver && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你来战！</div>}
+                    {this.props.room.state === 'end' && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你再战！</div>}
                     <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
                 </footer>
             </div>
@@ -699,8 +778,8 @@ render(
     <Table />,
     document.getElementById('layout')
 )
-// render(
-//     <QueueAnim delay={300} style={{height:'100%'}} className="queue-simple">
+        // render(
+//     <QueueAnim delay={300} style={{ height: '100%' }} className="queue-simple">
 //         <Table key='a' />
 //     </QueueAnim>,
 //     document.getElementById('layout')

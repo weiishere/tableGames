@@ -40,6 +40,10 @@ app.use(require('webpack-hot-middleware')(compiler, {
 const server = http.createServer(app);
 webscoket(server);
 route(app);
+
+
+
+
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
     //不处理 map 和 json 格式的数据
@@ -52,13 +56,13 @@ app.use((req, res, next) => {
 });
 // error handlers
 app.use((err, req, res, next) => {
-    if (req.url.startsWith('/api')) {
-        const msg = errorHandler(err);
-        return res.status(200).json({
-            code: err.code || 'E-50x',
-            msg
-        });
-    }
+    // if (req.url.startsWith('/api')) {
+    //     const msg = errorHandler(err);
+    //     return res.status(200).json({
+    //         code: err.code || 'E-50x',
+    //         msg
+    //     });
+    // }
 
     res.status(err.status || 500);
     res.render('error', {

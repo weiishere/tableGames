@@ -36,13 +36,14 @@ class Room {
         Object.keys(this.optionSet).forEach((item) => {
             this[item] = this.optionSet[item];
         });
+        this.checkinTime = Date.now();
         this.gameTime--;
         this.initGame();
     }
     initGame() {
         const self = this;
         this.gameType = "majiang";
-        this.game = new Majiang({ colorType: this.optionSet.colorType });
+        this.game = new Majiang({ colorType: this.optionSet.colorType, master: this.gamers[0] });//庄家，上一次第一次胡牌的玩家
         this.game.setSendMsg(function (content) {
             //监听游戏发出的任何信息
             self.sendMsg && self.sendMsg(content);
@@ -103,7 +104,7 @@ class Room {
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
         this.initGame();
-        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: index === 0 ? true : false } }));
+        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }));
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {
@@ -120,7 +121,12 @@ class Room {
                             const userState = content.gameState[i];
                             result['user_' + userState.uid] = clone(userState);
                             if (userState.uid !== gamer.uid) {
-                                result['user_' + userState.uid].cards = userState.cards.length;
+                                if (content.isOver) {
+                                    result['user_' + userState.uid].cards = userState.cards;
+                                } else {
+                                    result['user_' + userState.uid].cards = userState.cards.length;
+                                }
+
                             }
                         }
                         return result;
@@ -158,7 +164,10 @@ class Room {
         // });
         this.recode.push(this.game.gameState.map(item => {
             return {
-                uid: item.uid, name: item.name, point: item.point
+                uid: item.uid,
+                name: item.name,
+                point: item.point,
+                winDesc: item.winDesc
             }
         }));
     }
