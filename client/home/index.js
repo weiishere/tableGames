@@ -225,12 +225,12 @@ class NewRoom extends Component {
                 visible={this.state.roomInfo_visible}
                 transparent
                 maskClosable={true}
-                title="操作说明"
+                title="开房成功"
                 animationType='slide-down'
                 footer={[{ text: '跳转', onPress: () => { } }]}
             >
                 <div style={{ textAlign: 'left' }}>
-                    开房成功：请点击<a href={`http://localhost:3300/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~
+                    请点击<a href={`http://localhost:3300/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~
                 <div>http://localhost:3300/room?roomId={this.state.roomId}</div>
                 </div>
             </Modal>

@@ -65,6 +65,12 @@ class Table extends Component {
     componentDidMount() {
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
         const self = this;
+        var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+        var r = getQueryString('roomId').match(reg);
+        if (!r) {
+            alert('对不起，房间号不合法!');
+            return;
+        }
         axios.post('/api/getRoom', {
             roomId: getQueryString('roomId'),
         }).then(({ data }) => {
@@ -78,7 +84,7 @@ class Table extends Component {
                 if (room.state === 2) {
                     alert('对不起，此房间已失效~');
                     history.back();
-                return false;
+                    return false;
                 } else {
                     self.gameInit(room);
                     // self.gameInit({
