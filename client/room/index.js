@@ -4,17 +4,16 @@ import url from 'url';
 import clone from 'clone';
 import '../reset.less';
 import './style2.less';
-import { getQueryString, getColorName, concatCard, getRedom, isRealNum } from '../util';
+import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum } from '../util';
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
-import { isNumber } from 'util';
-
+const axios = require('axios');
 
 let isBegin = false;
-
+let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-//const ws = io('ws://192.168.31.222:3300/');
-const ws = io('ws://220.167.101.116:3300');
+const ws = io('ws://192.168.31.222:3300/');
+//const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
 window.addEventListener("orientationchange", function () {
@@ -38,39 +37,74 @@ class Table extends Component {
                 avatar: '/images/games/majiang/head.jpg',
                 state: 'wait',
             },
-            roomId: getQueryString('roomId'),
+            //roomId: getQueryString('roomId'),
             roomLog: [],
             room: null,
             game: null,
             activeCard: null,
             newState: true,
             isBegin: false,
-            showRecore: false
-            //countdown: 20
+            showRecore: false,
+
         }
-        this.option = {
-            gamerNumber: 4,
-            colorType: 2,//表示两黄牌还是三黄牌
-            mulriple: 1,//倍数
-            score: 0,//底分
-            gameTime: 4,
-            countdown: 20
-        }
+        // this.option = {
+        //     gamerNumber: 4,
+        //     colorType: 3,//表示两黄牌还是三黄牌
+        //     mulriple: 1,//倍数
+        //     score: 0,//底分
+        //     gameTime: 4,
+
+        // }
+        this.countdown = 60;
+        this.gameInit = this.gameInit.bind(this);
         this.gameInfoCloseHandle = this.gameInfoCloseHandle.bind(this);
         this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
         this.readyCallback = this.readyCallback.bind(this);
         this.showCardAuto = this.showCardAuto.bind(this);
     }
     componentDidMount() {
+        //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
+        const self = this;
+        axios.post('/api/getRoom', {
+            roomId: getQueryString('roomId'),
+        }).then(({ data }) => {
+            //state,//0：房间数据已经创建，1：房间已激活，2：房间已失效
+            if (!data) {
+                alert('对不起，房间号不存在~');
+                history.back();
+                return false;
+            } else {
+                const room = data;
+                if (room.state === 2) {
+                    alert('对不起，此房间已失效~');
+                    history.back();
+                return false;
+                } else {
+                    self.gameInit(room);
+                    // self.gameInit({
+                    //     roomId: '292f0a78-e304-48cc-9aea-4fd0a7341347',
+                    //     jsonData: JSON.stringify({ countdown: 30, colorType: 3, mulriple: 1, gameTime: 4 })
+                    // });
+                }
+            }
+        });
+        ws.on('connect', function () { });
+    }
+    gameInit(room) {
         const self = this;
         let once = true;
-        ws.on('connect', function () {
-            ws.emit('checkin', JSON.stringify({
-                user: self.state.user,
-                roomId: self.state.roomId,
-                option: self.option
-            }));
-        });
+        const roomOption = JSON.parse(room.jsonData);
+        this.countdown = roomOption.countdown;
+        ws.emit('checkin', JSON.stringify({
+            user: self.state.user,
+            roomId: room.roomId,
+            option: {
+                gamerNumber: 4,
+                colorType: roomOption.colorType,//表示两黄牌还是三黄牌
+                mulriple: roomOption.mulriple,//倍数
+                gameTime: roomOption.gameTime
+            }
+        }));
         ws.on('message', function (msg) {
             const data = JSON.parse(msg);
             switch (data.type) {
@@ -79,6 +113,7 @@ class Table extends Component {
                     break;
                 case 'gameData':
                     if (data.content) {
+                        newRecore = true;
                         if (data.content.isOver) {
                             self.setState({ game: data.content, showRecore: true });
                         } else {
@@ -108,6 +143,7 @@ class Table extends Component {
         }, 50);
     }
     gameInfoCloseHandle() {
+        newRecore = false;
         if (this.state.room.state === 'end') {
             //关闭连接
             ws.emit('disconnect');
@@ -115,6 +151,7 @@ class Table extends Component {
         this.setState({ showRecore: false });
     }
     gameInfoOpenHandle() {
+        newRecore = false;
         this.setState({ showRecore: true });
     }
     readyCallback() {
@@ -128,30 +165,48 @@ class Table extends Component {
     //玩家时间到，自动为其出牌
     showCardAuto() {
         //获取应该出牌的玩家
-        const catcher = this.state.game.gameState['user_' + this.state.user.uid];
-        if (catcher.colorLack === '') {
-            //选花色
-            ws.emit('chooseColor', JSON.stringify({
-                roomId: this.props.room.roomId,
-                uid: catcher.uid,
-                color: ['b', 't', 'w'][getRedom(0, 2)]
-            }));
-        } else if (catcher.actionCode.length !== 0) {
-            //如果有胡，就胡，不然默认过
-            ws.emit('action', JSON.stringify({
-                roomId: this.state.room.roomId,
-                uid: catcher.uid,
-                actionType: catcher.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
-            }));
-        } else {
-            //随便抽一张牌（优先抽摸到的牌）
-            const redomCard = catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedom(0, catcher.cards - 1)];
-            if (redomCard) {
-                ws.emit('showCard', JSON.stringify({
-                    roomId: this.state.room.roomId,
-                    uid: catcher.uid,
-                    cardKey: redomCard.key
+        const mine = this.state.game.gameState['user_' + this.state.user.uid];
+        if (mine.catcher || mine.actionCode.length !== 0) {
+            if (mine.colorLack === '') {
+                //选花色
+                ws.emit('chooseColor', JSON.stringify({
+                    roomId: this.props.room.roomId,
+                    uid: mine.uid,
+                    color: ['b', 't', 'w'][getRedomNum(0, 2)]
                 }));
+            } else if (mine.actionCode.length !== 0) {
+                //如果有胡，就胡，不然默认过
+                ws.emit('action', JSON.stringify({
+                    roomId: this.state.room.roomId,
+                    uid: mine.uid,
+                    actionType: mine.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
+                }));
+            } else {
+                //先看有没有打缺
+                const addConcatCard = concatCard(mine);
+                const _isLack = addConcatCard.filter(card => card.color === mine.colorLack).length === 0 ? true : false;
+                let redomCard;
+                if (!_isLack) {
+                    //若没打缺，就打缺了的牌
+                    if (mine.fatchCard.color === mine.colorLack) {
+                        //如果摸的牌是要缺的，直接打
+                        redomCard = mine.fatchCard;
+                    } else {
+                        const lackCards = mine.cards.filter(card => card.color === mine.colorLack);
+                        redomCard = lackCards[0];
+                    }
+
+                } else {
+                    //随便抽一张牌（优先抽摸到的牌）
+                    redomCard = mine.fatchCard ? mine.fatchCard : mine.cards[getRedomNum(0, mine.cards.length - 1)];
+                }
+                if (redomCard) {
+                    ws.emit('showCard', JSON.stringify({
+                        roomId: this.state.room.roomId,
+                        uid: mine.uid,
+                        cardKey: redomCard.key
+                    }));
+                }
             }
         }
     }
@@ -203,7 +258,7 @@ class Table extends Component {
                     <button onClick={this.gameInfoOpenHandle}></button>
                 </div>}
                 {this.state.game && <div className='tableCenter'>
-                    <Countdown time={this.state.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
+                    <Countdown time={this.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
                     {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
                     {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
                     {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
@@ -230,6 +285,7 @@ class Countdown extends Component {
         window.clearInterval(this.timer);
     }
     componentWillReceiveProps() {
+        if (!newRecore) { return false; }
         if (this.props.isOver) {
             window.clearInterval(this.timer);
         } else {
@@ -256,28 +312,6 @@ class Countdown extends Component {
         return <div className='center'>{this.state.countdown}</div>
     }
 }
-// class TableCenter extends Component {
-//     constructor(props) {
-//         super(props);
-//         this.state = {
-//             countdown: 20
-//         }
-//     }
-//     render() {
-//         const meGameState = this.props.game ? this.props.game.gameState['user_' + me.uid] : null;
-//         const rightGameState = this.props.game ? this.props.game.gameState['user_' + rightGamer.uid] : null;
-//         const leftGameState = this.props.game ? this.props.game.gameState['user_' + leftGamer.uid] : null;
-//         const topGameState = this.props.game ? this.props.game.gameState['user_' + topGamer.uid] : null;
-//         return this.props.game && <div className='tableCenter'>
-//             <div className='center'>{this.state.countdown}</div>
-//             {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
-//             {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
-//             {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
-//             {topGameState && <div className={`${topGameState.catcher && 'top'}`}></div>}
-//         </div>
-
-//     }
-// }
 class GamerDock extends Component {
     constructor(props) {
         super(props);
@@ -332,15 +366,15 @@ class Gamer_mine extends Component {
         this.setState({ buttonVisible: false, activeCard: nextProps.userState && nextProps.userState.fatchCard || {} });
 
 
-        let timer;
-        //------------------------------------------------------测试自动打牌，自动准备--------------------------------------------------
-        if (this.props.user.state === 'wait') {
-            timer = window.setTimeout(() => {
-                this.ready();
-            }, 15000);
-        } else {
-            window.clearTimeout(timer);
-        }
+        // let timer;
+        // //------------------------------------------------------测试自动打牌，自动准备--------------------------------------------------
+        // if (this.props.user.state === 'wait') {
+        //     timer = window.setTimeout(() => {
+        //         this.ready();
+        //     }, 15000);
+        // } else {
+        //     window.clearTimeout(timer);
+        // }
     }
     showCard() {
         if (this.cardHandler) return;

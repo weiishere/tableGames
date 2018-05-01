@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button } from 'antd-mobile';
+import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator } from 'antd-mobile';
 import url from 'url';
 import clone from 'clone';
 import '../reset.less';
@@ -13,31 +13,50 @@ const Item = Popover.Item;
 class LayOut extends Component {
     constructor(props) {
         super(props);
-
+        this.state = {
+            isAllow: false,
+            user: {}
+        }
     }
     componentDidMount() {
         const openId = 12345;
         const uaerName = 'weishere';
-        axios.post('/api/login', {
-            openId: openId
-        }).then(function (response) {
-            if (!response.data) {
-                //未注册
-                axios.post('/api/reg', {
-                    openId: openId,
-                    username: uaerName
-                }).then(function (response) {
-                    console.log(response);
-                });
-            } else {
-                //已注册
-            }
-        }).catch(function (error) {
-            console.log(error);
-        });
+        // axios.post('/api/login', {
+        //     openId: openId
+        // }).then(function (response) {
+        //     if (!response.data) {
+        //         //未注册
+        //         axios.post('/api/reg', {
+        //             openId: openId,
+        //             username: uaerName
+        //         }).then(function (response) {
+        //             console.log(response);
+        //         });
+        //     } else {
+        //         //已注册
+        //     }
+        // }).catch(function (error) {
+        //     console.log(error);
+        // });
+        window.setTimeout(() => {
+            this.setState({
+                isAllow: true,
+                user: {
+                    openId,
+                    uid: '123',
+                    userName: 'weishere'
+                }
+            })
+        }, 3000);
     }
     render() {
-        return <div>loading</div>
+        return this.state.isAllow ? <NewRoom user={this.state.user} /> : <div className="toast-example">
+            <ActivityIndicator
+                toast
+                text="请稍后..."
+                animating={true}
+            />
+        </div>
     }
 }
 class NewRoom extends Component {
@@ -45,17 +64,33 @@ class NewRoom extends Component {
         super(props);
         this.state = {
             roomCard: 1,
+            roomId: 0,
             visible: false,
             modal_visible: false,
+            roomInfo_visible: false,
             modal_title: '',
             modal_details: '',
             role: ['chengdu'],
             mulriple: 1,
             colorType: [3],
-            timeLimit: [20]
+            countdown: [20]
         }
+        this.checkinHandler = this.checkinHandler.bind(this);
     }
-
+    checkinHandler() {
+        axios.post('/api/checkin', {
+            uid: '123456',
+            role: this.state.role[0],
+            mulriple: this.state.mulriple,
+            colorType: this.state.colorType[0],
+            countdown: this.state.countdown[0]
+        }).then((data) => {
+            this.setState({
+                roomInfo_visible: true,
+                roomId: data.data
+            });
+        });
+    }
     render() {
         return <div className='flex-container'>
             <div className="sub-title">
@@ -152,9 +187,9 @@ class NewRoom extends Component {
                                     { value: 30, label: '30S' }, { value: 40, label: '40S' },
                                     { value: 50, label: '50S' }, { value: 60, label: '60S' }
                                 ]} cols={1}
-                                    value={this.state.timeLimit}
-                                    onChange={v => this.setState({ timeLimit: v })}
-                                    onOk={v => this.setState({ timeLimit: v })}>
+                                    value={this.state.countdown}
+                                    onChange={v => this.setState({ countdown: v })}
+                                    onOk={v => this.setState({ countdown: v })}>
                                     <List.Item arrow="horizontal">时间限制(秒)</List.Item>
                                 </Picker>
                                 <div className='iconFloat'>
@@ -168,7 +203,7 @@ class NewRoom extends Component {
                                 </div>
                             </List.Item>
                             <List.Item>
-                                <Button type="primary">确认建房</Button>
+                                <Button type="primary" onClick={this.checkinHandler}>确认建房</Button>
                             </List.Item>
                         </List>
                     </Card.Body>
@@ -186,14 +221,19 @@ class NewRoom extends Component {
             >
                 <div style={{ textAlign: 'left' }}>{this.state.modal_details}</div>
             </Modal>
-            {/* <Modal
-                popup={true}
-                visible={this.state.modal_visible}
-                onClose={() => { this.setState({ modal_visible: false }) }}
-                
+            <Modal
+                visible={this.state.roomInfo_visible}
+                transparent
+                maskClosable={true}
+                title="操作说明"
+                animationType='slide-down'
+                footer={[{ text: '跳转', onPress: () => { } }]}
             >
-                {this.state.modal_details}
-            </Modal> */}
+                <div style={{ textAlign: 'left' }}>
+                    开房成功：请点击<a href={`http://localhost:3300/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~
+                <div>http://localhost:3300/room?roomId={this.state.roomId}</div>
+                </div>
+            </Modal>
         </div>
     }
 }

@@ -1,6 +1,7 @@
 const UUID = require('../util/uuid');
 const Majiang = require('./majiang');
 const clone = require('clone');
+const writeLog = require('../util/errorLog');
 
 class Room {
     constructor(option) {
@@ -43,7 +44,26 @@ class Room {
     initGame() {
         const self = this;
         this.gameType = "majiang";
-        this.game = new Majiang({ colorType: this.optionSet.colorType, master: this.gamers[0] });//庄家，上一次第一次胡牌的玩家
+        //获取庄家
+        let gamerMaster;
+        if (this.recode.length !== 0) {
+            let _uid;
+            for (let i; i < this.recode.length; i++) {
+                if (this.recode[i].master) {
+                    _uid = this.recode[i].uid;
+                    break;
+                }
+            }
+            if (_uid) {
+                gamerMaster = this.gamer.find(item => item.id === _uid);
+            } else {
+                gamerMaster = this.gamers[0];
+            }
+        } else {
+            gamerMaster = this.gamers[0];//第一局的话，第一个加入的人是庄家
+        }
+
+        this.game = new Majiang({ colorType: this.optionSet.colorType, master: gamerMaster });//庄家，上一次第一次胡牌的玩家
         this.game.setSendMsg(function (content) {
             //监听游戏发出的任何信息
             self.sendMsg && self.sendMsg(content);
@@ -108,37 +128,41 @@ class Room {
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {
-        const self = this;
-        this.sendForRoom = sendForRoom;
-        this.sendForUser = sendForUser;
-        this.setSendMsg(function (content) {
-            //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
-            self.gamers.forEach(gamer => {
-                const _data = {
-                    gameState: (() => {
-                        let result = new Object(), l = content.gameState.length;
-                        for (let i = 0; i < l; i++) {
-                            const userState = content.gameState[i];
-                            result['user_' + userState.uid] = clone(userState);
-                            if (userState.uid !== gamer.uid) {
-                                if (content.isOver) {
-                                    result['user_' + userState.uid].cards = userState.cards;
-                                } else {
-                                    result['user_' + userState.uid].cards = userState.cards.length;
-                                }
+        try {
+            const self = this;
+            this.sendForRoom = sendForRoom;
+            this.sendForUser = sendForUser;
+            this.setSendMsg(function (content) {
+                //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
+                self.gamers.forEach(gamer => {
+                    const _data = {
+                        gameState: (() => {
+                            let result = new Object(), l = content.gameState.length;
+                            for (let i = 0; i < l; i++) {
+                                const userState = content.gameState[i];
+                                result['user_' + userState.uid] = clone(userState);
+                                if (userState.uid !== gamer.uid) {
+                                    if (content.isOver) {
+                                        result['user_' + userState.uid].cards = userState.cards;
+                                    } else {
+                                        result['user_' + userState.uid].cards = userState.cards.length;
+                                    }
 
+                                }
                             }
-                        }
-                        return result;
-                    })(),
-                    lastShowCard: content.lastShowCard,
-                    remainCardNumber: content.remainCardNumber,
-                    isOver: (content.isOver ? true : false)
-                }
-                sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
-            });
-        })
-        this.singleGameBegin(scoket);
+                            return result;
+                        })(),
+                        lastShowCard: content.lastShowCard,
+                        remainCardNumber: content.remainCardNumber,
+                        isOver: (content.isOver ? true : false)
+                    }
+                    sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                });
+            })
+            this.singleGameBegin(scoket);
+        } catch (e) {
+            writeLog('begin', e);
+        }
         //this.gameStart();
     }
     //全部局数结束
@@ -167,7 +191,8 @@ class Room {
                 uid: item.uid,
                 name: item.name,
                 point: item.point,
-                winDesc: item.winDesc
+                winDesc: item.winDesc,
+                master: item.master
             }
         }));
     }

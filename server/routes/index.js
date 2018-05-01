@@ -12,7 +12,7 @@ module.exports = (app) => {
     app.get('/room/', function (req, res, next) {
         res.render('room.ejs', {
             title: '掌派桌游-房间',
-            scripts: `<script src='/frame/socket.io-1.4.5.js'></script><script src='/dist/room.bundle.js'></script>`
+            scripts: `<script src='/frame/socket.io-1.4.5.js'></script><script src='/dist/room.bundle.js?dist=043003'></script>`
         });
     });
 

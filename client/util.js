@@ -61,7 +61,7 @@ export function concatCard(state) {
     })
     return allCards;
 }
-export function getRedom(minNum, maxNum) {
+export function getRedomNum(minNum, maxNum) {
     switch (arguments.length) {
         case 1: return parseInt(Math.random() * minNum + 1);
         case 2: return parseInt(Math.random() * (maxNum - minNum + 1) + minNum);
