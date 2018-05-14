@@ -137,7 +137,7 @@ class Majiang {
         });
         this.sendData();
     }
-    //察觉
+    //察叫
     validateCanWin(uid) {
         const userState = this.gameState.find(item => item.uid === uid);
         //要验证的牌（除去缺的牌）

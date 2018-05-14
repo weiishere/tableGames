@@ -7,6 +7,8 @@ import '../reset.less';
 import './style.less';
 import { getQueryString, getColorName, concatCard, getRedom } from '../util';
 import $ from 'jquery';
+import './test2';
+
 const axios = require('axios');
 const Item = Popover.Item;
 
