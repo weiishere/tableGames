@@ -71,14 +71,14 @@ const getCardShowTime = (cards) => {
     return { resultType_1, resultType_2 };
 }
 
-//判断牌组是否都能组成组合
+//返回去掉靠子的牌组（不存在单牌）
 const isAllGroup = (cards) => {
     let { resultType_1, resultType_2 } = getCardShowTime(cards);
     if (resultType_2.one.length === 0) {
         //如果没有耍单的牌，直接通过
         return true;
     } else {
-        //取得耍单的牌，看是否能组成连子，有的话抽出，剩下的牌递归
+        //取得耍单的牌，看是否能组成连子，有的话抽出3个，如果剩下的还有单，那么再抽，直到没有单
         let copy_cards = clone(cards);
         const keBijiao = (_card) => {
             let frist, second;
@@ -89,24 +89,25 @@ const isAllGroup = (cards) => {
             if (frist && second) {
                 //如果有靠的，那么清除掉这三个，继续走
                 copy_cards = copy_cards.filter(card => (card.key !== frist.key && card.key !== second.key));
-                if (copy_cards.length === 0) {
-                    return true;
+                let { resultType_1, resultType_2 } = getCardShowTime(copy_cards);
+                if (resultType_2.one.length !== 0) {
+                    keBijiao(resultType_1[resultType_2.one[0]].type);
                 } else {
-                    const tCard = copy_cards.splice(0, 1)[0];
-                    return keBijiao(tCard);
+                    return copy_cards;
                 }
             } else {
                 //不能胡牌
-                return false;
+                return copy_cards;
             }
         }
-        for (let i = 0; i < resultType_2.one.length; i++) {
-            copy_cards = clone(cards);
-            if (keBijiao(resultType_1[resultType_2.one[i]].type)) {
-                return true;
-            }
-            return false;
+        let { resultType_1, resultType_2 } = getCardShowTime(cards);
+        if (resultType_2.one.length === 0) {
+            //没有单牌
+            return cards;
+        }else{
+            keBijiao(resultType_1[resultType_2.one[0]].type);
         }
+        return false;
     }
 }
 
