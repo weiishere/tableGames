@@ -12,7 +12,7 @@ const axios = require('axios');
 let isBegin = false;
 let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-const ws = io('ws://192.168.31.222:3300/');
+const ws = io('ws://192.168.31.139:3300/');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
