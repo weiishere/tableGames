@@ -5,11 +5,10 @@ import clone from 'clone';
 const thisCards = [
     { color: 't', number: 1, key: 't-1-1' }, { color: 't', number: 1, key: 't-1-2' }, { color: 't', number: 1, key: 't-1-3' },
     { color: 't', number: 2, key: 't-2-1' }, { color: 't', number: 2, key: 't-2-2' }, { color: 't', number: 2, key: 't-2-3' },
-    { color: 't', number: 4, key: 't-4-1' }, { color: 't', number: 4, key: 't-4-2' }, { color: 't', number: 4, key: 't-4-3' },
-    { color: 't', number: 5, key: 't-5-1' }, { color: 't', number: 5, key: 't-5-2' }, { color: 't', number: 5, key: 't-5-3' },
+    { color: 't', number: 3, key: 't-3-1' }, { color: 't', number: 3, key: 't-3-2' }, { color: 't', number: 3, key: 't-3-3' },
+    { color: 'w', number: 3, key: 'w-3-1' }, { color: 'w', number: 4, key: 'w-4-1' }, { color: 'w', number: 5, key: 'w-5-1' },
     { color: 'w', number: 9, key: 'w-9-1' }
 ];
-
 // const thisCards = [
 //     { color: 't', number: 1, key: 't-1-1' }, { color: 't', number: 1, key: 't-1-2' }, { color: 't', number: 2, key: 't-2-1' },
 //     { color: 't', number: 2, key: 't-2-2' }, { color: 't', number: 3, key: 't-3-1' }, { color: 'w', number: 6, key: 'w-6-3' },
@@ -18,17 +17,8 @@ const thisCards = [
 //     { color: 'w', number: 9, key: 'w-9-1' }
 // ];
 
-// const thisCards = [
-//     { color: 't', number: 1, key: 't-1-1' }, { color: 't', number: 1, key: 't-1-2' },
-//     { color: 't', number: 2, key: 't-2-1' }, { color: 't', number: 2, key: 't-2-2' },
-//     { color: 't', number: 3, key: 't-3-1' }, { color: 't', number: 3, key: 't-3-2' },
-//     { color: 't', number: 5, key: 't-5-1' }, { color: 't', number: 5, key: 't-5-2' },
-//     { color: 't', number: 6, key: 't-6-1' }, { color: 't', number: 6, key: 't-6-2' },
-//     { color: 't', number: 7, key: 't-7-1' }, { color: 't', number: 7, key: 't-7-2' },
-//     { color: 't', number: 8, key: 't-8-1' }
-// ];
 
-const thisCompCard = { color: 'w', number: 9, key: 't-9-2' };
+const thisCompCard = { color: 'w', number: 9, key: 'w-9-2' };
 const objectArraySort = function (keyName) {
     return function (objectN, objectM) {
         var valueN = objectN[keyName]
@@ -120,61 +110,12 @@ const getSames = (cards) => {
         }
     }
 }
-//板子判断
-const isBanzi = (cards) => {
-    let { resultType_1, resultType_2 } = getCardShowTime(cards);
-    let twos = resultType_2.two;
-    resultType_2.four.forEach(item => {
-        twos.push(item);
-        twos.push(item);//分解成2个
-    });
-    twos = twos.map(item => { return resultType_1[item].card }).sort((a, b) => { return a.number - b.number; });
-    let dbzCount = 0, xbzCount = 0;
-    for (let i = 0; i < twos.length; i++) {
-        const frist = twos[i];
-        if (!frist) continue;
-        let second = twos.find(item => item.color === frist.color && item.number - frist.number === 1);
-        let third = twos.find(item => item.color === frist.color && item.number - frist.number === 2);
-        let fourth = twos.find(item => item.color === frist.color && item.number - frist.number === 3);
-        if (second && third && fourth) {
-            dbzCount = 1;
-            break;
-        } else if (second && third) {
-            xbzCount++;
-            frist = second = third = null;
-            continue;
-        }
-    }
-    return { dbzCount, xbzCount }
-}
-//飞机判断
-const isFeiji = (cards) => {
-    let { resultType_1, resultType_2 } = getCardShowTime(cards);
-    let three = resultType_2.three;
-    three = three.map(item => { return resultType_1[item].card }).sort((a, b) => { return a.number - b.number; });
-    let dfjCount = 0, xfjCount = 0;
-    for (let i = 0; i < three.length; i++) {
-        const frist = three[i];
-        if (!frist) continue;
-        let second = three.find(item => item.color === frist.color && item.number - frist.number === 1);
-        let third = three.find(item => item.color === frist.color && item.number - frist.number === 2);
-        if (second && third) {
-            dfjCount = 1;
-            break;
-        } else if (second) {
-            xfjCount++;
-            frist = second = null;
-            continue;
-        }
-    }
-    return { dfjCount, xfjCount }
-}
+
 const rules = [
-    //平胡1，缺一门1，基本就是2
     () => {
+        //平胡1，缺一门1，基本就是2
         return { name: '缺一门', multiple: 2 };
     },
-    //是否有中发白
     ({ cards }) => {
         let result = 0, name = [];
         if (cards.allCards.filter(card => card.color === 'hz').length >= 3) { name.push('三红中'); result++; }
@@ -182,41 +123,85 @@ const rules = [
         if (cards.allCards.filter(card => card.color === 'bb').length >= 3) { name.push('三白板'); result++; }
         return { name: name.join(','), multiple: result };
     },
-    //板子、飞机
     ({ cards }) => {
         //大飞机、小飞机、大板子、小板子
+        //223344、778899,去cardsTime2的two、three、four去找，有的话扣除
+        let result;
         const noSamesCards = getSames(cards.allCards);
+        //有无大飞机
         let { resultType_1, resultType_2 } = getCardShowTime(noSamesCards);
-        const threeGroupCount = resultType_2.three.length;
-        let name = '', multiple = 0;
-        const getResult = (dcount, xcount, _name) => {
-            name += dcount !== 0 ? `大${_name}×${dcount}` : '';
-            name += xcount !== 0 ? `小${_name}×${xcount}` : '';
-            multiple += dcount * 5 + xcount;
+        let threeAndFour = clone(resultType_2.three.concat(resultType_2.four));
+        threeAndFour = threeAndFour.map(item => { return resultType_1[item].card }).sort((a, b) => {
+            return a.number - b.number;
+        });
+        let _length = threeAndFour.length;
+        for (let i = 0; i < _length; i++) {
+            const _item = threeAndFour[i];
+            const second = threeAndFour.find(item => item.color === _item.color && item.number - _item.number === 1);
+            const third = threeAndFour.find(item => item.color === _item.color && item.number - _item.number === 2);
+            if (second && third) {
+                //大飞机只可能有一个，所以一旦存在，直接走
+                return { name: '大飞机', multiple: 5 };
+            }
         }
-        if (threeGroupCount <= 1) {
-            //只可能存在板子
-            const { dbzCount, xbzCount } = isBanzi(cards.allCards);
-            getResult(dbzCount, xbzCount, '板子');
-        } else if (threeGroupCount === 2) {
-            const { dfjCount, xfjCount } = isFeiji(cards.allCards);
-            getResult(dfjCount, xfjCount, '飞机');
-            //可能还存在板子
-            const { dbzCount, xbzCount } = isBanzi(cards.allCards);
-            getResult(dbzCount, xbzCount, '板子');
-        } else if (threeGroupCount >= 3) {
-            //不可能存在板子，只可能存在飞机
-            const { dfjCount, xfjCount } = isFeiji(cards.allCards);
-            getResult(dfjCount, xfjCount, '飞机');
+        //判断小飞机（可能有多个）
+        let count = 0;
+        for (let i = 0; i < _length; i++) {
+            if (threeAndFour[i] === null) continue;
+            let _item = threeAndFour[i];
+            let second = threeAndFour.find(item => item.color === _item.color && item.number - _item.number === 1);
+            if (second) {
+                //这里不能清除，清除之后，下一次i+1，那么从第二个开始，第一个就被跳过了，这里设置为null
+                //threeAndFour = threeAndFour.filter(item => item.key !== _item.key && second.key !== item.key);
+                _item = second = null;
+                count++;
+            }
         }
-        return { name: name, multiple: multiple }
-    },
-    //门清（没有碰和杠）
-    ({ cards }) => {
-        if (cards.groupCards.length === 0) {
-            return { name: '门清', multiple: 1 }
+        //如果大小飞机都不是，才再说板子的事情，因为大飞机也可以判断为是板子，但是不能既是大飞机又是板子
+        let twoAndThreeAndFour = clone(threeAndFour.concat(resultType_2.two.map(item => { return resultType_1[item].card })));
+        if (twoAndThreeAndFour.filter(item => item !== null).length < 3) {
+            //如果牌组都小于3了，就不用判断板子了，小板子都需要3对牌
+            return { name: '小飞机', multiple: count };
+        } else {
+            result = count === 0 ? { name: '', multiple: 0 } : { name: '小飞机', multiple: count };
+            //判断大飞机(只可能有一个)
+
+            twoAndThreeAndFour = twoAndThreeAndFour.sort((a, b) => { return a.number - b.number; });
+            let _length2 = twoAndThreeAndFour.length;
+            if (_length2 >= 3) {
+                let count2 = 0;
+                for (let i = 0; i < _length2; i++) {
+                    if (twoAndThreeAndFour[i] === null) continue;
+                    let _item = twoAndThreeAndFour[i];
+                    let second = twoAndThreeAndFour.find(item => item.color === _item.color && item.number - _item.number === 1);
+                    let third = twoAndThreeAndFour.find(item => item.color === _item.color && item.number - _item.number === 2);
+                    let fourth = twoAndThreeAndFour.find(item => item.color === _item.color && item.number - _item.number === 3);
+                    //先判断大飞机
+                    if (second && third && fourth) {
+                        //大板子只可能有一个
+                        result.name += '大板子';
+                        result.multiple += 5;
+                        if (resultType_1[_item.color + _item.number].count !== 4) _item = null;//4个的不要设置为null，可能还有剩余两个，可以组成其他板子，3个的就不说了，肯定不能再组合了
+                        if (resultType_1[second.color + second.number].count !== 4) second = null;
+                        if (resultType_1[third.color + third.number].count !== 4) third = null;
+                        if (resultType_1[fourth.color + fourth.number].count !== 4) fourth = null;
+                        continue;
+                    }
+                    //再来小飞机(可能有多个小飞机)
+                    if (second && third) {
+                        _item = second = third = null;
+                        count2++;
+                    }
+                }
+                if (count2 !== 0) {
+                    result.name += '小板子';
+                    result.multiple += 1;
+                }
+            } else {
+                //组合牌小于3个，肯定什么都不是啊
+            }
         }
-        return { name: '', multiple: 0 }
+        return result;
     }
 ]
 const get = (cards, compCard) => {
