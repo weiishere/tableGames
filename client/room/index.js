@@ -12,7 +12,7 @@ const axios = require('axios');
 let isBegin = false;
 let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-const ws = io('ws://192.168.31.139:3300/');
+const ws = io('ws://localhost:3300/');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -105,7 +105,7 @@ class Table extends Component {
             user: self.state.user,
             roomId: room.roomId,
             option: {
-                gamerNumber: 4,
+                gamerNumber: 2,
                 colorType: roomOption.colorType,//表示两黄牌还是三黄牌
                 mulriple: roomOption.mulriple,//倍数
                 gameTime: roomOption.gameTime
@@ -715,7 +715,7 @@ class GameInfo extends Component {
                                             <li key={`li_${_index}`}>
                                                 第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
                                                 {item.find(user => user.uid === gamer.uid).point}
-                                                <div><i>-{item.find(user => user.uid === gamer.uid).winDesc}-</i></div>
+                                                <div><i>-{item.find(user => user.uid === gamer.uid).winDesc}</i></div>
                                             </li>)
                                     }
                                 </ul>

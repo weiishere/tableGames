@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator } from 'antd-mobile';
+import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator, Stepper } from 'antd-mobile';
 import url from 'url';
 import clone from 'clone';
 import '../reset.less';
 import './style.less';
 import { getQueryString, getColorName, concatCard, getRedom } from '../util';
 import $ from 'jquery';
-import './test2';
+//import './test2';
 
 const axios = require('axios');
 const Item = Popover.Item;
@@ -65,7 +65,7 @@ class NewRoom extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            roomCard: 1,
+            roomCard: 0,
             roomId: 0,
             visible: false,
             modal_visible: false,
@@ -109,13 +109,22 @@ class NewRoom extends Component {
                     <Card.Body>
                         <List>
                             <List.Item>
-                                <InputItem
+                                {/* <InputItem
                                     value={this.state.roomCard}
                                     maxLength={2}
                                     type='number'
                                     placeholder="一张房卡4局"
                                     onChange={v => this.setState({ roomCard: v })}
-                                >使用房卡:</InputItem>
+                                >使用房卡:</InputItem> */}
+                                <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem'  }}>使用房卡</span>
+                                <Stepper
+                                    style={{ width: '7rem', marginLeft: '1rem' }}
+                                    showNumber
+                                    max={5}
+                                    min={0}
+                                    value={this.state.roomCard}
+                                    onChange={v => this.setState({ roomCard: v })}
+                                />
                                 <div className='iconFloat'>
                                     <Icon type='ellipsis' onClick={() => {
                                         this.setState({
@@ -147,12 +156,21 @@ class NewRoom extends Component {
                                 </div>
                             </List.Item>
                             <List.Item>
-                                <InputItem
+                                {/* <InputItem
                                     value={this.state.mulriple}
                                     type='number'
                                     placeholder="虚拟分数的倍数"
                                     onChange={v => this.setState({ mulriple: v })}
-                                >倍数:</InputItem>
+                                >倍数:</InputItem> */}
+                                <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem' }}>倍数</span>
+                                <Stepper
+                                    style={{ width: '7rem', marginLeft: '1rem' }}
+                                    showNumber
+                                    max={10}
+                                    min={1}
+                                    value={this.state.mulriple}
+                                    onChange={v => this.setState({ mulriple: v })}
+                                />
                                 <div className='iconFloat'>
                                     <Icon type='ellipsis' onClick={() => {
                                         this.setState({

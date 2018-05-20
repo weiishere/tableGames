@@ -2,7 +2,7 @@ const getRedom = require('../../util/redom');
 const UUID = require('../../util/uuid');
 const winCore = require('./winCore');
 const clone = require('clone');
-const trggleAction = require('./role');
+const trggleAction = require('./rule')();
 const writeLog = require('../../util/errorLog');
 
 let winActionListening = {};
@@ -218,6 +218,7 @@ class Majiang {
         const showCard = function (data) {
             try {
                 const userState = this.gameState.find(item => item.uid === data.uid);
+                if (userState.testWinType) userState.testWinType = '';//出牌的时候解除胡牌类型监控，？？
                 let showCard;
                 if (userState.fatchCard && userState.fatchCard.key === data.cardKey) {
                     //直接打出了刚刚摸的牌
@@ -482,35 +483,36 @@ class Majiang {
                                 } else {
                                     userState.master = false;
                                 }
+                                userState.groupCards.winCard = doCard;
                                 if (isMineAction) {
-                                    //let winListen = winActionListening.find(item => item.uid === userState);
-                                    //自摸
-                                    //let { action, role, fullMeetCount } = trggleAction('role_chengdu', (winListen ? winListen.type : 'selfWin'), { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
                                     //testWinType可能是天胡、地胡、杠上花之类的行为
-                                    let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
-                                    let roles_multiple = 1;
-                                    roles.forEach(role => {
-                                        roles_multiple = roles_multiple * role.multiple;
-                                    });
-                                    this.castAccounts(userState, 'all', action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
+                                    // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
+                                    // let roles_multiple = 1;
+                                    // roles.forEach(role => {
+                                    //     roles_multiple = roles_multiple * role.multiple;
+                                    // });
+                                    let { action, result, allMultipl } = trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                                    this.castAccounts(userState, 'all', allMultipl);
                                     userState.fatchCard = undefined;
                                     //next = this.getNaxtCacher(userState.uid);
                                     userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
-                                    userState.winDesc = `${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
+                                    userState.winDesc = `${action.name}(${action.multiple}倍) + ${result.map(item => item.name + `(${item.multiple})`)}`;
                                 } else {
                                     //别人点炮
                                     //testWinType可能是杠上炮、抢杠
-                                    let { action, roles, fullMeetCount } = trggleAction('role_chengdu', this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });//点炮
-                                    let roles_multiple = 1;
-                                    roles.forEach(role => {
-                                        roles_multiple = roles_multiple * role.multiple;
-                                    });
+                                    // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });//点炮
+                                    // let roles_multiple = 1;
+                                    // roles.forEach(role => {
+                                    //     roles_multiple = roles_multiple * role.multiple;
+                                    // });
+                                    let { action, result, allMultipl } = trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
                                     userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
-                                    userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
-                                    this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
+                                    userState.winDesc = `${action.name}(${action.multiple}倍) + ${result.map(item => item.name + `(${item.multiple})`)}`;
+                                    //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
+                                    //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
+                                    this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
                                     //next = this.getNaxtCacher(this.lastShowCardUserState.uid);//
                                 }
-                                userState.groupCards.winCard = doCard;
                                 //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听
                                 if (this.gameState.filter(item => item.isWin === false).length === 1) {
                                     //this.isOver = true;
@@ -575,22 +577,22 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
-        //     this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
-        // ].sort(objectArraySort('key'));
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 1)
+        ].sort(objectArraySort('key'));
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
         //     this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
@@ -635,9 +637,13 @@ class Majiang {
             if (userState.winDesc) userState.winDesc = '';
             //判断用户拿到牌之后是否需要用户做出其他选择(胡牌、杠)
             if (!this.doGameState(_uid, cardByCatch, 'self')) {
-                //没有自己没有需要处理的动作，而且是杠的话，那么下一步就是打一张牌出去，此用户头上就要加上杠上炮监听
-                if (listenType && listenType.indexOf('fullMeetWin') !== -1) {
-                    userState['testWinType'] = 'fullMeetLose';
+                //没有自己没有需要处理的动作，而且是杠的话，那么下一步就是打一张牌出去，其他用户头上就要加上杠上炮监听
+                if (listenType && listenType.indexOf('fullMeetLose') !== -1) {
+                    this.gameState.forEach(item => {
+                        if (!item.isWin && item.uid !== userState.uid && item.testWinType && item.testWinType.indexOf('fullMeetLose') === -1) {
+                            item.testWinType = 'fullMeetLose';
+                        }
+                    });
                 }
                 //listenType && (userState['testWinType'] = listenType);
             } else {

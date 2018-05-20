@@ -1,4 +1,4 @@
-import clone from 'clone';
+const clone = require('clone');
 //{color:'fc',number:0,key:'fc-1'}//发财
 //{color:'hz',number:0,key:'hz-1'}//红中
 //{color:'bb',number:0,key:'bb-1'}//白板
@@ -253,7 +253,7 @@ const rules = [
     },
     //卡边吊（只有一个叫）
     ({ cards }) => {
-        return { name: '卡边吊', multiple: 1 }
+        return { name: '卡边吊', multiple: 0 }
     },
     //小三元
     ({ cards }) => {
@@ -348,12 +348,45 @@ const rules = [
         return { name: '', multiple: 0 }
     }
 ]
-const get = (handCards, group) => {
+const actions = [
+    {
+        code: 'triggerWin',
+        name: '点炮',
+        multiple: 0
+    }, {
+        code: 'selfWin',
+        name: '自摸',
+        multiple: 1
+    }, {
+        code: 'beginWin',
+        name: '天胡',
+        multiple: 5//天胡算自摸，一颗
+    }, {
+        code: 'endWin',
+        name: '海底',
+        multiple: 5
+    }, {
+        code: 'fullMeetWin',
+        name: '杠上花',
+        multiple: 5
+    }, {
+        code: 'fullMeetLose',
+        name: '杠上炮',
+        multiple: 5
+    }, {
+        code: 'robFullMeetWin',//被抢杠的人输分翻番
+        name: '抢杠',
+        multiple: 5
+    },
+]
+const trggleAction = (handCards, group, actionName) => {
     let result = [], allMultipl = 0;
     let _handCards = handCards.concat(group.winCard);
     let allCards = concatCard(_handCards, group);//handCards.concat(compCard);
     //let { resultType_1, resultType_2 } = getCardShowTime(allCards);
     const res = getSames(allCards);
+    let action = actions.find(item => item.code === actionName);
+    allMultipl += action.multiple;
     rules.forEach(item => {
         const ruleResult = item({ cards: { allCards: allCards, handCards: _handCards, groupCards: group } });
         if (ruleResult.multiple) {
@@ -364,10 +397,13 @@ const get = (handCards, group) => {
     if (result.find(item => item.name === '大三元')) {
         allMultipl = allMultipl * 2;
     }
-    return { result, allMultipl };
+    console.log(result);
+    return { action, result, allMultipl };
 }
-console.log(get(thisCards, {
-    meet: [],
-    fullMeet: [],
-    winCard: thisCompCard
-}));
+// console.log(get(thisCards, {
+//     meet: [],
+//     fullMeet: [],
+//     winCard: thisCompCard
+// }));
+
+module.exports = trggleAction;
