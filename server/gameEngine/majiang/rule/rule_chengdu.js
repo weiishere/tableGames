@@ -95,9 +95,9 @@ const rules = [
         return { multiple: 0 };
     }, ({ cards, cardsTime2 }) => {
         //七个对牌，不能有杠
-        if (cardsTime2.two.length === 7) {
-            if (cardsTime2.three.length === 0 && cardsTime2.four.length >= 1 && cardsTime2.one.length === 0 && cards.handCards.length === 14) {
-                return { name: '龙七对', multiple: 8 };
+        if (cardsTime2.one.length === 0 && cardsTime2.three.length === 0 && cards.handCards.length === 14) {
+            if (cardsTime2.four.length >= 1) {
+                return { name: '龙七对', multiple: 4 };//因为杠会单独算番，这里只是给个名字
             } else {
                 return { name: '暗七对', multiple: 4 };
             }
