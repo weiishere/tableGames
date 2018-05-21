@@ -208,4 +208,4 @@ const trggleAction = (handCards, group, actionName) => {
     return { action, result, allMultipl };
 }
 
-module.exports = trggleAction;
+module.exports = { trggleAction, option: { zfb: false } };

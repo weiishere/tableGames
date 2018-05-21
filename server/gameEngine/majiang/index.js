@@ -2,7 +2,7 @@ const getRedom = require('../../util/redom');
 const UUID = require('../../util/uuid');
 const winCore = require('./winCore');
 const clone = require('clone');
-const trggleAction = require('./rule')();
+const rule = require('./rule')();
 const writeLog = require('../../util/errorLog');
 
 let winActionListening = {};
@@ -28,7 +28,7 @@ class Majiang {
             //     { uid: '3', increase: 0, cards: [], groupCards: [] },
             //     { uid: '4', increase: 0, cards: [], groupCards: [] }
             // ],
-        }, option || {});
+        }, rule.option, option || {});
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
@@ -80,6 +80,14 @@ class Majiang {
                 }
             }
         });
+        //加入中发白
+        if (this.zfb) {
+            ['hz', 'fc', 'bb'].forEach(cardColor => {
+                for (let i = 1; i <= 4; i++) {
+                    _cards.push({ key: `card-${cardColor}-${i}`, color: cardColor, number: 1 });
+                }
+            })
+        }
         this.lastShowCardUserState = this.gameState.find(item => item.catcher === true);//默认是第一个人
         getRedomCard();
     }
@@ -145,6 +153,11 @@ class Majiang {
         ['w', 't', 'b'].filter(item => item !== userState.colorLack).forEach(color => {
             for (let i = 1; i <= 9; i++) { validateCards.push({ key: color + i, number: i, color: color }); }
         });
+        if (this.zfb) {
+            ['hz', 'fc', 'bb'].forEach((color, i) => {
+                validateCards.push({ key: color + i, number: 1, color: color });
+            });
+        }
         for (let i = 0; i < validateCards.length; i++) {
             const _cards = userState.cards.concat(validateCards[i]).sort(objectArraySort('key'));
             if (winCore(_cards)) return true;
@@ -491,7 +504,7 @@ class Majiang {
                                     // roles.forEach(role => {
                                     //     roles_multiple = roles_multiple * role.multiple;
                                     // });
-                                    let { action, result, allMultipl } = trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
                                     this.castAccounts(userState, 'all', allMultipl);
                                     userState.fatchCard = undefined;
                                     //next = this.getNaxtCacher(userState.uid);
@@ -505,7 +518,7 @@ class Majiang {
                                     // roles.forEach(role => {
                                     //     roles_multiple = roles_multiple * role.multiple;
                                     // });
-                                    let { action, result, allMultipl } = trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
                                     userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
                                     userState.winDesc = `${action.name}(${action.multiple}倍) + ${result.map(item => item.name + `(${item.multiple})`)}`;
                                     //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;

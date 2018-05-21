@@ -270,6 +270,9 @@ const rules = [
         colorArr.forEach(color => {
             for (let i = 1; i <= 9; i++) { validateCards.push({ key: color + i, number: i, color: color }); }
         });
+        ['hz', 'fc', 'bb'].forEach((color, i) => {
+            validateCards.push({ key: color + i, number: 1, color: color });
+        });
         for (let i = 0; i < validateCards.length; i++) {
             const _cards = cards.handCards.concat(validateCards[i]);
             if (winCore(_cards)) winCount.push(_cards);
@@ -435,4 +438,4 @@ const trggleAction = (handCards, group, actionName) => {
 //     winCard: thisCompCard
 // }));
 
-module.exports = trggleAction;
+module.exports = { trggleAction, option: { zfb: true } };
