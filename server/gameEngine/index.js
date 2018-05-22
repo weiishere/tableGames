@@ -4,6 +4,13 @@ const writeLog = require('../util/errorLog');
 const sqliteCommon = require('../sqliteCommon');
 let rooms = [];
 
+
+
+//每10分钟清理一下state=end、上次活跃时间大于1小时且未激活的room，上次活跃时间由sqlite查询获得
+
+
+
+
 module.exports = (io, scoket) => {
     const sendForUser = (uid, content) => {
         for (let i in io.sockets.sockets) {
@@ -155,6 +162,7 @@ module.exports = (io, scoket) => {
                                 gameTime: data.option.gameTime,
                                 state: 'wait',
                                 gameType: 'majiang',
+                                rule: data.option.rule,
                                 colorType: data.option.colorType || 3
                             });
                             rooms.push(room);
@@ -195,6 +203,8 @@ module.exports = (io, scoket) => {
                     sendForUser(data.user.uid, `{"type":"gameData","content":""} `);//重置gameData
                 }
             }
+            //准备时更新下活动状态（主要更新最后活跃时间）
+            sqliteCommon.updateState({ roomId: data.roomId, state: 1 });
             setTimeout(() => {
                 //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                 sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);

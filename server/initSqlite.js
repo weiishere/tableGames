@@ -19,9 +19,9 @@ db.serialize(function () {
         "roomId TEXT PRIMARY KEY NOT NULL," +    //id
         "checkinTime INTEGER," +                 //开房时间
         "updateTime INTEGER," +                 //最后活跃时间
-        "state INTEGER," +                     //状态
+        "state INTEGER," +                     //状态0-初始未激活，1-已激活，2-牌局全部结束
         "checkiner INTEGER," +                 //开房者
-        "jsonData TEXT" +                            //房间jsonData数据
+        "jsonData TEXT" +                      //房间jsonData数据
         ") ", function () {
             console.log('success');
         });

@@ -25,7 +25,7 @@ module.exports = (app) => {
         })
     });
     app.post(path + '/checkin', function (req, res, next) {
-        const { uid, role, mulriple, colorType, countdown } = req.body;
+        const { uid, rule, ruleName, mulriple, colorType, countdown } = req.body;
         const option = {
             gamers: [],
             gamerNumber: 4,
@@ -33,6 +33,8 @@ module.exports = (app) => {
             gameTime: 4,
             state: 'wait',
             gameType: 'majiang',
+            rule: rule,
+            ruleName: ruleName,
             colorType: colorType,
             countdown: countdown
         }

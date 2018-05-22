@@ -72,17 +72,23 @@ class NewRoom extends Component {
             roomInfo_visible: false,
             modal_title: '',
             modal_details: '',
-            role: ['chengdu'],
+            rule: ['chengdu'],
+            ruleName: '',
             mulriple: 1,
             colorType: [3],
             countdown: [20]
         }
+        this.ruleData = [
+            { value: 'chengdu', label: '成都麻将' },
+            { value: 'guangan', label: '广安麻将' }
+        ]
         this.checkinHandler = this.checkinHandler.bind(this);
     }
     checkinHandler() {
         axios.post('/api/checkin', {
             uid: '123456',
-            role: this.state.role[0],
+            rule: this.state.rule[0],
+            ruleName: this.state.ruleName,
             mulriple: this.state.mulriple,
             colorType: this.state.colorType[0],
             countdown: this.state.countdown[0]
@@ -94,6 +100,7 @@ class NewRoom extends Component {
         });
     }
     render() {
+
         return <div className='flex-container'>
             <div className="sub-title">
                 <img src='/images/games/majiang2/roomCheckin.png' />
@@ -116,7 +123,7 @@ class NewRoom extends Component {
                                     placeholder="一张房卡4局"
                                     onChange={v => this.setState({ roomCard: v })}
                                 >使用房卡:</InputItem> */}
-                                <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem'  }}>使用房卡</span>
+                                <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem' }}>使用房卡</span>
                                 <Stepper
                                     style={{ width: '7rem', marginLeft: '1rem' }}
                                     showNumber
@@ -136,13 +143,16 @@ class NewRoom extends Component {
                                 </div>
                             </List.Item>
                             <List.Item>
-                                <Picker data={[
-                                    { value: 'chengdu', label: '成都麻将' },
-                                    { value: 'guangan', label: '广安麻将' }
-                                ]} cols={1}
-                                    value={this.state.role}
-                                    onChange={v => this.setState({ role: v })}
-                                    onOk={v => this.setState({ role: v })}>
+                                <Picker data={this.ruleData} cols={1}
+                                    value={this.state.rule}
+                                    onChange={v => this.setState({
+                                        rule: v,
+                                        ruleName: this.ruleData.find(item => item.value === v[0]).label
+                                    })}
+                                    onOk={v => this.setState({
+                                        rule: v,
+                                        ruleName: this.ruleData.find(item => item.value === v[0]).label
+                                    })}>
                                     <List.Item arrow="horizontal">规则</List.Item>
                                 </Picker>
                                 <div className='iconFloat'>

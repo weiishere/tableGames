@@ -44,8 +44,7 @@ class Table extends Component {
             activeCard: null,
             newState: true,
             isBegin: false,
-            showRecore: false,
-
+            showRecore: false
         }
         // this.option = {
         //     gamerNumber: 4,
@@ -56,6 +55,7 @@ class Table extends Component {
 
         // }
         this.countdown = 60;
+        this.ruleName = '';
         this.gameInit = this.gameInit.bind(this);
         this.gameInfoCloseHandle = this.gameInfoCloseHandle.bind(this);
         this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
@@ -101,11 +101,13 @@ class Table extends Component {
         let once = true;
         const roomOption = JSON.parse(room.jsonData);
         this.countdown = roomOption.countdown;
+        this.ruleName = roomOption.ruleName;
         ws.emit('checkin', JSON.stringify({
             user: self.state.user,
             roomId: room.roomId,
             option: {
                 gamerNumber: 2,
+                rule: roomOption.rule,
                 colorType: roomOption.colorType,//表示两黄牌还是三黄牌
                 mulriple: roomOption.mulriple,//倍数
                 gameTime: roomOption.gameTime
@@ -255,6 +257,7 @@ class Table extends Component {
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
+                <div className='ruleNameBar'>{this.ruleName}</div>
                 {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -745,6 +748,7 @@ class ImgLoader extends Component {
         this.imgList = [
             { key: "b", url: "/images/games/majiang2/b.png" },
             { key: "bg_1", url: "/images/games/majiang2/bg_1.jpg" },
+            { key: "bg_1", url: "/images/games/majiang2/bg_2.jpg" },
             { key: "bg_default", url: "/images/games/majiang2/bg_default.jpg" },
             { key: "center", url: "/images/games/majiang2/center.png" },
             { key: "center_bottom", url: "/images/games/majiang2/center_bottom.png" },

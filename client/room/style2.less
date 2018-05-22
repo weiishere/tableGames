@@ -1,19 +1,24 @@
-.ellipsis{
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap
+.ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
 }
-._transition{-webkit-transition: all 0.1s ease-out;}
-.clearfix{
-    &:after{
-        content:"";
-        height:0;
-        line-height:0;
-        display:block;
-        visibility:hidden;
-        clear:both
+
+._transition {
+    -webkit-transition: all 0.1s ease-out;
+}
+
+.clearfix {
+    &:after {
+        content: "";
+        height: 0;
+        line-height: 0;
+        display: block;
+        visibility: hidden;
+        clear: both
     }
 }
+
 .loadWrap {
     position: absolute;
     left: 0;
@@ -21,17 +26,18 @@
     width: 100%;
     height: 100%;
     background: #484A5F;
-    
-    &>div{
+    &>div {
         position: absolute;
         width: 20rem;
         height: 1rem;
-        border:solid .2rem #64D4E8;
+        border: solid .2rem #64D4E8;
         border-radius: .5rem;
-        top: 0;bottom: 0;
-        left: 0;right: 0;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
         margin: auto;
-        span{
+        span {
             ._transition;
             border-radius: .3rem;
             float: left;
@@ -44,20 +50,21 @@
             text-shadow: 1px 1px 0 #fff;
             box-shadow: 0 0 3.5rem #64D4E8;
         }
-        h3{
+        h3 {
             position: absolute;
             width: 100%;
             bottom: -200%;
             color: #64D4E8;
-            text-align:center;
+            text-align: center;
             font-weight: normal;
         }
     }
 }
-button{
+
+button {
     outline: none;
-    &:active{
-        transform: translate3d(0,.2rem,0)
+    &:active {
+        transform: translate3d(0, .2rem, 0)
     }
 }
 
@@ -65,26 +72,33 @@ button{
     width: 100%;
     margin: 0;
     height: 100%;
-    background: url('/images/games/majiang2/bg_1.jpg');
+    background: url('/images/games/majiang2/bg_2.jpg');
     background-size: 100% 100%;
     position: relative;
-    .mask{
+    .ruleNameBar {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        height: 1.5rem;
+        color: #fff;
+        box-shadow: 1px 1px 1px #000;
+    }
+    .mask {
         position: absolute;
         z-index: 99;
         left: 0;
         top: 0;
         width: 100%;
         height: 100%;
-        background:rgba(0, 0, 0, 0.3);
+        background: rgba(0, 0, 0, 0.3);
     }
-    .gameInfoBar{
+    .gameInfoBar {
         position: absolute;
         z-index: 88;
         width: 15rem;
         height: 2rem;
         right: 0;
-        top:0;
-        // border-left: solid .1rem #ac5618;
+        top: 0; // border-left: solid .1rem #ac5618;
         // border-bottom: solid .1rem #ac5618;
         // border-radius: 0 0 0 1rem;
         //background: #d4ab7fbf;
@@ -93,7 +107,7 @@ button{
         font-size: 1.1rem;
         text-align: center;
         text-shadow: 1px 1px 1px #333;
-        .remain{
+        .remain {
             //background: url('/images/games/majiang2/remain.png');
             width: 11rem;
             height: 1.7rem;
@@ -104,13 +118,13 @@ button{
             border-radius: 1.7rem;
             color: #6EDB97;
             line-height: 1.7rem;
-            b{
+            b {
                 margin: 0 .1rem;
                 font-weight: normal;
                 color: #edf397;
             }
         }
-        button{
+        button {
             width: 2rem;
             height: 2rem;
             margin: 0;
@@ -120,7 +134,7 @@ button{
             background-size: 100% 100%;
         }
     }
-    .gameInfoPanel{
+    .gameInfoPanel {
         position: absolute;
         z-index: 100;
         width: 90%;
@@ -130,11 +144,11 @@ button{
         top: 0;
         bottom: 0;
         margin: auto;
-        background: -webkit-linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.2));
-        border:solid .1rem #fff;
+        background: -webkit-linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+        border: solid .1rem #fff;
         box-shadow: 0 0 .2rem #fff inset;
         border-radius: 2rem;
-        &>header{
+        &>header {
             background: url('/images/games/majiang2/endTitle.png') no-repeat center;
             position: absolute;
             top: -1.5rem;
@@ -142,26 +156,26 @@ button{
             width: 100%;
             background-size: contain
         }
-        .contentWrap{
+        .contentWrap {
             height: 21rem;
             margin-top: 3rem;
             display: flex;
-            .content{
+            .content {
                 height: 21rem;
                 box-sizing: border-box;
                 flex: 1;
-                &>div{
+                &>div {
                     margin: .5rem;
-                    border:solid .3rem #d4ab7f;
+                    border: solid .3rem #d4ab7f;
                     height: 18rem;
                     background: #fcfaed;
                     border-radius: 1rem;
                     overflow: hidden;
-                    &.self{
+                    &.self {
                         border-color: #ce632d;
                         background: #d8ebee
                     }
-                    header{
+                    header {
                         height: 3rem;
                         background: #e7d1a8;
                         text-align: center;
@@ -169,42 +183,47 @@ button{
                         font-weight: bold;
                         color: #b2510c;
                         border-bottom: solid 1px #d4ab7f;
-                        img{width: 1.8rem;height: 1.8rem;border-radius: .9rem;overflow: hidden;;margin-right: .2rem}
-                        span{ }
+                        img {
+                            width: 1.8rem;
+                            height: 1.8rem;
+                            border-radius: .9rem;
+                            overflow: hidden;
+                            ;
+                            margin-right: .2rem
+                        }
+                        span {}
                     }
-                    ul{
+                    ul {
                         list-style: none;
                         margin: 0;
                         height: 12rem;
                         overflow: auto;
-                        li{
+                        li {
                             color: #a4723d;
                             text-align: left;
                             margin: 0 auto;
                             padding-left: .5rem;
                             height: 2.6rem;
-                            &:nth-child(2n){
+                            &:nth-child(2n) {
                                 background: #f1d8c5;
                             }
-                            i{
-                                font-size: .7rem;
-                                // width: 7rem;
+                            i {
+                                font-size: .7rem; // width: 7rem;
                                 // display: inline-block;
-                                color: #666;
-                                // margin-left: .2rem;
+                                color: #666; // margin-left: .2rem;
                                 // vertical-align: middle;
                                 // white-space:nowrap;
                                 // overflow: hidden;
                             }
                         }
                     }
-                    footer{
+                    footer {
                         height: 3rem;
                         background: #e7d1a8;
                         text-align: center;
                         line-height: 3rem;
                         font-weight: bold;
-                        span{
+                        span {
                             font-size: 1.4rem;
                             color: #ac5618;
                             text-shadow: 0px 1px 2px #000;
@@ -213,15 +232,15 @@ button{
                 }
             }
         }
-        &>footer{
+        &>footer {
             position: absolute;
             bottom: 0;
             height: 4rem;
             width: 100%;
             text-align: center;
-            .overWeak{
+            .overWeak {
                 position: absolute;
-                top:-2.5rem;
+                top: -2.5rem;
                 text-align: center;
                 left: 0;
                 right: 0;
@@ -230,37 +249,40 @@ button{
                 background: rgba(0, 0, 0, 0.4);
                 border-radius: 1rem;
                 color: #e7fc46;
-                img{
+                img {
                     vertical-align: middle
                 }
             }
-            .closeBtu{
+            .closeBtu {
                 background: url('/images/games/majiang2/close_btu.png');
                 height: 3rem;
                 width: 6.2rem;
                 background-size: cover;
                 border: 0;
                 padding: 0;
-                
             }
         }
     }
-    .tableCenter{
+    .tableCenter {
         position: absolute;
         width: 8rem;
-        height: 8rem;
-        // top: 11.4rem;
+        height: 8rem; // top: 11.4rem;
         // left: 26rem;
-        top: -4rem;bottom: 0;
-        left: 0;right: 0;
-        transform: scale(.8,.8);
+        top: -4rem;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        transform: scale(.8, .8);
         margin: auto;
         background: url('/images/games/majiang2/center.png');
         background-size: 100% 100%;
         opacity: .8;
-        .center{
+        .center {
             position: absolute;
-            left: 0;right: 0;top: 0;bottom: 0;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
             margin: auto;
             width: 4rem;
             height: 4rem;
@@ -269,7 +291,7 @@ button{
             line-height: 4rem;
             font-size: 1.5rem;
         }
-        .bottom{
+        .bottom {
             background: url('/images/games/majiang2/center_bottom.png');
             position: absolute;
             bottom: -1.3rem;
@@ -278,7 +300,7 @@ button{
             width: 100%;
             background-size: 100% 100%;
         }
-        .left{
+        .left {
             background: url('/images/games/majiang2/center_left.png');
             position: absolute;
             bottom: .5rem;
@@ -287,7 +309,7 @@ button{
             width: 50%;
             background-size: 100% 100%;
         }
-        .right{
+        .right {
             background: url('/images/games/majiang2/center_right.png');
             position: absolute;
             bottom: .5rem;
@@ -296,7 +318,7 @@ button{
             width: 50%;
             background-size: 100% 100%;
         }
-        .top{
+        .top {
             background: url('/images/games/majiang2/center_top.png');
             position: absolute;
             top: -1.3rem;
@@ -306,15 +328,19 @@ button{
             background-size: 100% 100%;
         }
     }
-    &.hideLackIcon{
-        .colorLack{display: none}
+    &.hideLackIcon {
+        .colorLack {
+            display: none
+        }
     }
-    
 }
 
 .userDock {
     position: absolute;
-    left: 1rem;top:0;bottom: 0;margin: auto;
+    left: 1rem;
+    top: 0;
+    bottom: 0;
+    margin: auto;
     width: 5rem;
     height: 6.2rem;
     padding-top: .5rem;
@@ -323,9 +349,9 @@ button{
     background: rgba(255, 255, 255, 0.3);
     box-shadow: 0 0 0.3rem #000;
     border-radius: .4rem;
-    &.winner{
-        &:after{
-            content:'';
+    &.winner {
+        &:after {
+            content: '';
             position: absolute;
             width: 2.2rem;
             height: 1.5rem;
@@ -335,54 +361,57 @@ button{
             background-size: cover;
         }
     }
-    .nameWrap{
+    .nameWrap {
         .ellipsis;
         color: #ddf145;
         text-shadow: 0 0 1px #333;
     }
-    .score{
+    .score {
         color: #ccc
     }
     &>img {
         width: 3rem;
         height: 3rem;
         border-radius: 3rem;
-        border:solid .2rem rgb(117, 94, 17);
+        border: solid .2rem rgb(117, 94, 17);
     }
-    .ready_ok{
+    .ready_ok {
         position: absolute;
-        top:0;
+        top: 0;
         right: -1rem;
         width: 1.5rem;
         height: 2rem;
         background: url('/images/games/majiang2/ok.png');
         background-size: cover;
     }
-    .colorLack{
+    .colorLack {
         position: absolute;
-        top:0;
+        top: 0;
         left: -1rem;
         width: 2rem;
         height: 2rem;
-        img{
+        img {
             width: 100%;
             height: 100%;
         }
     }
 }
 
-.outCardListWrap{
-    &>div{float: left;margin-top: -.7rem;}
+.outCardListWrap {
+    &>div {
+        float: left;
+        margin-top: -.7rem;
+    }
 }
-.winDesc{
+
+.winDesc {
     position: absolute;
     left: 0;
     right: 0;
     bottom: -1rem;
     margin: auto;
     color: #ffc;
-    text-shadow: 0 0 .1em #000;
-    // position: absolute;
+    text-shadow: 0 0 .1em #000; // position: absolute;
     // left: 0;
     // right: 0;
     // //bottom: -1rem;
@@ -412,208 +441,202 @@ button{
 .gamerWrap_mine {
     position: absolute;
     width: 100%;
-    height: 8rem;
-    //border: solid 1px #fff;
+    height: 8rem; //border: solid 1px #fff;
     left: 0;
     bottom: 0;
-    box-sizing: border-box;
-    // .userInfoWrap {
+    box-sizing: border-box; // .userInfoWrap {
     //     .userDock;
     // }
-    .cardListWrap{
+    .cardListWrap {
         .clearfix;
         position: absolute;
         right: 2rem;
-        top:0;bottom: 0;margin: auto;
-        //background: rgba(255, 255, 255, 0.1);
+        top: 0;
+        bottom: 0;
+        margin: auto; //background: rgba(255, 255, 255, 0.1);
         width: 90%;
         height: 5rem;
         text-align: center;
-        .group{
+        .group {
             text-align: left;
             display: inline-block;
             margin: 0 .5rem;
-            &.meet{
+            &.meet {
                 //width:15%;
-                span:last-child{
-                    margin-left:-5rem;
-                    transform:translate3d(0,-1.1rem,0);
+                span:last-child {
+                    margin-left: -5rem;
+                    transform: translate3d(0, -1.1rem, 0);
                 }
             }
-            &.fullmeet{
+            &.fullmeet {
                 //width: 20%;
-                span:last-child{
-                    margin-left:-6.6rem;
-                    transform:translate3d(0,-1.1rem,0);
+                span:last-child {
+                    margin-left: -6.6rem;
+                    transform: translate3d(0, -1.1rem, 0);
                 }
             }
-            
         }
-        .fetchCard{
+        .fetchCard {
             //display: inline-block;
             position: absolute;
             right: 0;
             top: 0;
-        }
-        // &>div{
+        } // &>div{
         //     ._transition
         // }
     }
-    .outCardListWrap{
+    .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
         width: 20rem;
         height: 5rem;
-        left: 0;right: 0;
+        left: 0;
+        right: 0;
         margin: auto;
-        top:-5rem;
+        top: -5rem;
     }
-    .operateWrap{
+    .operateWrap {
         position: absolute;
-        width:100%;
-        top:-3rem;
+        width: 100%;
+        top: -3rem;
         height: 3rem;
         text-align: center;
-        .loadingPanel{
+        .loadingPanel {
             opacity: 0;
             color: #6EDB97;
             position: absolute;
-            left:0;
+            left: 0;
             right: 0;
             bottom: -8rem;
-            background: #66666669;
-            //background: url(/images/games/majiang2/laoding.gif) no-repeat center;
+            background: #66666669; //background: url(/images/games/majiang2/laoding.gif) no-repeat center;
             -webkit-animation: effect_mark2 4s infinite linear;
-            &.action{
+            &.action {
                 -webkit-transition: all 0.1s ease-out 3s;
                 opacity: 1;
             }
         }
     }
-    
 }
 
-.gamerWrap_left{
-    position: absolute; 
-    width: 10rem;
-    //border: solid 1px #fff;
+.gamerWrap_left {
+    position: absolute;
+    width: 10rem; //border: solid 1px #fff;
     left: 0;
     top: 5rem;
     bottom: 8rem;
     box-sizing: border-box;
-    .userDock{
+    .userDock {
         left: 1rem;
     }
-    .cardListWrap{
+    .cardListWrap {
         .clearfix;
         position: absolute;
         right: 1rem;
-        margin: auto;
-        //height: 14.5rem;
+        margin: auto; //height: 14.5rem;
         width: 1.6rem;
         text-align: center;
-        .fetchCard{
+        .fetchCard {
             float: left;
         }
-        .group{
+        .group {
             margin-bottom: .2rem;
             .clearfix;
         }
-        .card_group{
+        .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
-            width: 2rem;height: 1.8rem;
+            width: 2rem;
+            height: 1.8rem;
             margin-left: -.1rem;
             float: left;
             margin-top: -.6rem;
-            img{
-                -webkit-transform:translate3d(.1rem,-.1rem,0) rotate(90deg);
+            img {
+                -webkit-transform: translate3d(.1rem, -.1rem, 0) rotate(90deg);
                 width: 70%;
                 height: 90%;
-                
             }
         }
     }
-    .outCardListWrap{
+    .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
         width: 7.8rem;
         top: 3rem;
         bottom: 3rem;
         margin: auto;
-        left:100%;
+        left: 100%;
     }
 }
-.gamerWrap_right{
-    position: absolute; 
-    width: 10rem;
-    //border: solid 1px #fff;
+
+.gamerWrap_right {
+    position: absolute;
+    width: 10rem; //border: solid 1px #fff;
     right: 0;
     top: 5rem;
     bottom: 8rem;
     box-sizing: border-box;
-    .userDock{
+    .userDock {
         right: 1rem;
         left: auto;
     }
-    .cardListWrap{
+    .cardListWrap {
         .clearfix;
         position: absolute;
-        top:-2rem;left: 1rem;
+        top: -2rem;
+        left: 1rem;
         bottom: 0;
         margin: auto;
         height: 14.5rem;
         width: 1.6rem;
         text-align: center;
-        .card_side_gamer_main{
+        .card_side_gamer_main {
             transform: rotate(0deg)
         }
-        .fetchCard{
+        .fetchCard {
             float: left;
         }
-        .group{
+        .group {
             margin-bottom: .2rem;
             .clearfix;
         }
-        .card_group{
+        .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
-            width: 2rem;height: 1.8rem;
+            width: 2rem;
+            height: 1.8rem;
             margin-left: -.1rem;
             float: left;
             margin-top: -.6rem;
-            img{
-                -webkit-transform:translate3d(-.1rem,-.1rem,0) rotate(-90deg);
+            img {
+                -webkit-transform: translate3d(-.1rem, -.1rem, 0) rotate(-90deg);
                 width: 70%;
                 height: 90%;
-                
             }
         }
     }
-    .outCardListWrap{
+    .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
         width: 7.8rem;
         top: 3rem;
         bottom: 3rem;
         margin: auto;
-        right:100%;
+        right: 100%;
     }
 }
 
-.gamerWrap_top{
-    position: absolute; 
+.gamerWrap_top {
+    position: absolute;
     width: 49rem;
-    height: 5rem;
-    //border: solid 1px #fff;
+    height: 5rem; //border: solid 1px #fff;
     left: 0;
     top: 0;
     box-sizing: border-box;
-    .userDock{
-        top:2rem;
+    .userDock {
+        top: 2rem;
     }
-    .cardListWrap{
+    .cardListWrap {
         .clearfix;
         position: absolute;
-        top:1.5rem;
+        top: 1.5rem;
         left: 10rem;
         right: 1rem;
         margin: auto;
@@ -621,115 +644,118 @@ button{
         margin: auto;
         height: 5rem;
         text-align: center;
-        .card_side_gamer_main{
+        .card_side_gamer_main {
             transform: rotate(0deg)
         }
-        .fetchCard{
+        .fetchCard {
             margin-left: .5rem;
             float: left;
         }
-        .group{
+        .group {
             margin-left: .2rem;
             .clearfix;
             float: left;
         }
-        .card_group{
-            width: 2.5rem;height: 3.3rem;
-            img{
-                -webkit-transform:rotate(180deg);
+        .card_group {
+            width: 2.5rem;
+            height: 3.3rem;
+            img {
+                -webkit-transform: rotate(180deg);
                 margin-top: .3rem
             }
         }
     }
-    .outCardListWrap{
+    .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
         width: 20rem;
         height: 5rem;
-        left: 11rem;right: .5rem;
+        left: 11rem;
+        right: .5rem;
         margin: auto;
-        bottom:-5rem;
+        bottom: -5rem;
     }
 }
-.btu{
+
+.btu {
     ._transition;
     display: inline-block;
     background-size: 100% 100%;
-    &.showCard{
+    &.showCard {
         width: 5.5rem;
         height: 3rem;
         background-image: url('/images/games/majiang2/showCard.png');
         opacity: 0;
-        transform: translate3d(0,0rem,0);
+        transform: translate3d(0, 0rem, 0);
         position: absolute;
         left: 0;
         right: 0;
         margin: auto;
-        &.active{
+        &.active {
             opacity: 1;
-            transform: translate3d(0,-.6rem,0);
+            transform: translate3d(0, -.6rem, 0);
         }
     }
-    &.meet{
+    &.meet {
         width: 5rem;
         height: 4rem;
         background-image: url('/images/games/majiang2/meet.png');
     }
-    &.fullmeet{
+    &.fullmeet {
         width: 5rem;
         height: 4rem;
         background-image: url('/images/games/majiang2/fullmeet.png');
     }
-    &.win{
+    &.win {
         width: 5rem;
         height: 4rem;
         background-image: url('/images/games/majiang2/win.png');
     }
-    &.pass{
+    &.pass {
         width: 5rem;
         height: 4rem;
         background-image: url('/images/games/majiang2/pass.png');
     }
-    &:active{
-        transform: scale(.9,.9);
+    &:active {
+        transform: scale(.9, .9);
     }
-    &.ready{
+    &.ready {
         width: 5.5rem;
         height: 3rem;
         background-image: url('/images/games/majiang2/ready.png');
         margin-bottom: -5rem;
     }
-    &.chooseColor{
+    &.chooseColor {
         width: 5rem;
         height: 5rem;
         margin: 0 1rem;
         ._transition;
-        &.active{
-            transform: scale(.8,.8);
+        &.active {
+            transform: scale(.8, .8);
         }
     }
-    &.chooseB{
+    &.chooseB {
         background-image: url('/images/games/majiang2/chooseB.png');
     }
-    &.chooseT{
+    &.chooseT {
         background-image: url('/images/games/majiang2/chooseT.png');
     }
-    &.chooseW{
+    &.chooseW {
         background-image: url('/images/games/majiang2/chooseW.png');
     }
 }
-.card{
+
+.card {
     display: inline-block;
     background-size: 100% 100%;
     text-align: center;
     position: relative;
     ._transition;
-    &.gray { 
+    &.gray {
         -webkit-filter: grayscale(100%);
         filter: grayscale(100%);
         filter: gray;
-        
-        &:after{
+        &:after {
             position: absolute;
             content: '';
             width: 100%;
@@ -740,8 +766,8 @@ button{
             background: rgba(0, 0, 0, 0.3);
         }
     }
-    &.mark{
-        &:after{
+    &.mark {
+        &:after {
             position: absolute;
             content: '';
             width: 100%;
@@ -753,85 +779,119 @@ button{
             -webkit-animation: effect_mark 1s infinite linear;
         }
     }
-    &.active{
-        -webkit-transform: translate3d(0,-.7rem,0);
+    &.active {
+        -webkit-transform: translate3d(0, -.7rem, 0);
     }
-    &.stress{
-        border:solid .1rem #59f1b2;
-        border-radius:.5rem;
-        //-webkit-animation: effect1 1s infinite linear;
+    &.stress {
+        border: solid .1rem #59f1b2;
+        border-radius: .5rem; //-webkit-animation: effect1 1s infinite linear;
     }
-    img{
+    img {
         width: 85%;
         height: 85%;
     }
-    &.card_face_gamer_main{
+    &.card_face_gamer_main {
         background-image: url('/images/games/majiang2/faceCard.png');
-        width: 2.5rem;height: 3.6rem;
+        width: 2.5rem;
+        height: 3.6rem;
         margin-left: -.2rem;
         float: left;
-        &.stress{
-            border-radius:.2rem;
+        &.stress {
+            border-radius: .2rem;
         }
     }
-    &.card_side_gamer_main{
+    &.card_side_gamer_main {
         background-image: url('/images/games/majiang2/sideCard.png');
-        width: 1rem;height: 2.1rem;
+        width: 1rem;
+        height: 2.1rem;
         margin-left: -.1rem;
         transform: rotate(180deg);
-        margin-top:-1.1rem;
+        margin-top: -1.1rem;
         float: left;
-        &.stress{
-            border-radius:.2rem;
+        &.stress {
+            border-radius: .2rem;
         }
     }
-    &.card_mine_main{
+    &.card_mine_main {
         background-image: url('/images/games/majiang2/mainCard.png');
-        width: 3.4rem;height: 4.5rem;
+        width: 3.4rem;
+        height: 4.5rem;
         margin-left: -.1rem;
-        img{margin-top: .4rem;}
+        img {
+            margin-top: .4rem;
+        }
     }
-    &.card_mine_main_out{
+    &.card_mine_main_out {
         background-image: url('/images/games/majiang2/mainCard_group.png');
-        width: 2rem;height: 2.6rem;
+        width: 2rem;
+        height: 2.6rem;
         margin-left: -.1rem;
-        img{
+        img {
             width: 70%;
             height: 70%;
         }
     }
-    &.card_group{
+    &.card_group {
         background-image: url('/images/games/majiang2/mainCard_group.png');
-        width: 3.4rem;height: 4.5rem;
+        width: 3.4rem;
+        height: 4.5rem;
         margin-left: -.1rem;
-        img{
+        img {
             width: 70%;
             height: 70%;
         }
     }
-    &.card_mine_fetch{
+    &.card_mine_fetch {
         background-image: url('/images/games/majiang2/mainCard.png');
-        width: 3.4rem;height: 4.5rem;
+        width: 3.4rem;
+        height: 4.5rem;
         margin-left: .5rem;
-        
-        img{margin-top: .4rem;}
+        img {
+            margin-top: .4rem;
+        }
     }
 }
+
 @-webkit-keyframes effect1 {
-    0% { border:solid .1rem #59f1b2;}
-    50% { border:solid .3rem #59f1b2; }
-    100% { border:solid .1rem #59f1b2;}
+    0% {
+        border: solid .1rem #59f1b2;
+    }
+    50% {
+        border: solid .3rem #59f1b2;
+    }
+    100% {
+        border: solid .1rem #59f1b2;
+    }
 }
+
 @-webkit-keyframes effect_mark {
-    0% {background: rgba(226, 29, 29, 0.5);}
-    50% {background: rgba(226, 29, 29, 0);}
-    100% {background: rgba(226, 29, 29, 0.5);}
+    0% {
+        background: rgba(226, 29, 29, 0.5);
+    }
+    50% {
+        background: rgba(226, 29, 29, 0);
+    }
+    100% {
+        background: rgba(226, 29, 29, 0.5);
+    }
 }
+
 @-webkit-keyframes effect_mark2 {
-    0% {background: rgba(145, 145, 145, 0.8);}
-    25% {background: rgba(139, 70, 70, 0.8);}
-    50% {background: rgba(201, 76, 76, 0.8);}
-    75% {background: rgba(139, 70, 70, 0.8);}
-    100% {background: rgba(145, 145, 145, 0.8);}
+    0% {
+        background: rgba(145, 145, 145, 0.8);
+    }
+    25% {
+        background: rgba(139, 70, 70, 0.8);
+    }
+    50% {
+        background: rgba(201, 76, 76, 0.8);
+    }
+    75% {
+        background: rgba(139, 70, 70, 0.8);
+    }
+    100% {
+        background: rgba(145, 145, 145, 0.8);
+    }
 }
+
 //-webkit-animation: stress 1s infinite linear;

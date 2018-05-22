@@ -2,28 +2,13 @@ const UUID = require('../util/uuid');
 const Majiang = require('./majiang');
 const clone = require('clone');
 const writeLog = require('../util/errorLog');
+const sqliteCommon = require('../sqliteCommon');
 
 class Room {
     constructor(option) {
         this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
             gamers: [],
-            // gamers: [
-            //     {
-            //         uid: 1,
-            //         name: '葛大爷',
-            //         avatar: '',
-            //         point: 1000,
-            //         state: 'wait'//ready
-            //     },
-            //     {
-            //         uid: 2,
-            //         name: '董卓',
-            //         avatar: '',
-            //         point: 1000,
-            //         state: 'wait'//ready
-            //     }
-            // ],//玩家
             gamerNumber: 4,
             mulriple: 1,//倍数
             score: 100,//底分
@@ -32,6 +17,7 @@ class Room {
             recode: [],
             gameType: 'majiang',//‘jinhua’
             game: {},//正在进行的游戏
+            rule: 'chengdu'
         }, option);
         this.allTime = this.gameTime = this.optionSet.gameTime;//可以玩的次数，备份下，用于显示
         Object.keys(this.optionSet).forEach((item) => {
@@ -63,7 +49,7 @@ class Room {
             gamerMaster = this.gamers[0];//第一局的话，第一个加入的人是庄家
         }
 
-        this.game = new Majiang({ colorType: this.optionSet.colorType, master: gamerMaster });//庄家，上一次第一次胡牌的玩家
+        this.game = new Majiang({ colorType: this.optionSet.colorType, master: gamerMaster, rule: this.optionSet.rule });//庄家，上一次第一次胡牌的玩家
         this.game.setSendMsg(function (content) {
             //监听游戏发出的任何信息
             self.sendMsg && self.sendMsg(content);
@@ -167,6 +153,8 @@ class Room {
     }
     //全部局数结束
     end() {
+        //结束时更新下房间状态
+        sqliteCommon.updateState({ roomId: self.roomId, state: 2 });
         this.state = 'end';
         this.endHandler && this.endHandler();
     }

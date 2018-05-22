@@ -263,8 +263,8 @@ const rules = [
         let colorArr = [];
         let winCount = [];
         cards.allCards.forEach(card => {
-            if (card.color.length === 1 && colorArr.indexOf(item.color) === -1) {
-                colorArr.push(item.color);
+            if (card.color.length === 1 && colorArr.indexOf(card.color) === -1) {
+                colorArr.push(card.color);
             }
         });
         colorArr.forEach(color => {
@@ -276,7 +276,7 @@ const rules = [
         for (let i = 0; i < validateCards.length; i++) {
             const _cards = cards.handCards.concat(validateCards[i]);
             if (winCore(_cards)) winCount.push(_cards);
-            if (winCount.length === 2) break;
+            if (winCount.length === 2) return { name: '', multiple: 0 };
         }
         if (winCount.length === 1) {
             if (winCount[0].number === 5) {
@@ -429,7 +429,7 @@ const trggleAction = (handCards, group, actionName) => {
     if (result.find(item => item.name === '大三元')) {
         allMultipl = allMultipl * 2;
     }
-    console.log(result);
+    //console.log(result);
     return { action, result, allMultipl };
 }
 // console.log(get(thisCards, {
@@ -438,4 +438,4 @@ const trggleAction = (handCards, group, actionName) => {
 //     winCard: thisCompCard
 // }));
 
-module.exports = { trggleAction, option: { zfb: true } };
+module.exports = { trggleAction, option: { zfb: true, ruleName: '广安麻将' } };

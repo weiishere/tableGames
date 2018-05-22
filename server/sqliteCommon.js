@@ -64,7 +64,7 @@ module.exports = {
     updateState: ({ roomId, state }, done, error) => {
         db.serialize(function () {
             //roomId = '6c29d288-81ce-4843-b5b2-25c8b84d4e18'
-            const sql = `UPDATE rooms SET state = ${state} WHERE roomId = "${roomId}"`;
+            const sql = `UPDATE rooms SET state = ${state},updateTime=${Date.now()} WHERE roomId = "${roomId}"`;
             db.run(sql, function (err) {
                 if (err) {
                     if (error) error(err);

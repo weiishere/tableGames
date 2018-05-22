@@ -2,7 +2,8 @@ const getRedom = require('../../util/redom');
 const UUID = require('../../util/uuid');
 const winCore = require('./winCore');
 const clone = require('clone');
-const rule = require('./rule')();
+const getRule = require('./rule');
+let rule = undefined;
 const writeLog = require('../../util/errorLog');
 
 let winActionListening = {};
@@ -19,6 +20,7 @@ const objectArraySort = function (keyName) {
 }
 class Majiang {
     constructor(option) {
+        rule = getRule(option.rule);
         const _option = Object.assign({
             gameId: (new UUID()).generateUUID(),
             gameState: [{ uid: '1' }, { uid: '2' }, { uid: '3' }, { uid: '4' }],
@@ -509,7 +511,7 @@ class Majiang {
                                     userState.fatchCard = undefined;
                                     //next = this.getNaxtCacher(userState.uid);
                                     userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
-                                    userState.winDesc = `${action.name}(${action.multiple}倍) + ${result.map(item => item.name + `(${item.multiple})`)}`;
+                                    userState.winDesc = `${action.name}(${action.multiple}),${result.map(item => item.name + `(${item.multiple})`)}`;
                                 } else {
                                     //别人点炮
                                     //testWinType可能是杠上炮、抢杠
@@ -518,9 +520,9 @@ class Majiang {
                                     // roles.forEach(role => {
                                     //     roles_multiple = roles_multiple * role.multiple;
                                     // });
-                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'triggerWin')
                                     userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
-                                    userState.winDesc = `${action.name}(${action.multiple}倍) + ${result.map(item => item.name + `(${item.multiple})`)}`;
+                                    userState.winDesc = `${action.name}(${action.multiple}),${result.map(item => item.name + `(${item.multiple})`)}`;
                                     //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
                                     //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
                                     this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
@@ -569,7 +571,19 @@ class Majiang {
     }
     //设定庄家，根据上一局的第一赢家
     setFrist() {
-        this.gameState.forEach((state, index) => state.catcher = (state.uid === this.master.uid ? true : false));
+        //优先选择master=true上一次的第一胡牌赢家，如果没有master，再找庄家，如果庄家也找不到了，就设置第一个为catcher
+        const lastMaster = this.gameState.find(state => state.master);
+        if (lastMaster) {
+            this.gameState.forEach((state, index) => state.catcher = (state.uid === lastMaster.uid ? true : false));
+        } else {
+            const fristMaster = this.gameState.find(state => state.uid === this.master.uid);
+            if (fristMaster) {
+                this.gameState.forEach((state, index) => state.catcher = (state.uid === this.master.uid ? true : false));
+            } else {
+                this.gameState.forEach((state, index) => state.catcher = (index === 0 ? true : false));
+            }
+        }
+
     }
     sendData() {
         this.sendMsgHandler({
