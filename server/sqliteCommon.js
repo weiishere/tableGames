@@ -21,7 +21,7 @@ module.exports = {
                     if (error) error(err);
                     throw err;
                 }
-                done(uuid);
+                done && done(uuid);
             });
             // insert.run((new UUID()).generateUUID(), Date.now(), Date.now(), 0, 123);
             // insert.run((new UUID()).generateUUID(), Date.now(), Date.now(), 0, 1234);
@@ -42,7 +42,7 @@ module.exports = {
                     if (error) error(err);
                     throw err;
                 }
-                done(result);
+                done && done(result);
             });
         })
     },
@@ -56,7 +56,7 @@ module.exports = {
                     if (error) error(err);
                     throw err;
                 }
-                done(rows);
+                done && done(rows);
             });
         })
     },
@@ -64,13 +64,28 @@ module.exports = {
     updateState: ({ roomId, state }, done, error) => {
         db.serialize(function () {
             //roomId = '6c29d288-81ce-4843-b5b2-25c8b84d4e18'
-            const sql = `UPDATE rooms SET state = ${state},updateTime=${Date.now()} WHERE roomId = "${roomId}"`;
+            const sql = `UPDATE rooms SET state = ${state},updateTime=${Date.now()} WHERE roomId = "${roomId}" AND (state = 1 or state = 0)`;//只有state=0或1才允许更新数据
             db.run(sql, function (err) {
                 if (err) {
                     if (error) error(err);
                     throw err;
                 }
-                done(this.changes);
+                done && done(this.changes);
+            });
+        })
+    },
+    //删除房间
+    deleteRoom: ({ roomIds }, done, error) => {
+        db.serialize(function () {
+            //roomId = '6c29d288-81ce-4843-b5b2-25c8b84d4e18'
+            const removeRoomIds = roomIds.map(item => "'" + item + "'").join(',');
+            const sql = `DELETE FROM rooms WHERE roomId in (${removeRoomIds})`;//只有state=0或1才允许更新数据
+            db.run(sql, function (err) {
+                if (err) {
+                    if (error) error(err);
+                    throw err;
+                }
+                done && done(this.changes);
             });
         })
     },

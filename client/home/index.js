@@ -3,14 +3,23 @@ import { render } from 'react-dom';
 import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator, Stepper } from 'antd-mobile';
 import url from 'url';
 import clone from 'clone';
+import Cookies from "js-cookie";
 import '../reset.less';
 import './style.less';
 import { getQueryString, getColorName, concatCard, getRedom } from '../util';
 import $ from 'jquery';
-//import './test2';
-
 const axios = require('axios');
 const Item = Popover.Item;
+
+const userInfoCookie = Cookies.get('wxUserInfo');
+if (!userInfoCookie) {
+    location.href = '/auth?target=home';
+} else {
+    console.log(JSON.parse(userInfoCookie));
+    const userInfo = JSON.parse(userInfoCookie);
+    const openId = 12345;
+    const uaerName = 'weishere';
+}
 
 class LayOut extends Component {
     constructor(props) {
@@ -21,8 +30,7 @@ class LayOut extends Component {
         }
     }
     componentDidMount() {
-        const openId = 12345;
-        const uaerName = 'weishere';
+
         // axios.post('/api/login', {
         //     openId: openId
         // }).then(function (response) {

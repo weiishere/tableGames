@@ -140,7 +140,7 @@ const isBanzi = (cards) => {
     twos = twos.map(item => { return resultType_1[item].card }).sort((a, b) => { return a.number - b.number; });
     let dbzCount = 0, xbzCount = 0;
     for (let i = 0; i < twos.length; i++) {
-        const frist = twos[i];
+        let frist = twos[i];
         if (!frist) continue;
         let second = twos.find(item => item.color === frist.color && item.number - frist.number === 1);
         let third = twos.find(item => item.color === frist.color && item.number - frist.number === 2);
@@ -275,7 +275,7 @@ const rules = [
         });
         for (let i = 0; i < validateCards.length; i++) {
             const _cards = cards.handCards.concat(validateCards[i]);
-            if (winCore(_cards)) winCount.push(_cards);
+            if (winCore(_cards)) winCount.push(validateCards[i]);
             if (winCount.length === 2) return { name: '', multiple: 0 };
         }
         if (winCount.length === 1) {

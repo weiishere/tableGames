@@ -24,7 +24,15 @@ window.addEventListener("onsize", function () {
     //console.log(window.orientation);
     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 });
-
+const userInfoCookie = Cookies.get('wxUserInfo');
+if (!userInfoCookie) {
+    location.href = '/auth?target=home';
+} else {
+    console.log(JSON.parse(userInfoCookie));
+    const userInfo = JSON.parse(userInfoCookie);
+    const openId = 12345;
+    const uaerName = 'weishere';
+}
 
 class Table extends Component {
     constructor(props) {
@@ -44,7 +52,8 @@ class Table extends Component {
             activeCard: null,
             newState: true,
             isBegin: false,
-            showRecore: false
+            showRecore: false,
+            option: {}
         }
         // this.option = {
         //     gamerNumber: 4,
@@ -66,8 +75,8 @@ class Table extends Component {
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
         const self = this;
         var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
-        var r = getQueryString('roomId').match(reg);
-        if (!r) {
+        //var r = getQueryString('roomId').match(reg);
+        if (!reg.test(getQueryString('roomId'))) {
             alert('对不起，房间号不合法!');
             return;
         }
@@ -102,16 +111,20 @@ class Table extends Component {
         const roomOption = JSON.parse(room.jsonData);
         this.countdown = roomOption.countdown;
         this.ruleName = roomOption.ruleName;
+        const __option = {
+            gamerNumber: 2,
+            rule: roomOption.rule,
+            colorType: roomOption.colorType,//表示两黄牌还是三黄牌
+            mulriple: roomOption.mulriple,//倍数
+            gameTime: roomOption.gameTime
+        }
+        this.setState({
+            option: __option
+        })
         ws.emit('checkin', JSON.stringify({
             user: self.state.user,
             roomId: room.roomId,
-            option: {
-                gamerNumber: 2,
-                rule: roomOption.rule,
-                colorType: roomOption.colorType,//表示两黄牌还是三黄牌
-                mulriple: roomOption.mulriple,//倍数
-                gameTime: roomOption.gameTime
-            }
+            option: __option
         }));
         ws.on('message', function (msg) {
             const data = JSON.parse(msg);
@@ -257,7 +270,7 @@ class Table extends Component {
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
-                <div className='ruleNameBar'>{this.ruleName}</div>
+                <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -745,43 +758,45 @@ class ImgLoader extends Component {
         super(props);
         this.state = { percent: 0 };
         this.loadedCount = 0;
+        //const host = 'https://yefeng-test.oss-cn-beijing.aliyuncs.com/images/';
+        const host = '/images/games/majiang2/';
         this.imgList = [
-            { key: "b", url: "/images/games/majiang2/b.png" },
-            { key: "bg_1", url: "/images/games/majiang2/bg_1.jpg" },
-            { key: "bg_1", url: "/images/games/majiang2/bg_2.jpg" },
-            { key: "bg_default", url: "/images/games/majiang2/bg_default.jpg" },
-            { key: "center", url: "/images/games/majiang2/center.png" },
-            { key: "center_bottom", url: "/images/games/majiang2/center_bottom.png" },
-            { key: "center_left", url: "/images/games/majiang2/center_left.png" },
-            { key: "center_right", url: "/images/games/majiang2/center_right.png" },
-            { key: "center_top", url: "/images/games/majiang2/center_top.png" },
-            { key: "chooseB", url: "/images/games/majiang2/chooseB.png" },
-            { key: "chooseT", url: "/images/games/majiang2/chooseT.png" },
-            { key: "chooseW", url: "/images/games/majiang2/chooseW.png" },
-            { key: "endTitle", url: "/images/games/majiang2/endTitle.png" },
-            { key: "faceCard", url: "/images/games/majiang2/faceCard.png" },
-            { key: "fullmeet", url: "/images/games/majiang2/fullmeet.png" },
-            { key: "mainCard", url: "/images/games/majiang2/mainCard.png" },
-            { key: "mainCard_group", url: "/images/games/majiang2/mainCard_group.png" },
-            { key: "meet", url: "/images/games/majiang2/meet.png" },
-            { key: "pass", url: "/images/games/majiang2/pass.png" },
-            { key: "ready", url: "/images/games/majiang2/ready.png" },
-            { key: "showCard", url: "/images/games/majiang2/showCard.png" },
-            { key: "sideCard", url: "/images/games/majiang2/sideCard.png" },
-            { key: "sideCard2", url: "/images/games/majiang2/sideCard2.png" },
-            { key: "t", url: "/images/games/majiang2/t.png" },
-            { key: "w", url: "/images/games/majiang2/w.png" },
-            { key: "win", url: "/images/games/majiang2/win.png" },
-            { key: "winner", url: "/images/games/majiang2/winner.png" },
-            { key: "remain", url: "/images/games/majiang2/remain.png" },
-            { key: "record", url: "/images/games/majiang2/record.png" },
-            { key: "close_btu", url: "/images/games/majiang2/close_btu.png" },
-            { key: "msg", url: "/images/games/majiang2/msg.png" }
+            { key: "b", url: host + "/b.png" },
+            { key: "bg_1", url: host + "/bg_1.jpg" },
+            { key: "bg_1", url: host + "/bg_2.jpg" },
+            { key: "bg_default", url: host + "/bg_default.jpg" },
+            { key: "center", url: host + "/center.png" },
+            { key: "center_bottom", url: host + "/center_bottom.png" },
+            { key: "center_left", url: host + "/center_left.png" },
+            { key: "center_right", url: host + "/center_right.png" },
+            { key: "center_top", url: host + "/center_top.png" },
+            { key: "chooseB", url: host + "/chooseB.png" },
+            { key: "chooseT", url: host + "/chooseT.png" },
+            { key: "chooseW", url: host + "/chooseW.png" },
+            { key: "endTitle", url: host + "/endTitle.png" },
+            { key: "faceCard", url: host + "/faceCard.png" },
+            { key: "fullmeet", url: host + "/fullmeet.png" },
+            { key: "mainCard", url: host + "/mainCard.png" },
+            { key: "mainCard_group", url: host + "/mainCard_group.png" },
+            { key: "meet", url: host + "/meet.png" },
+            { key: "pass", url: host + "/pass.png" },
+            { key: "ready", url: host + "/ready.png" },
+            { key: "showCard", url: host + "/showCard.png" },
+            { key: "sideCard", url: host + "/sideCard.png" },
+            { key: "sideCard2", url: host + "/sideCard2.png" },
+            { key: "t", url: host + "/t.png" },
+            { key: "w", url: host + "/w.png" },
+            { key: "win", url: host + "/win.png" },
+            { key: "winner", url: host + "/winner.png" },
+            { key: "remain", url: host + "/remain.png" },
+            { key: "record", url: host + "/record.png" },
+            { key: "close_btu", url: host + "/close_btu.png" },
+            { key: "msg", url: host + "/msg.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {
             cardArr = cardArr.concat(cardColor.map(color => {
-                return { key: color + i, url: "/images/games/majiang2/cards/" + (color + i) + ".png" };
+                return { key: color + i, url: host + "/cards/" + (color + i) + ".png" };
             }));
         }
         this.imgList = this.imgList.concat(cardArr);

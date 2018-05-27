@@ -6,8 +6,26 @@ let rooms = [];
 
 
 
-//每10分钟清理一下state=end、上次活跃时间大于1小时且未激活的room，上次活跃时间由sqlite查询获得
-
+//每60分钟清理一下state=end、上次活跃时间大于1小时且未激活的room，上次活跃时间由sqlite查询获得
+//sqliteCommon.getList({}, (rows) => { console.log(rows) });
+setInterval(function () {
+    sqliteCommon.getList({}, (rows) => {
+        let roomIds = [];
+        rows.forEach(row => {
+            if (Date.now() - row.updateTime >= 60 * 60 * 1000 || row.state === 2) {
+                roomIds.push(row.roomId);
+            }
+        });
+        console.log(roomIds) 
+        sqliteCommon.deleteRoom({ roomIds }, (changes) => {
+            console.log('清理房间数据' + changes + '条');
+        });
+        // roomIds.forEach(itemid => {
+        //     rooms = rooms.filter(room => room.roomId !== itemid);
+        // });
+        rooms = rooms.filter(room => roomIds.indexOf(room.roomId) === -1 ? true : false);//清理内存room的数据
+    });
+}, 60 * 60 * 1000);
 
 
 
@@ -47,10 +65,15 @@ module.exports = (io, scoket) => {
         return null;
     }
     const getRoom = (roomId) => {
-        let room;//user,roomId,state
+        let resultRooms;//user,roomId,state
         const _rooms = rooms.filter(item => item.roomId + '' === roomId);
-        if (_rooms.length === 1) room = _rooms[0];
-        return room;
+        if (_rooms.length === 1) {
+            resultRooms = _rooms[0];
+        } else if (_rooms.length === 0) {
+            //到sqllite里面去找，如果要考虑内存丢失，恢复数据的情况下可以考虑(待定)
+
+        }
+        return resultRooms;
     }
     return {
         connection: () => {
@@ -85,15 +108,16 @@ module.exports = (io, scoket) => {
                 if (otherRoom && otherRoom.roomId !== data.roomId) {
                     setTimeout(() => {
                         console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                        scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（ID:${otherRoom.roomId}）中，退出之前不能再加入其他房间"}`);
+                        scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
                         //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                     }, 2000);
                     return;
                 }
-                const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
-                if (_rooms.length === 1) {
+                //const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
+                const _rooms = getRoom(data.roomId);
+                if (_rooms) {
                     //走加入流程
-                    let room = _rooms[0];
+                    let room = _rooms;
                     const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
                     //data.user['catcher'] = false;
                     scoket.user = data.user;
@@ -132,11 +156,14 @@ module.exports = (io, scoket) => {
                         scoket.on(item.actionName, function (data) {
                             item.actionFn.call(room.game, data);
                         })
-                    })
+                    });
+                    sqliteCommon.updateState({
+                        roomId: data.roomId,
+                        state: 1
+                    });
                 } else {
                     //走建房流程
                     //找到房间后先更新房间状态为1（已激活）
-
                     sqliteCommon.getOne({
                         roomId: data.roomId
                     }, (result) => {
@@ -192,6 +219,12 @@ module.exports = (io, scoket) => {
         },
         ready: (data) => {
             let room = getRoom(data.roomId);
+            if (!room) {
+                setTimeout(() => {
+                    scoket.emit('message', `{"type":"errorInfo","content":"抱歉，此房间已过期..."}`);
+                }, 2000);
+                return;
+            }
             room.setUserState(data.user.uid, data.state);
             if (room.gamers.filter(gamer => gamer.state === 'ready').length === room.gamerNumber) {
                 //准备人数等于规定人数，游戏开始

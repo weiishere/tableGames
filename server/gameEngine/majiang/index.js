@@ -511,7 +511,7 @@ class Majiang {
                                     userState.fatchCard = undefined;
                                     //next = this.getNaxtCacher(userState.uid);
                                     userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
-                                    userState.winDesc = `${action.name}(${action.multiple}),${result.map(item => item.name + `(${item.multiple})`)}`;
+                                    userState.winDesc = `${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                                 } else {
                                     //别人点炮
                                     //testWinType可能是杠上炮、抢杠
@@ -522,7 +522,7 @@ class Majiang {
                                     // });
                                     let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'triggerWin')
                                     userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
-                                    userState.winDesc = `${action.name}(${action.multiple}),${result.map(item => item.name + `(${item.multiple})`)}`;
+                                    userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                                     //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
                                     //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
                                     this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
