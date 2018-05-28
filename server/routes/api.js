@@ -1,9 +1,19 @@
 const axios = require('axios');
 const sqliteCommon = require('../sqliteCommon');
+const apiUrl = 'http://220.167.101.116:8080';
 
 module.exports = (app) => {
-    const apiUrl = 'http://220.167.101.116:8080';
     const path = '/api'
+    app.get(path + '/node/userIsExists', function (req, res, next) {
+        const { openId } = req.body;
+        axios.get(`${apiUrl}/node/userIsExists?openid=${openId}`).then(function (response) {
+            res.json(response.data);
+        }).catch(function (error) {
+            console.log('----------------userIsExists error start----------------------');
+            console.log(error);
+            console.log('-----------------userIsExists error end---------------------');
+        })
+    });
     app.post(path + '/login', function (req, res, next) {
         const { openId } = req.body;
         axios.post(`${apiUrl}/node/userViewByOpenId?openid=${openId}`).then(function (response) {

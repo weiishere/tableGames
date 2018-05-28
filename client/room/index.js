@@ -7,13 +7,14 @@ import './style2.less';
 import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum } from '../util';
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
+import Cookies from "js-cookie";
 const axios = require('axios');
-
+let userInfo;
 let isBegin = false;
 let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-const ws = io('ws://localhost:3300/');
-//const ws = io('ws://220.167.101.116:3300');
+//const ws = io('ws://localhost:3300/');
+const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
 window.addEventListener("orientationchange", function () {
@@ -30,8 +31,8 @@ if (!userInfoCookie) {
 } else {
     console.log(JSON.parse(userInfoCookie));
     const userInfo = JSON.parse(userInfoCookie);
-    const openId = 12345;
-    const uaerName = 'weishere';
+    // const openId = 12345;
+    // const uaerName = 'weishere';
 }
 
 class Table extends Component {
@@ -39,10 +40,10 @@ class Table extends Component {
         super(props);
         this.state = {
             user: {
-                uid: getQueryString('uid'),
-                name: getQueryString('name'),
+                uid: userInfo.userid,//getQueryString('uid'),
+                name: userInfo.nickName,//getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
-                avatar: '/images/games/majiang/head.jpg',
+                avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 state: 'wait',
             },
             //roomId: getQueryString('roomId'),
@@ -112,7 +113,7 @@ class Table extends Component {
         this.countdown = roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 2,
+            gamerNumber: 4,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数

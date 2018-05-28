@@ -10,15 +10,16 @@ import { getQueryString, getColorName, concatCard, getRedom } from '../util';
 import $ from 'jquery';
 const axios = require('axios');
 const Item = Popover.Item;
+let userInfo;
 
 const userInfoCookie = Cookies.get('wxUserInfo');
 if (!userInfoCookie) {
     location.href = '/auth?target=home';
 } else {
     console.log(JSON.parse(userInfoCookie));
-    const userInfo = JSON.parse(userInfoCookie);
-    const openId = 12345;
-    const uaerName = 'weishere';
+    userInfo = JSON.parse(userInfoCookie);
+    //const openId = 12345;
+    //const uaerName = 'weishere';
 }
 
 class LayOut extends Component {
@@ -52,12 +53,12 @@ class LayOut extends Component {
             this.setState({
                 isAllow: true,
                 user: {
-                    openId,
-                    uid: '123',
-                    userName: 'weishere'
+                    openId: userInfo.openid,
+                    uid: userInfo.userid,//'123',
+                    userName: userInfo.nickname//'weishere'
                 }
             })
-        }, 3000);
+        }, 1000);
     }
     render() {
         return this.state.isAllow ? <NewRoom user={this.state.user} /> : <div className="toast-example">
