@@ -9,11 +9,15 @@ import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 const axios = require('axios');
-let userInfo;
+let userInfo = {
+    userid: 123456,
+    nickName: 'huangwei',
+    headimgurl: '/images/games/majiang/head.jpg'
+};
 let isBegin = false;
 let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-//const ws = io('ws://localhost:3300/');
+//const ws = io('ws://localhost/');
 const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -25,14 +29,15 @@ window.addEventListener("onsize", function () {
     //console.log(window.orientation);
     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 });
+
+
+
 const userInfoCookie = Cookies.get('wxUserInfo');
 if (!userInfoCookie) {
-    location.href = '/auth?target=home';
+    location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
 } else {
     console.log(JSON.parse(userInfoCookie));
-    const userInfo = JSON.parse(userInfoCookie);
-    // const openId = 12345;
-    // const uaerName = 'weishere';
+    userInfo = JSON.parse(userInfoCookie);
 }
 
 class Table extends Component {
@@ -41,7 +46,7 @@ class Table extends Component {
         this.state = {
             user: {
                 uid: userInfo.userid,//getQueryString('uid'),
-                name: userInfo.nickName,//getQueryString('name'),
+                name: userInfo.nickname,//getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 state: 'wait',
@@ -292,7 +297,11 @@ class Table extends Component {
                 ]}>{this.state.game && this.state.showRecore &&
                     <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.state.room} game={this.state.game} />}
                 </QueueAnim>
-            </div></QueueAnim>
+            </div>
+            <div className='orientationWeak'>
+                <span>为了更好的游戏体验，请使用横屏模式，iPhone用户请直接允许系统横屏，Android用户微信请设置：横屏设置：我-设置-通用-开启横屏模式</span>
+            </div>
+        </QueueAnim>
     }
 }
 class Countdown extends Component {

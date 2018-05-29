@@ -853,6 +853,37 @@ button {
     }
 }
 
+@media screen and (orientation: portrait) {
+    /*竖屏 css*/
+    .orientationWeak {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        span {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
+            width: 80%;
+            height: 5rem;
+            font-size: 2rem;
+            text-align: center;
+        }
+    }
+}
+
+@media screen and (orientation: landscape) {
+    /*横屏 css*/
+    .orientationWeak {
+        display: none
+    }
+}
+
 @-webkit-keyframes effect1 {
     0% {
         border: solid .1rem #59f1b2;

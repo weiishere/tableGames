@@ -167,6 +167,7 @@ module.exports = (io, scoket) => {
                     sqliteCommon.getOne({
                         roomId: data.roomId
                     }, (result) => {
+                        console.log(result);
                         if (+result.checkiner !== +data.user.uid) {
                             //非创建者开房，弹出未激活
                             setTimeout(() => {

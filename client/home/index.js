@@ -10,7 +10,11 @@ import { getQueryString, getColorName, concatCard, getRedom } from '../util';
 import $ from 'jquery';
 const axios = require('axios');
 const Item = Popover.Item;
-let userInfo;
+let userInfo = {
+    userid: 123456,
+    nickName: 'huangwei',
+    headimgurl: '/images/games/majiang/head.jpg'
+};
 
 const userInfoCookie = Cookies.get('wxUserInfo');
 if (!userInfoCookie) {
@@ -18,8 +22,6 @@ if (!userInfoCookie) {
 } else {
     console.log(JSON.parse(userInfoCookie));
     userInfo = JSON.parse(userInfoCookie);
-    //const openId = 12345;
-    //const uaerName = 'weishere';
 }
 
 class LayOut extends Component {
@@ -27,7 +29,7 @@ class LayOut extends Component {
         super(props);
         this.state = {
             isAllow: false,
-            user: {}
+            user: userInfo
         }
     }
     componentDidMount() {
@@ -51,12 +53,7 @@ class LayOut extends Component {
         // });
         window.setTimeout(() => {
             this.setState({
-                isAllow: true,
-                user: {
-                    openId: userInfo.openid,
-                    uid: userInfo.userid,//'123',
-                    userName: userInfo.nickname//'weishere'
-                }
+                isAllow: true
             })
         }, 1000);
     }
@@ -73,6 +70,7 @@ class LayOut extends Component {
 class NewRoom extends Component {
     constructor(props) {
         super(props);
+        
         this.state = {
             roomCard: 0,
             roomId: 0,
@@ -82,7 +80,7 @@ class NewRoom extends Component {
             modal_title: '',
             modal_details: '',
             rule: ['chengdu'],
-            ruleName: '',
+            ruleName: '成都麻将',
             mulriple: 1,
             colorType: [3],
             countdown: [20]
@@ -95,7 +93,7 @@ class NewRoom extends Component {
     }
     checkinHandler() {
         axios.post('/api/checkin', {
-            uid: '123456',
+            uid: this.props.user.userid,
             rule: this.state.rule[0],
             ruleName: this.state.ruleName,
             mulriple: this.state.mulriple,
@@ -114,6 +112,7 @@ class NewRoom extends Component {
             <div className="sub-title">
                 <img src='/images/games/majiang2/roomCheckin.png' />
             </div>
+
             <WingBlank size="lg">
                 <WhiteSpace size="lg" />
                 <Card>
@@ -269,8 +268,8 @@ class NewRoom extends Component {
                 footer={[{ text: '跳转', onPress: () => { } }]}
             >
                 <div style={{ textAlign: 'left' }}>
-                    请点击<a href={`http://localhost:3300/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~
-                <div>http://localhost:3300/room?roomId={this.state.roomId}</div>
+                    请点击<a href={`http://www.fanstongs.com/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~
+                <div>http://fanstongs.com/room?roomId={this.state.roomId}</div>
                 </div>
             </Modal>
         </div>

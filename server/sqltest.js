@@ -22,12 +22,20 @@ db.serialize(function () {
     // })
 
     // sqliteCommon.getOne({
-    //     roomId: 'b83635a6-2f0e-445b-aaa7-8aa7c29bf586'
+    //     roomId: '4531a5ec-f45b-4c20-a97e-bf6d158b2aef'
     // }, function (data) {
     //     console.log(data);
     // })
-
-    sqliteCommon.getList({ }, function (data) {
-        console.log(data);
-    })
+    
+    const sql = `select * from rooms where roomId="4531a5ec-f45b-4c20-a97e-bf6d158b2aef"`;
+    db.get(sql, function (err, result) {
+        if (err) {
+            if (error) error(err);
+            throw err;
+        }
+        console.log(result);
+    });
+    // sqliteCommon.getList({ }, function (data) {
+    //     console.log(data);
+    // })
 });

@@ -60,18 +60,18 @@ module.exports = (app) => {
         const openid = result.data.openid;
         console.log(accessToken + '---' + openid);
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
-        let userinfo = await oauth.getUser(openid);
+        let userInfo = await oauth.getUser(openid);
 
         console.log("userInfo:" + userInfo);
-        axios.get(`http://manage.fanstongs.com/api/login?openid=${userinfo.openid}&token=${getToken()}&username=${userinfo.niceName}&head=${userinfo.headimgurl}`, {
+        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.niceName}&head=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
             console.log(response.data)
-            userinfo['userid'] = response.data.userid;
-            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)));
+            userInfo['userid'] = response.data.userid;
+            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
         }).catch(function (error) {
             console.log('----------------login api error start----------------------');
@@ -100,7 +100,7 @@ module.exports = (app) => {
             }
         }).then(function (response) {
             console.log(response.data)
-            userinfo['userid'] = response.data.userid;
+            userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)));
             res.redirect(`/${state}`);
         }).catch(function (error) {
