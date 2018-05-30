@@ -39,7 +39,7 @@ const webpackConfig = {
 
   output: {
     // 编译输出目录, 不能省略
-    path: path.resolve(appPath, 'dist'),
+    path: path.resolve(appPath, 'dist/'),
     filename: '[name].bundle.js', //文件名称
     publicPath: '/dist/' //资源上下文路径
   },
@@ -49,9 +49,6 @@ const webpackConfig = {
       test: /\.(js|jsx)$/,
       loader: 'babel-loader?cacheDirectory=true',
       exclude: /(node_modules|bower_components)/,
-      // query: {
-      //   presets: ['es2015']
-      // }
       query: {
         plugins: [["import", { libraryName: "antd-mobile", style: true }]]
       }

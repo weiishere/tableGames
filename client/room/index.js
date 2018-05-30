@@ -356,7 +356,7 @@ class GamerDock extends Component {
     }
     render() {
         return <div className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
-            <img src='/images/games/majiang/head.jpg' />
+            <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
             <div className='score'>{this.getTotal()}</div>
