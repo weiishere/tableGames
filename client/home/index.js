@@ -11,17 +11,20 @@ import $ from 'jquery';
 const axios = require('axios');
 const Item = Popover.Item;
 let userInfo = {
-    userid: 123456,
-    nickName: 'huangwei',
+    userid: getQueryString('uid'),
+    nickname: 'huangwei',
     headimgurl: '/images/games/majiang/head.jpg'
 };
 
-const userInfoCookie = Cookies.get('wxUserInfo');
-if (!userInfoCookie) {
-    location.href = '/auth?target=home';
-} else {
-    console.log(JSON.parse(userInfoCookie));
-    userInfo = JSON.parse(userInfoCookie);
+
+if (process.env.NODE_ENV !== 'development') {
+    const userInfoCookie = Cookies.get('wxUserInfo');
+    if (!userInfoCookie) {
+        location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
+    } else {
+        console.log(JSON.parse(userInfoCookie));
+        userInfo = JSON.parse(userInfoCookie);
+    }
 }
 
 class LayOut extends Component {
@@ -70,7 +73,7 @@ class LayOut extends Component {
 class NewRoom extends Component {
     constructor(props) {
         super(props);
-        
+
         this.state = {
             roomCard: 0,
             roomId: 0,

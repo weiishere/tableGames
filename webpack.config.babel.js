@@ -91,7 +91,7 @@ const webpackConfig = {
     new webpack.HotModuleReplacementPlugin(), // 热部署替换模块
     new webpack.DefinePlugin({
       'process.env': {
-        'process.env.NODE_ENV': JSON.stringify('development'),
+        'NODE_ENV': JSON.stringify('development'),
       }
     })
   ]

@@ -10,15 +10,20 @@ import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 const axios = require('axios');
 let userInfo = {
-    userid: 123456,
-    nickName: 'huangwei',
+    userid: getQueryString('uid'),
+    nickname: 'huangwei',
     headimgurl: '/images/games/majiang/head.jpg'
 };
 let isBegin = false;
 let newRecore = false;
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-//const ws = io('ws://localhost/');
-const ws = io('ws://220.167.101.116:3300');
+window.addEventListener("onorientationchange" in window ? "orientationchange" : "resize", function () {
+    window.setTimeout(function () {
+        document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
+    }, 1000);
+}, false);
+const ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
+//const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
 window.addEventListener("orientationchange", function () {
@@ -31,14 +36,16 @@ window.addEventListener("onsize", function () {
 });
 
 
-
-const userInfoCookie = Cookies.get('wxUserInfo');
-if (!userInfoCookie) {
-    location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
-} else {
-    console.log(JSON.parse(userInfoCookie));
-    userInfo = JSON.parse(userInfoCookie);
+if (process.env.NODE_ENV !== 'development') {
+    const userInfoCookie = Cookies.get('wxUserInfo');
+    if (!userInfoCookie) {
+        location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
+    } else {
+        console.log(JSON.parse(userInfoCookie));
+        userInfo = JSON.parse(userInfoCookie);
+    }
 }
+
 
 class Table extends Component {
     constructor(props) {
@@ -118,7 +125,7 @@ class Table extends Component {
         this.countdown = roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 4,
+            gamerNumber: 2,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -160,7 +167,7 @@ class Table extends Component {
                     history.back();
                     break;
             }
-            console.log(data.content);
+            process.env.NODE_ENV === 'development' && console.log(data.content);
         });
         const timerforBegin = window.setInterval(() => {
             if (isBegin === true) {
@@ -457,7 +464,9 @@ class Gamer_mine extends Component {
         } else {
             if (card.key === this.state.activeCard.key) {
                 this.showCard();
-                //this.setState({ activeCard: {} });
+                if (this.props.userState.catcher) {
+                    this.setState({ activeCard: card });
+                }
             } else {
                 this.setState({ activeCard: card });
             }

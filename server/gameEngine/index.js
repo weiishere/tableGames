@@ -103,22 +103,25 @@ module.exports = (io, scoket) => {
         },
         checkin: (data) => {
             try {
-                //let data = JSON.parse(_data);//user, roomId, option
-                const otherRoom = findUserInRoom(data.user.uid);
-                if (otherRoom && otherRoom.roomId !== data.roomId) {
-                    setTimeout(() => {
-                        console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                        scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
-                        //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                    }, 2000);
-                    return;
-                }
+                //判断是否在其他牌局当中（暂时取消这个约束）
+                // const otherRoom = findUserInRoom(data.user.uid);
+                // if (otherRoom && otherRoom.roomId !== data.roomId) {
+                //     setTimeout(() => {
+                //         console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                //         scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
+                //         //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                //     }, 2000);
+                //     return;
+                // }
                 //const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
                 const _rooms = getRoom(data.roomId);
                 if (_rooms) {
                     //走加入流程
                     let room = _rooms;
-                    const isInRoom = room.gamers.filter(gamer => gamer.uid + '' === data.user.uid).length === 0 ? false : true;
+                    console.log(data.user.uid);
+                    console.log(room.gamers);
+                    const isInRoom = room.gamers.filter(gamer => gamer.uid === data.user.uid).length === 0 ? false : true;
+                    console.log(isInRoom);
                     //data.user['catcher'] = false;
                     scoket.user = data.user;
                     if (!isInRoom) {
@@ -130,7 +133,7 @@ module.exports = (io, scoket) => {
                             //scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`);
                             return;
                         }
-                        console.log(data.user.name + '加入房间ID:' + room.roomId);
+                        //console.log(data.user.name + '加入房间ID:' + room.roomId);
                         room.gamerJoin(data.user);
                         //为用户注册scoket事件
                         //room.game.regAction(scoket, room);
@@ -167,7 +170,7 @@ module.exports = (io, scoket) => {
                     sqliteCommon.getOne({
                         roomId: data.roomId
                     }, (result) => {
-                        console.log(result);
+                        //console.log(result);
                         if (+result.checkiner !== +data.user.uid) {
                             //非创建者开房，弹出未激活
                             setTimeout(() => {
