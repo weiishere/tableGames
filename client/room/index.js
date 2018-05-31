@@ -8,7 +8,11 @@ import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum } from
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
+import wechatConfig from '../wxConfig';
 const axios = require('axios');
+const Wechat = require('wechat-jssdk');
+const wx = new Wechat(wechatConfig);
+
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: 'huangwei',

@@ -3,7 +3,6 @@ const fs = require('fs');
 const webpack = require('webpack');
 const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
-const NodemonPlugin = require( 'nodemon-webpack-plugin' )
 const appPath = path.resolve(__dirname, 'public');
 const nodeModules = path.resolve(__dirname, 'node_modules');
 
