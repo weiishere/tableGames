@@ -8,10 +8,10 @@ import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum } from
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
-import wechatConfig from '../wxConfig';
+//import wechatConfig from '../wxConfig';
 const axios = require('axios');
-const Wechat = require('wechat-jssdk');
-const wx = new Wechat(wechatConfig);
+//const Wechat = require('wechat-jssdk');
+//const wx = new Wechat(wechatConfig);
 
 let userInfo = {
     userid: getQueryString('uid'),
@@ -134,10 +134,10 @@ class Table extends Component {
         const self = this;
         let once = true;
         const roomOption = JSON.parse(room.jsonData);
-        this.countdown = roomOption.countdown;
+        this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 2,
+            gamerNumber: 3,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
