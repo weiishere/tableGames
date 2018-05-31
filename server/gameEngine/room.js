@@ -50,9 +50,9 @@ class Room {
         }
 
         this.game = new Majiang({ colorType: this.optionSet.colorType, master: gamerMaster, rule: this.optionSet.rule });//庄家，上一次第一次胡牌的玩家
-        this.game.setSendMsg(function (content) {
+        this.game.setSendMsg(function (content, uid) {
             //监听游戏发出的任何信息
-            self.sendMsg && self.sendMsg(content);
+            self.sendMsg && self.sendMsg(content, uid);
         })
         this.game.setOverHander(function () {
             //监听单局游戏结束，进入下一局
@@ -118,7 +118,7 @@ class Room {
             const self = this;
             this.sendForRoom = sendForRoom;
             this.sendForUser = sendForUser;
-            this.setSendMsg(function (content) {
+            this.setSendMsg(function (content, uid) {
                 //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
                 self.gamers.forEach(gamer => {
                     const _data = {
@@ -142,7 +142,14 @@ class Room {
                         remainCardNumber: content.remainCardNumber,
                         isOver: (content.isOver ? true : false)
                     }
-                    sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                    if (uid) {
+                        if (gamer.uid === uid) {
+                            sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                        }
+                    } else {
+                        sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                    }
+
                 });
             })
             this.singleGameBegin(scoket);

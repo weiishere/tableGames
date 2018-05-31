@@ -7,6 +7,11 @@ const appPath = path.resolve(__dirname, 'public');
 const version = 'v1'
 
 const pro_config = extend(config, {
+  entry: {
+    //app: './server/app.js',
+    home: ['./client/home/index'],
+    room: ['./client/room/index']
+  },
   output: {
     // 编译输出目录, 不能省略
     path: path.resolve(appPath, `dist_${version}/`),

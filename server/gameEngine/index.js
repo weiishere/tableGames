@@ -16,7 +16,7 @@ setInterval(function () {
                 roomIds.push(row.roomId);
             }
         });
-        console.log(roomIds) 
+        console.log(roomIds)
         sqliteCommon.deleteRoom({ roomIds }, (changes) => {
             console.log('清理房间数据' + changes + '条');
         });
@@ -76,8 +76,9 @@ module.exports = (io, scoket) => {
         return resultRooms;
     }
     return {
-        connection: () => {
+        connection: (scoket) => {
             //console.log('接入链接-------------------------scoket.id ' + scoket.id);
+            
         },
         disconnect: () => {
             //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
@@ -86,6 +87,7 @@ module.exports = (io, scoket) => {
             if (room) {
                 if (room.state === 'playing') {
                     //正在进行的游戏
+                    room.game.regAction(scoket, this);
                 } else {
                     room.gamerLeave(scoket.user.uid);
                     if (room.gamers.length === 0) {
@@ -118,10 +120,7 @@ module.exports = (io, scoket) => {
                 if (_rooms) {
                     //走加入流程
                     let room = _rooms;
-                    console.log(data.user.uid);
-                    console.log(room.gamers);
                     const isInRoom = room.gamers.filter(gamer => gamer.uid === data.user.uid).length === 0 ? false : true;
-                    console.log(isInRoom);
                     //data.user['catcher'] = false;
                     scoket.user = data.user;
                     if (!isInRoom) {
@@ -171,7 +170,7 @@ module.exports = (io, scoket) => {
                         roomId: data.roomId
                     }, (result) => {
                         //console.log(result);
-                        if (+result.checkiner !== +data.user.uid) {
+                        if (+result.checkiner !== +data.user.uid && result.state === 0) {
                             //非创建者开房，弹出未激活
                             setTimeout(() => {
                                 scoket.emit('message', `{"type":"errorInfo","content":"对不起，此房间尚未由创建者激活，请稍候..."}`);
@@ -246,6 +245,16 @@ module.exports = (io, scoket) => {
                 //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                 sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
             }, 50);
+        },
+        heartBeat: (data) => {
+            const room = findUserInRoom(data.uid);
+            if (room) {
+                if (room.state === 'playing') {
+                    room.game.sendData(data.uid);
+                }
+            }
+            // const room = getRoom(data.roomId);
+            // room.game.sendData();
         }
         //注册游戏客户端动作
         // regAction: (scoket) => {

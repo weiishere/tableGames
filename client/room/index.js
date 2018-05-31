@@ -22,7 +22,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-const ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
+const ws = process.env.NODE_ENV === 'development' ? io('ws://127.20.10.9/') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -83,6 +83,13 @@ class Table extends Component {
         this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
         this.readyCallback = this.readyCallback.bind(this);
         this.showCardAuto = this.showCardAuto.bind(this);
+        this.heartBeat = this.heartBeat.bind(this);
+    }
+    heartBeat({ roomId, uid }) {
+        //心跳
+        window.setInterval(() => {
+            ws.emit('heartBeat', JSON.stringify({ roomId, uid }));
+        }, 10000);
     }
     componentDidMount() {
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
@@ -109,6 +116,7 @@ class Table extends Component {
                     return false;
                 } else {
                     self.gameInit(room);
+                    this.heartBeat({ roomId: room.roomId, uid: this.state.user.uid });
                     // self.gameInit({
                     //     roomId: '292f0a78-e304-48cc-9aea-4fd0a7341347',
                     //     jsonData: JSON.stringify({ countdown: 30, colorType: 3, mulriple: 1, gameTime: 4 })
@@ -125,7 +133,7 @@ class Table extends Component {
         this.countdown = roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 4,
+            gamerNumber: 2,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -164,7 +172,7 @@ class Table extends Component {
                     break;
                 case 'errorInfo':
                     alert(data.content);
-                    history.back();
+                    //history.back();
                     break;
             }
             process.env.NODE_ENV === 'development' && console.log(data.content);

@@ -4,7 +4,7 @@
   "description": "",
   "main": "./server/app.js",
   "scripts": {
-    "start": "pm2 start process.prod.json --no-daemon",
+    "start": "node ./server/app.js",
     "build": "webpack  --config webpack.config.babel.prod.js",
     "dev": "nodemon --config nodemon.json ./server/app.js"
   },
@@ -77,6 +77,7 @@
     "koa-webpack-middleware": "^1.0.7",
     "less": "^3.0.4",
     "less-loader": "^4.1.0",
+    "nodemon-webpack-plugin": "^3.0.1",
     "postcss-loader": "^2.1.5",
     "style-loader": "^0.20.3",
     "webpack-hot-middleware": "^2.22.2"

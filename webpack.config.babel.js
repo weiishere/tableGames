@@ -3,6 +3,7 @@ const fs = require('fs');
 const webpack = require('webpack');
 const autoprefixer = require('autoprefixer');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const NodemonPlugin = require( 'nodemon-webpack-plugin' )
 const appPath = path.resolve(__dirname, 'public');
 const nodeModules = path.resolve(__dirname, 'node_modules');
 
@@ -26,24 +27,17 @@ const webpackConfig = {
     //   'react-router-redux': path.resolve(nodeModules, 'react-router-redux-fixed/lib/index.js'),
     // }
   },
-  //mode: 'development',
-  // 入口文件 让webpack用哪个文件作为项目的入口
   entry: {
-    // app: ['./client/app', 'webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
-    home: ['./client/home/index'],
-    room: ['./client/room/index']
+    //app: './server/app.js',
+    home: ['./client/home/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
+    room: ['./client/room/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },
 
-
-  // 出口 让webpack把处理完成的文件放在哪里
-
   output: {
-    // 编译输出目录, 不能省略
     path: path.resolve(appPath, 'dist/'),
     filename: '[name].bundle.js', //文件名称
     publicPath: '/dist/' //资源上下文路径
   },
-
   module: {
     rules: [{
       test: /\.(js|jsx)$/,
@@ -89,6 +83,7 @@ const webpackConfig = {
     new ExtractTextPlugin("styles.css"),
     new webpack.optimize.OccurrenceOrderPlugin(),
     new webpack.HotModuleReplacementPlugin(), // 热部署替换模块
+    //new NodemonPlugin(), // Dong
     new webpack.DefinePlugin({
       'process.env': {
         'NODE_ENV': JSON.stringify('development'),

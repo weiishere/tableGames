@@ -585,13 +585,13 @@ class Majiang {
         }
 
     }
-    sendData() {
+    sendData(uid) {
         this.sendMsgHandler({
             gameState: this.gameState,
             remainCardNumber: this.cards.length,
             lastShowCard: this.lastShowCard,
             isOver: this.isOver
-        });
+        }, uid);
     }
     //获取指定的牌（主要用于快速获取牌型用于测试）
     getSpecifiedCard(color, number) {

@@ -4,7 +4,8 @@
         ".git",
         "node_modules/**/node_modules"
     ],
-    "verbose": true,
+    "ignoreRoot": [".git", "node_modules", "bower_components", ".sass-cache"],
+    "verbose": false,
     "execMap": {
         "js": "node --harmony"
     },

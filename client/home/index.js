@@ -15,8 +15,6 @@ let userInfo = {
     nickname: 'huangwei',
     headimgurl: '/images/games/majiang/head.jpg'
 };
-
-
 if (process.env.NODE_ENV !== 'development') {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {

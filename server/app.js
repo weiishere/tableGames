@@ -22,7 +22,7 @@ const webpackConfig = require('../webpack.config.babel');
 const compiler = webpack(webpackConfig);
 //热部署，自动刷新，需要结合 webpack.config.dev.babel 中的定义
 app.use(require('webpack-dev-middleware')(compiler, {
-    noInfo: true, //如果设置该参数为 true，则不打印输出信息
+    noInfo: false, //如果设置该参数为 true，则不打印输出信息
     cache: true, //开启缓存，增量编译
     stats: {
         colors: true, //打印日志显示颜色
@@ -30,7 +30,6 @@ app.use(require('webpack-dev-middleware')(compiler, {
     },
     publicPath: webpackConfig.output.publicPath
 }));
-
 
 app.use(require('webpack-hot-middleware')(compiler, {
     log: console.log,
@@ -40,9 +39,6 @@ app.use(require('webpack-hot-middleware')(compiler, {
 const server = http.createServer(app);
 webscoket(server);
 route(app);
-
-
-
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
