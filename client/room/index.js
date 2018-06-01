@@ -4,7 +4,7 @@ import url from 'url';
 import clone from 'clone';
 import '../reset.less';
 import './style2.less';
-import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum } from '../util';
+import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum, getCardShowTime } from '../util';
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
@@ -453,6 +453,14 @@ class Gamer_mine extends Component {
     }
     actionHandler(type) {
         if (this.cardHandler) return;
+        if (type === 'fullMeet') {
+            let allCard = concatCard(this.props.userState);
+            let { resultType_1, resultType_2 } = getCardShowTime(allCard);
+            if (resultType_2.four.length >= 2) {
+                //需要选择杠哪张牌
+                return;
+            }
+        }
         this.cardHandler = true;
         //点击了就马上隐藏按钮，免得再多生事端
         this.setState({ buttonVisible: true });

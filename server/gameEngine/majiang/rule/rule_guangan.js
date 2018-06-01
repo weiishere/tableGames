@@ -1,5 +1,6 @@
 const clone = require('clone');
 const winCore = require('../winCore');
+const tool = require('./tool');
 //{color:'fc',number:0,key:'fc-1'}//发财
 //{color:'hz',number:0,key:'hz-1'}//红中
 //{color:'bb',number:0,key:'bb-1'}//白板
@@ -39,7 +40,7 @@ const thisCards = [
 // ];
 
 const thisCompCard = { color: 'hz', number: 0, key: 'hz-2' };
-const objectArraySort = function (keyName) {
+/*const objectArraySort = function (keyName) {
     return function (objectN, objectM) {
         var valueN = objectN[keyName]
         var valueM = objectM[keyName]
@@ -60,7 +61,7 @@ const concatCard = (cards, groupCards) => {
     })
     return allCards.sort(objectArraySort('key'));
 }
-const getCardShowTime = (cards) => {
+const tool.getCardShowTime = (cards) => {
     let resultType_1 = {}, resultType_2 = {
         one: [], two: [], three: [], four: []
     };
@@ -98,10 +99,10 @@ const getCardShowTime = (cards) => {
     //     four:[]
     // }
     return { resultType_1, resultType_2 };
-}
+}*/
 //返回去掉靠子的牌组（不存在单牌）
 const getSames = (cards) => {
-    let { resultType_1, resultType_2 } = getCardShowTime(cards);
+    let { resultType_1, resultType_2 } = tool.getCardShowTime(cards);
     let copy_cards = clone(cards);
     if (resultType_2.one.length === 0) {
         //如果没有耍单的牌，直接通过
@@ -117,7 +118,7 @@ const getSames = (cards) => {
         if (frist && second) {
             //如果有靠的，那么清除掉这三个，继续走
             copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
-            let { resultType_1, resultType_2 } = getCardShowTime(copy_cards);
+            let { resultType_1, resultType_2 } = tool.getCardShowTime(copy_cards);
             if (resultType_2.one.length !== 0) {
                 return getSames(copy_cards);
             } else {
@@ -131,7 +132,7 @@ const getSames = (cards) => {
 }
 //板子判断
 const isBanzi = (cards) => {
-    let { resultType_1, resultType_2 } = getCardShowTime(cards);
+    let { resultType_1, resultType_2 } = tool.getCardShowTime(cards);
     let twos = resultType_2.two;
     resultType_2.four.forEach(item => {
         twos.push(item);
@@ -158,7 +159,7 @@ const isBanzi = (cards) => {
 }
 //飞机判断
 const isFeiji = (cards) => {
-    let { resultType_1, resultType_2 } = getCardShowTime(cards);
+    let { resultType_1, resultType_2 } = tool.getCardShowTime(cards);
     let three = resultType_2.three;
     three = three.map(item => { return resultType_1[item].card }).sort((a, b) => { return a.number - b.number; });
     let dfjCount = 0, xfjCount = 0;
@@ -220,7 +221,7 @@ const rules = [
     ({ cards }) => {
         //大飞机、小飞机、大板子、小板子
         const noSamesCards = getSames(cards.allCards);
-        let { resultType_1, resultType_2 } = getCardShowTime(noSamesCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(noSamesCards);
         const threeGroupCount = resultType_2.three.length;
         let name = '', multiple = 0;
         const getResult = (dcount, xcount, _name) => {
@@ -289,7 +290,7 @@ const rules = [
     },
     //小三元
     ({ cards }) => {
-        let { resultType_1, resultType_2 } = getCardShowTime(cards.allCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
         if (resultType_1.hz0 && resultType_1.bb0 && resultType_1.fc0) {
             if (resultType_1.hz0.count >= 2 && resultType_1.bb0.count >= 2 && resultType_1.fc0 == fc0.count >= 2) {
                 return { name: '小三元', multiple: 5 }
@@ -299,7 +300,7 @@ const rules = [
     },
     //大对子(手牌全是3个，加一对)
     ({ cards }) => {
-        let { resultType_2 } = getCardShowTime(cards.fullHandCards);
+        let { resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         if (resultType_2.one.length === 0 && resultType_2.four.length === 0 && resultType_2.two.length === 1 && resultType_2.three.length >= 1) {
             return { name: '大对子', multiple: 5 }
         }
@@ -308,7 +309,7 @@ const rules = [
     //暗杠
     ({ cards }) => {
         //2颗，字牌为3颗
-        let { resultType_1, resultType_2 } = getCardShowTime(cards.fullHandCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         let multiple = 0;
         resultType_2.four.forEach(item => {
             multiple += multiple + resultType_1[item].card.color.length === 1 ? 2 : 3;
@@ -335,7 +336,7 @@ const rules = [
             });
             //存在1~9的同花色牌，这是首要条件，再验证剩下的牌是否是组
             const remainCard = getSames(grArr);//去掉靠子，返回的如果还存在单牌，那么就不成立
-            const { resultType_2 } = getCardShowTime(remainCard);
+            const { resultType_2 } = tool.getCardShowTime(remainCard);
             if (resultType_2.one.length === 0) {
                 return { name: '一条龙', multiple: 5 }
             }
@@ -344,7 +345,7 @@ const rules = [
     },
     //暗(龙)七对
     ({ cards }) => {
-        let { resultType_1, resultType_2 } = getCardShowTime(cards.fullHandCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         if (resultType_2.one.length === 0 && resultType_2.three.length === 0 && cards.fullHandCards.length === 14) {
             for (let i in resultType_1) {
                 if (resultType_1[i].count === 4 && resultType_1[i].card.color === cards.groupCards.winCard.color && resultType_1[i].card.number === cards.groupCards.winCard.number) {
@@ -371,7 +372,7 @@ const rules = [
     },
     //大三元
     ({ cards }) => {
-        let { resultType_1, resultType_2 } = getCardShowTime(cards.allCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
         if (resultType_1.hz0 && resultType_1.bb0 && resultType_1.fc0) {
             if (resultType_1.hz0.count >= 3 && resultType_1.bb0.count >= 3 && resultType_1.hz == fc0.count >= 3) {
                 return { name: '大三元', multiple: 0 }//大三元是在计算完之后乘以2，这里先给0
@@ -414,8 +415,8 @@ const actions = [
 const trggleAction = (handCards, group, actionName) => {
     let result = [], allMultipl = 0;
     let _handCards = handCards.concat(group.winCard);
-    let allCards = concatCard(_handCards, group);//handCards.concat(compCard);
-    //let { resultType_1, resultType_2 } = getCardShowTime(allCards);
+    let allCards = tool.concatCard(_handCards, group);//handCards.concat(compCard);
+    //let { resultType_1, resultType_2 } = tool.getCardShowTime(allCards);
     const res = getSames(allCards);
     let action = actions.find(item => item.code === actionName);
     allMultipl += action.multiple;

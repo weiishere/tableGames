@@ -79,3 +79,31 @@ export function isRealNum(val){
         return false;
     }
 }
+export function getCardShowTime(cards) {
+    let resultType_1 = {}, resultType_2 = {
+        one: [], two: [], three: [], four: []
+    };
+    cards.forEach(card => {
+        if (resultType_1[card.color + card.number]) {
+            resultType_1[card.color + card.number].count += 1;
+        } else {
+            let obj = {
+                count: 1,
+                card: card
+            };
+            resultType_1[card.color + card.number] = obj;
+        }
+    });
+    for (let item in resultType_1) {
+        if (resultType_1[item].count === 1) {
+            resultType_2.one.push(item);
+        } else if (resultType_1[item].count === 2) {
+            resultType_2.two.push(item);
+        } else if (resultType_1[item].count === 3) {
+            resultType_2.three.push(item);
+        } else if (resultType_1[item].count === 4) {
+            resultType_2.four.push(item);
+        }
+    }
+    return { resultType_1, resultType_2 };
+}

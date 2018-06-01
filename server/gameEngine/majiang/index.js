@@ -5,19 +5,22 @@ const clone = require('clone');
 const getRule = require('./rule');
 let rule = undefined;
 const writeLog = require('../../util/errorLog');
+//const { objectArraySort, concatCard, getCardShowTime } = require('./rule/tool');
+const tool = require('./rule/tool');
+const objectArraySort = tool.objectArraySort;
 
 let winActionListening = {};
 let sssIndex = 10;
 //用于对牌组排序
-const objectArraySort = function (keyName) {
-    return function (objectN, objectM) {
-        var valueN = objectN[keyName]
-        var valueM = objectM[keyName]
-        if (valueN < valueM) return -1
-        else if (valueN > valueM) return 1
-        else return 0
-    }
-}
+// const objectArraySort = function (keyName) {
+//     return function (objectN, objectM) {
+//         var valueN = objectN[keyName]
+//         var valueM = objectM[keyName]
+//         if (valueN < valueM) return -1
+//         else if (valueN > valueM) return 1
+//         else return 0
+//     }
+// }
 class Majiang {
     constructor(option) {
         rule = getRule(option.rule);
@@ -178,6 +181,7 @@ class Majiang {
                 //如果对比的是自己要定缺的牌色，不予继续
                 if (showCrad.color === userState.colorLack) { return false; }
                 //let _concatCard = this.concatCard(userState);
+                console.log(showCrad);
                 const alikeCount = userState.cards.filter(card => card.color === showCrad.color && card.number === showCrad.number).length;
                 if (from === 'other' && alikeCount === 2) {
                     userState.actionCode.push('meet');//有碰(自己的话不能碰)
@@ -187,13 +191,19 @@ class Majiang {
                         userState.actionCode.push('meet');//别人打的牌，如果有杠，当然也可以选择碰
                     }
                 }
+
                 //判断是否有碰的碰牌加杠
                 if (from === 'self') {
                     userState.groupCards.meet.forEach(_meet => {
                         if (_meet[0].color === showCrad.color && _meet[0].number === showCrad.number) {
                             userState.actionCode.push('fullMeet');//自己摸的牌杠
                         }
-                    })
+                    });
+                    let { resultType_1, resultType_2 } = tool.getCardShowTime(userState.cards);
+                    if (resultType_2.four.length !== 0 && userState.actionCode.indexOf('fullMeet') === -1) {
+                        //暗杠
+                        userState.actionCode.push('fullMeet');
+                    }
                 }
                 //计算胡牌
                 const _cards = userState.cards.concat(showCrad).sort(objectArraySort('key'));
@@ -625,28 +635,29 @@ class Majiang {
         //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
         // });
         //获取指定的牌，主要还是快速调试
-        this.gameState[1].cards = [
+        this.gameState[0].cards = [
             this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
             this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
             this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
             this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
             this.getSpecifiedCard('w', 9)
         ].sort(objectArraySort('key'));
-        this.gameState[0].cards = [
+        this.gameState[1].cards = [
             this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
-            this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 9)
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
+            this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 9)
         ].sort(objectArraySort('key'));
-        this.gameState[0].groupCards.meet = [[
-            this.getSpecifiedCard('w', 6),
-            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        ]]
+        // this.gameState[1].groupCards.meet = [[
+        //     this.getSpecifiedCard('w', 6),
+        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        // ]]
 
         this.gameState[2].cards = [
             this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
             this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
-            this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 7)
+            this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 8)
         ].sort(objectArraySort('key'));
 
         if (this.colorType === 2) {
@@ -677,7 +688,7 @@ class Majiang {
                 listenType.push('endWin');
             }
             sssIndex++;
-            let cardByCatch = sssIndex <= 11 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
+            let cardByCatch = sssIndex >= 15 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
             //sssIndex++;
             //let cardByCatch = sssIndex <= 14 ? { key: 'card-w-4-' + sssIndex, number: 4, color: 'w' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
             // sssIndex++;
