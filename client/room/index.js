@@ -137,7 +137,7 @@ class Table extends Component {
         this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 3,
+            gamerNumber: 4,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
