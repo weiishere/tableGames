@@ -389,7 +389,8 @@ class Gamer_mine extends Component {
         super(props);
         this.state = {
             activeCard: {},
-            buttonVisible: false
+            buttonVisible: false,
+            fmChooseCardKey: [] //用于多杠的情况
         }
         this.cardHandler = false;
         this.isLack = false;
@@ -414,7 +415,10 @@ class Gamer_mine extends Component {
     }
     componentWillReceiveProps(nextProps) {
         this.cardHandler = false;
-        this.setState({ buttonVisible: false, activeCard: nextProps.userState && nextProps.userState.fatchCard || {} });
+        this.setState({
+            buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
+            activeCard: nextProps.userState && nextProps.userState.fatchCard || {}
+        });
 
 
         // let timer;
@@ -431,9 +435,9 @@ class Gamer_mine extends Component {
         if (this.cardHandler) return;
         this.cardHandler = true;
         this.setState({ buttonVisible: true });
-        //const _concatCard = concatCard(this.props.userState);
-        const _isLack = this.addConcatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
-        const _showCard = this.addConcatCard.find(card => card.key === this.state.activeCard.key);
+        const _concatCard = concatCard(this.props.userState);
+        const _isLack = _concatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
+        const _showCard = _concatCard.find(card => card.key === this.state.activeCard.key);
 
         if (!this.props.userState.catcher || (this.props.userState.colorLack !== _showCard.color && !_isLack)) {
             this.setState({ activeCard: {}, buttonVisible: false });
@@ -453,21 +457,36 @@ class Gamer_mine extends Component {
     }
     actionHandler(type) {
         if (this.cardHandler) return;
+        let doCardKey = undefined;
         if (type === 'fullMeet') {
-            let allCard = concatCard(this.props.userState);
-            let { resultType_1, resultType_2 } = getCardShowTime(allCard);
-            if (resultType_2.four.length >= 2) {
-                //需要选择杠哪张牌
-                return;
+            //let allCard = concatCard(this.props.userState);
+            //只要手牌有需要暗杠的就直接
+            //是否是碰转杠，如果是的话要优先处理
+            const isMeetToFull = this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
+            if(!isMeetToFull){
+                let { resultType_1, resultType_2 } = getCardShowTime(this.props.userState.cards);
+                if (resultType_2.four.length >= 2) {
+                    //需要选择杠哪张牌，置灰其他牌
+                    let _fmChooseCardKey = resultType_2.four.map(item => {
+                        return resultType_1[item].card.key;
+                    });
+                    this.setState({
+                        fmChooseCardKey: _fmChooseCardKey
+                    });
+                    return;
+                } else if (resultType_2.four.length >= 1) {
+                    doCardKey = resultType_1[resultType_2.four[0]].card.key;
+                }
             }
         }
         this.cardHandler = true;
         //点击了就马上隐藏按钮，免得再多生事端
-        this.setState({ buttonVisible: true });
+        this.setState({ buttonVisible: true, fmChooseCardKey: [] });
         ws.emit('action', JSON.stringify({
             roomId: this.props.room.roomId,
             uid: this.props.user.uid,
-            actionType: type
+            actionType: type,
+            doCardKey: doCardKey
         }));
     }
     clickHandle(e, card) {
@@ -479,10 +498,27 @@ class Gamer_mine extends Component {
         //         this.setState({ activeCard: item.key });
         //     }
         // }
+        if (this.state.fmChooseCardKey.length !== 0) {
+            //如果fmChooseCardKey选择值则说明是选择牌进行杠，需要执行杠操作
+            if (this.state.fmChooseCardKey.indexOf(card.key) === -1) {
+                //选择其他的非杠牌，不响应
+                return;
+            }
+            this.setState({ fmChooseCardKey: [] });
+            ws.emit('action', JSON.stringify({
+                roomId: this.props.room.roomId,
+                uid: this.props.user.uid,
+                actionType: 'fullMeet',
+                doCardKey: card.key
+            }));
+            return;
+        }
         if (!this.isLack && card.color !== this.props.userState.colorLack) {
             //this.setState({ activeCard: {} });
         } else {
             if (card.key === this.state.activeCard.key) {
+                //如果有操作选项在，则禁用双击打牌，不然有点麻烦
+                if (this.props.userState.actionCode.length !== 0) { return; }
                 this.showCard();
                 if (this.props.userState.catcher) {
                     this.setState({ activeCard: card });
@@ -502,8 +538,8 @@ class Gamer_mine extends Component {
     }
     render() {
         if (this.props.userState) {
-            this.addConcatCard = concatCard(this.props.userState);
-            this.isLack = this.addConcatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
+            //this.addConcatCard = concatCard(this.props.userState);
+            this.isLack = concatCard(this.props.userState).filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
         }
         const ready = <div key='ready' onClick={this.ready} className='btu ready'></div>
         const btu_showCard = <div key='showCard' onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>
@@ -537,7 +573,13 @@ class Gamer_mine extends Component {
                     }
                 </div>)}
                 {this.props.userState.cards.map(card =>
-                    <div style={{ display: 'inline-block' }} key={`card_${card.key}`}><Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} type={`mine_main ${!this.isLack && this.props.userState.colorLack !== card.color ? 'gray' : ''}`} card={card}></Card></div>)
+                    <div style={{ display: 'inline-block' }} key={`card_${card.key}`}>
+                        <Card
+                            activeKey={this.state.activeCard.key}
+                            clickHandle={this.clickHandle}
+                            type={`mine_main ${(!this.isLack && this.props.userState.colorLack !== card.color) || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1) ? 'gray' : ''}`}
+                            card={card}>
+                        </Card></div>)
                 }
 
                 {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>

@@ -181,7 +181,7 @@ class Majiang {
                 //如果对比的是自己要定缺的牌色，不予继续
                 if (showCrad.color === userState.colorLack) { return false; }
                 //let _concatCard = this.concatCard(userState);
-                console.log(showCrad);
+                //console.log(showCrad);
                 const alikeCount = userState.cards.filter(card => card.color === showCrad.color && card.number === showCrad.number).length;
                 if (from === 'other' && alikeCount === 2) {
                     userState.actionCode.push('meet');//有碰(自己的话不能碰)
@@ -248,14 +248,14 @@ class Majiang {
                 if (userState.fatchCard && userState.fatchCard.key === data.cardKey) {
                     //直接打出了刚刚摸的牌
                     showCard = userState.fatchCard;
-                    // console.log('-------------------------------------if----------------------------');
+                    if (!showCard) return;
                     // console.log(showCard);
                     userState.outCards.push(clone(userState.fatchCard));
                     //userState.fatchCard = undefined;
                 } else {
                     showCard = userState.cards.find(item => item.key === data.cardKey);
-                    // console.log('-------------------------------------else----------------------------');
                     // console.log(showCard);
+                    if (!showCard) return;
                     userState.outCards.push(showCard);
                     userState.cards = userState.cards.filter(item => item.key !== data.cardKey);
                     //fatchCard可能为空（碰了之后不会摸牌）
@@ -419,7 +419,7 @@ class Majiang {
                         }
                     } else {
                         //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
-                        const doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
+                        let doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
                         if (data.actionType === 'meet' && !isMineAction) {
                             let robMeetWin = false;
                             //这里要判断是否有其他人要胡，如果有，先等待
@@ -449,7 +449,14 @@ class Majiang {
                                 this.setGamerCacher(userState);
                             }
                         } else if (data.actionType === 'fullMeet') {
+
                             try {
+                                if (data.doCardKey) {
+                                    //这个杠可能是暗杠，那么会传过来一张选定的牌型，然后进行杠
+                                    doCard = clone(userState.cards.find(card => card.key === data.doCardKey));
+                                    userState.cards.push(clone(userState.fatchCard));
+                                    userState.cards = userState.cards.sort(objectArraySort('key'));
+                                }
                                 let meetToFull;
                                 //检查是否是碰升级为杠
                                 userState.groupCards.meet.forEach(_meet => {
@@ -486,14 +493,14 @@ class Majiang {
                                     }
                                 } else {
                                     //抢胡
-                                    if (robFullMeetWin) {
+                                    if (robFullMeetWin && !isMineAction) {//别人打的牌才会存在抢胡
                                         userState.testWinType = 'robFullMeet';//被抢胡等待
                                         userState.winDesc = '等待其他玩家选择是否胡牌~';
                                         userState.actionCode = [];
                                         setTimeout(() => { this.sendData(); }, 10);
                                         return false;
                                     } else {
-                                        let _fulMmeet = [doCard];
+                                        let _fulMmeet = data.doCardKey ? [] : [doCard];
                                         userState.cards = userState.cards.filter(card => {
                                             if (card.color === doCard.color && card.number === doCard.number) {
                                                 _fulMmeet.push(card);
@@ -639,14 +646,14 @@ class Majiang {
             this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
             this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
             this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
             this.getSpecifiedCard('w', 9)
         ].sort(objectArraySort('key'));
         this.gameState[1].cards = [
             this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
             this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
             this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
-            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 8), this.getSpecifiedCard('w', 9)
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 9)
         ].sort(objectArraySort('key'));
         // this.gameState[1].groupCards.meet = [[
         //     this.getSpecifiedCard('w', 6),
@@ -681,14 +688,14 @@ class Majiang {
             const _uid = !uid ? this.gameState.find(item => item.catcher === true).uid : uid;
             const userState = this.gameState.find(item => item.uid === _uid);
 
-            //let cardByCatch = this.cards.splice(0, 1)[0];
+            let cardByCatch = this.cards.splice(0, 1)[0];
             if (this.cards.length === 0) {
                 //最后一张牌了，海底
                 if (!listenType) listenType = [];
                 listenType.push('endWin');
             }
-            sssIndex++;
-            let cardByCatch = sssIndex >= 15 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
+            // sssIndex++;
+            // let cardByCatch = sssIndex >= 15 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
             //sssIndex++;
             //let cardByCatch = sssIndex <= 14 ? { key: 'card-w-4-' + sssIndex, number: 4, color: 'w' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
             // sssIndex++;
