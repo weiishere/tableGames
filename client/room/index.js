@@ -8,8 +8,12 @@ import { getQueryString, getColorName, concatCard, getRedomNum, isRealNum, getCa
 import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
+import $ from 'jquery';
 //import wechatConfig from '../wxConfig';
 const axios = require('axios');
+String.prototype.trim = function () {
+    return this.replace(/(^\s*)|(\s*$)/g, '');
+};
 //const Wechat = require('wechat-jssdk');
 //const wx = new Wechat(wechatConfig);
 
@@ -60,6 +64,7 @@ class Table extends Component {
                 name: userInfo.nickname,//getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
+                keepVertical: false,
                 state: 'wait',
             },
             //roomId: getQueryString('roomId'),
@@ -70,6 +75,7 @@ class Table extends Component {
             newState: true,
             isBegin: false,
             showRecore: false,
+            showMsgPanel: true,
             option: {}
         }
         // this.option = {
@@ -137,7 +143,7 @@ class Table extends Component {
         this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 4,
+            gamerNumber: 2,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -153,6 +159,7 @@ class Table extends Component {
         }));
         ws.on('message', function (msg) {
             const data = JSON.parse(msg);
+            let log;
             switch (data.type) {
                 case 'roomData':
                     self.setState({ room: data.content });
@@ -170,8 +177,13 @@ class Table extends Component {
                     }
                     break;
                 case 'notified':
-                    const log = self.state.roomLog;
-                    log.push(data.content);
+                    log = self.state.roomLog;
+                    log.push({ type: 'notified', content: data.content });
+                    self.setState({ roomLog: log });
+                    break;
+                case 'chat':
+                    log = self.state.roomLog;
+                    log.push({ type: 'chat', name: data.content.name, content: data.content.content });
                     self.setState({ roomLog: log });
                     break;
                 case 'errorInfo':
@@ -302,7 +314,8 @@ class Table extends Component {
                 {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {this.state.game && <div className='gameInfoBar'>
                     <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>
-                    <button onClick={this.gameInfoOpenHandle}></button>
+                    <button className='record' onClick={this.gameInfoOpenHandle}></button>
+                    <button className='msg' onClick={() => { this.setState({ showMsgPanel: !this.state.showMsgPanel }); }}></button>
                 </div>}
                 {this.state.game && <div className='tableCenter'>
                     <Countdown time={this.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
@@ -313,13 +326,29 @@ class Table extends Component {
                 </div>}
                 <QueueAnim delay={100} duration={400} animConfig={[
                     { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-                ]}>{this.state.game && this.state.showRecore &&
-                    <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.state.room} game={this.state.game} />}
+                ]}>
+                    {this.state.game && this.state.showRecore &&
+                        <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.state.room} game={this.state.game} />}
+                    <MsgPanel roomLog={this.state.roomLog} visible={this.state.showMsgPanel}
+                        onClose={() => { this.setState({ showMsgPanel: false }) }}
+                        sendMsg={(content) => {
+                            ws.emit('chatMsg', JSON.stringify({
+                                roomId: this.state.room.roomId,
+                                name: this.state.user.name,
+                                content: content
+                            }));
+                        }} />
                 </QueueAnim>
             </div>
-            <div className='orientationWeak'>
-                <span>为了更好的游戏体验，请使用横屏模式，iPhone用户请直接允许系统横屏，Android用户微信请设置：横屏设置：我-设置-通用-开启横屏模式</span>
-            </div>
+            {!this.state.keepVertical && <div className='orientationWeak'>
+                <span>
+                    为了更好的游戏体验，请打开手机的允许屏幕旋转开关，Android用户还需在微信中进行设置：我-设置-通用-开启横屏模式
+                    <br /><br />
+                    <a href='javascript:;' onClick={() => {
+                        this.setState({ keepVertical: true })
+                    }}>坚持竖屏</a>
+                </span>
+            </div>}
         </QueueAnim>
     }
 }
@@ -463,7 +492,7 @@ class Gamer_mine extends Component {
             //只要手牌有需要暗杠的就直接
             //是否是碰转杠，如果是的话要优先处理
             const isMeetToFull = this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
-            if(!isMeetToFull){
+            if (!isMeetToFull) {
                 let { resultType_1, resultType_2 } = getCardShowTime(this.props.userState.cards);
                 if (resultType_2.four.length >= 2) {
                     //需要选择杠哪张牌，置灰其他牌
@@ -833,6 +862,107 @@ class GameInfo extends Component {
         </div>
     }
 }
+class MsgPanel extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            visible: false,
+            msgContent: '',
+            miniMsgPanel: false,
+            miniMsgPanelList: []
+        }
+        this.timer;
+        this.logCount = this.props.roomLog.length;
+        this.scrollHeight = 0;
+    }
+    getTotal(uid) {
+        let total = 0;
+        this.props.room.recode.map(item => total += item.find(user => uid === user.uid).point);
+        return (total > 0 ? '+' : '') + total;
+    }
+    componentWillReceiveProps(nextProps) {
+        const _l = nextProps.roomLog.length - this.logCount;
+        if (_l > 0 && !this.props.visible) {
+            const _miniMsgPanelList = clone(nextProps.roomLog).splice(nextProps.roomLog.length - _l, _l);
+            this.setState({ miniMsgPanel: true, miniMsgPanelList: _miniMsgPanelList });
+            window.clearTimeout(this.timer);
+            this.timer = window.setTimeout(() => {
+                this.setState({ miniMsgPanel: false });
+            }, 3000);
+        }
+        this.logCount = nextProps.roomLog.length;
+    }
+    componentDidUpdate(){
+        $('.mainList').scrollTop($('.mainList').height());
+    }
+    componentDidMount() {
+        const self = this;
+        $('#selection').delegate('li', 'click', function () {
+            self.props.sendMsg(this.innerText);
+            self.setState({ visible: false });
+        })
+    }
+    render() {
+        return <div className={`msgPanel ${this.props.visible ? '' : 'hide'}`}>
+            <header>
+                <input value={this.state.msgContent} type='text' maxLength='30' onChange={(e) => {
+                    this.setState({ msgContent: e.target.value });
+                }} onKeyUp={(e) => {
+                    if (e.keyCode === 13) {
+                        if (this.state.msgContent.trim() === '') return;
+                        this.props.sendMsg(this.state.msgContent);
+                        this.setState({ msgContent: '' });
+                    }
+                }} />
+                <button onClick={() => { this.setState({ visible: !this.state.visible }) }}>
+                    <svg t="1528108975819" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1886" width="25" height="25"><defs><style type="text/css"></style></defs><path d="M512 1024a512 512 0 1 1 512-512 512.531692 512.531692 0 0 1-512 512z m0-967.089231A455.089231 455.089231 0 1 0 967.108923 512 455.660308 455.660308 0 0 0 512 56.910769z m211.042462 506.683077A51.593846 51.593846 0 1 1 774.734769 512a51.613538 51.613538 0 0 1-51.692307 51.593846zM512 563.593846A51.593846 51.593846 0 1 1 563.692308 512 51.593846 51.593846 0 0 1 512 563.593846z m-211.042462 0A51.593846 51.593846 0 1 1 352.649846 512a51.593846 51.593846 0 0 1-51.692308 51.593846z" p-id="1887" fill="#ffffff"></path></svg>
+                </button>
+                <div className={`${this.state.visible ? '' : 'hide'}`}>
+                    <ul id='selection'>
+                        <li>快点儿吧，都等到我花都结果啦！</li>
+                        <li>麻神驾到，各位还不颤抖！！</li>
+                        <li>输遍天下无敌手的我居然赢了你</li>
+                        <li>再不下叫，狗学猪叫！</li>
+                        <li>麻匪，不要怂，再来两局！</li>
+                    </ul>
+                </div>
+            </header>
+            <div className='mainList'>
+                <ul>
+                    {this.props.roomLog.map((log, index) => log.type === 'notified' ?
+                        <li className='sysMsg' key={`msg_${index}`}>
+                            <svg t="1528109426023" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4483" width="20" height="15"><defs><style type="text/css"></style></defs><path d="M490.453333 87.68c-5.333333 0-10.88 2.026667-15.253333 6.613333L256 320 64 320l0 205.333333L64 704l192 0 218.773333 248.853333c4.373333 5.013333 10.133333 7.146667 15.786667 7.146667 10.986667 0 21.546667-8.426667 21.546667-21.333333L512.106667 525.333333 512.106667 109.013333C512 96.213333 501.44 87.68 490.453333 87.68zM448 525.333333l0 300.16L304.106667 661.76 284.906667 640 256 640 128 640 128 525.333333 128 384l128 0 27.093333 0 18.88-19.413333 146.133333-150.4L448.106667 525.333333z" p-id="4484" fill="#ffffff"></path><path d="M832 512c0-105.92-86.08-192-192-192l0 64c70.613333 0 128 57.386667 128 128s-57.386667 128-128 128l0 64C745.92 704 832 617.92 832 512z" p-id="4485" fill="#ffffff"></path><path d="M866.24 285.76C805.866667 225.28 725.44 192 640 192l0 64c68.373333 0 132.693333 26.666667 181.013333 74.986667C869.333333 379.306667 896 443.626667 896 512s-26.666667 132.693333-74.986667 181.013333C772.693333 741.333333 708.373333 768 640 768l0 64c85.44 0 165.866667-33.28 226.24-93.76 60.48-60.48 93.76-140.8 93.76-226.24S926.72 346.133333 866.24 285.76z" p-id="4486" fill="#ffffff"></path></svg>
+                            <span>{log.content}</span></li> :
+                        <li key={`msg_${index}`}><b>{log.name}</b>：{log.content}</li>)}
+                    {/* <li className='sysMsg'>
+                        <svg t="1528109426023" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4483" width="20" height="15"><defs><style type="text/css"></style></defs><path d="M490.453333 87.68c-5.333333 0-10.88 2.026667-15.253333 6.613333L256 320 64 320l0 205.333333L64 704l192 0 218.773333 248.853333c4.373333 5.013333 10.133333 7.146667 15.786667 7.146667 10.986667 0 21.546667-8.426667 21.546667-21.333333L512.106667 525.333333 512.106667 109.013333C512 96.213333 501.44 87.68 490.453333 87.68zM448 525.333333l0 300.16L304.106667 661.76 284.906667 640 256 640 128 640 128 525.333333 128 384l128 0 27.093333 0 18.88-19.413333 146.133333-150.4L448.106667 525.333333z" p-id="4484" fill="#ffffff"></path><path d="M832 512c0-105.92-86.08-192-192-192l0 64c70.613333 0 128 57.386667 128 128s-57.386667 128-128 128l0 64C745.92 704 832 617.92 832 512z" p-id="4485" fill="#ffffff"></path><path d="M866.24 285.76C805.866667 225.28 725.44 192 640 192l0 64c68.373333 0 132.693333 26.666667 181.013333 74.986667C869.333333 379.306667 896 443.626667 896 512s-26.666667 132.693333-74.986667 181.013333C772.693333 741.333333 708.373333 768 640 768l0 64c85.44 0 165.866667-33.28 226.24-93.76 60.48-60.48 93.76-140.8 93.76-226.24S926.72 346.133333 866.24 285.76z" p-id="4486" fill="#ffffff"></path></svg>
+                        <span>系统消息~系统消息~</span></li>
+                    <li><b>huangwei</b>：尼妹的，你能不能快点儿</li>
+                    <li><b>huangwei</b>：你到底出不出啊？等到我胡子都白啦！！</li>
+                    <li><b>huaei</b>：你到底出不出啊？等到我胡子都白啦！！</li>
+                    <li><b>huangweibalabala</b>：尼妹的，你能不能快点儿</li> */}
+                </ul>
+            </div>
+            <footer onClick={this.props.onClose}>
+                <svg t="1528101175036" viewBox="0 0 1024 1024"
+                    version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1884"
+                    width="30" height="30"><defs><style type="text/css"></style></defs>
+                    <path d="M702.3816269859672 511.8825858058409l-33.10658589284864-33.1274284925312-0.14173022098839289 0.1403411217033862L354.7249589068816 164.46143998578168l-33.10658589284869 33.10658589284864 314.4118260713292 314.43197412136965L321.6183730140326 826.4347529988735l33.10658589284865 33.10311178676787 314.40835196524887-314.43127889279253 0.1417302209883927 0.1403411217033864 33.106585892848685-33.13090259861198-0.11741419415920966-0.11671896558254967L702.3816269859672 511.8825858058409zM702.3816269859672 511.8825858058409" fill="#ffffff" p-id="1885">
+                    </path>
+                </svg>
+            </footer>
+            <div className={`miniMsgPanel ${this.state.miniMsgPanel && 'show'}`}>
+                <ul>
+                    {this.state.miniMsgPanelList.map((log, index) => log.type === 'notified' ?
+                        <li className='sysMsg' key={`msg_${index}`}>
+                            <svg t="1528109426023" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4483" width="20" height="15"><defs><style type="text/css"></style></defs><path d="M490.453333 87.68c-5.333333 0-10.88 2.026667-15.253333 6.613333L256 320 64 320l0 205.333333L64 704l192 0 218.773333 248.853333c4.373333 5.013333 10.133333 7.146667 15.786667 7.146667 10.986667 0 21.546667-8.426667 21.546667-21.333333L512.106667 525.333333 512.106667 109.013333C512 96.213333 501.44 87.68 490.453333 87.68zM448 525.333333l0 300.16L304.106667 661.76 284.906667 640 256 640 128 640 128 525.333333 128 384l128 0 27.093333 0 18.88-19.413333 146.133333-150.4L448.106667 525.333333z" p-id="4484" fill="#ffffff"></path><path d="M832 512c0-105.92-86.08-192-192-192l0 64c70.613333 0 128 57.386667 128 128s-57.386667 128-128 128l0 64C745.92 704 832 617.92 832 512z" p-id="4485" fill="#ffffff"></path><path d="M866.24 285.76C805.866667 225.28 725.44 192 640 192l0 64c68.373333 0 132.693333 26.666667 181.013333 74.986667C869.333333 379.306667 896 443.626667 896 512s-26.666667 132.693333-74.986667 181.013333C772.693333 741.333333 708.373333 768 640 768l0 64c85.44 0 165.866667-33.28 226.24-93.76 60.48-60.48 93.76-140.8 93.76-226.24S926.72 346.133333 866.24 285.76z" p-id="4486" fill="#ffffff"></path></svg>
+                            <span>{log.content}</span></li> :
+                        <li key={`msg_${index}`}><b>{log.name}</b>：{log.content}</li>)}
+                </ul>
+            </div>
+        </div >
+    }
+}
 
 class ImgLoader extends Component {
     constructor(props) {
@@ -844,7 +974,7 @@ class ImgLoader extends Component {
         this.imgList = [
             { key: "b", url: host + "/b.png" },
             { key: "bg_1", url: host + "/bg_1.jpg" },
-            { key: "bg_1", url: host + "/bg_2.jpg" },
+            { key: "bg_2", url: host + "/bg_2.jpg" },
             { key: "bg_default", url: host + "/bg_default.jpg" },
             { key: "center", url: host + "/center.png" },
             { key: "center_bottom", url: host + "/center_bottom.png" },
@@ -872,7 +1002,8 @@ class ImgLoader extends Component {
             { key: "remain", url: host + "/remain.png" },
             { key: "record", url: host + "/record.png" },
             { key: "close_btu", url: host + "/close_btu.png" },
-            { key: "msg", url: host + "/msg.png" }
+            { key: "msg", url: host + "/msg.png" },
+            { key: "msgBtu", url: host + "/msgBtu.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {
@@ -918,10 +1049,5 @@ render(
     <Table />,
     document.getElementById('layout')
 )
-        // render(
-//     <QueueAnim delay={300} style={{ height: '100%' }} className="queue-simple">
-//         <Table key='a' />
-//     </QueueAnim>,
-//     document.getElementById('layout')
-// )
+
 

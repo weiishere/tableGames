@@ -19,6 +19,9 @@ module.exports = (server) => {
         socket.on('heartBeat', function (_data) {
             gameEngine.heartBeat(JSON.parse(_data));
         });
+        socket.on('chatMsg', function (_data) {
+            gameEngine.chatMsg(JSON.parse(_data));
+        });
     });
 
 };

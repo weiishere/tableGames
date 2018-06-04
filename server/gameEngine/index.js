@@ -18,7 +18,7 @@ setInterval(function () {
         });
         console.log(roomIds)
         sqliteCommon.deleteRoom({ roomIds }, (changes) => {
-            console.log('清理房间数据' + changes + '条');
+            console.log('(' + (new Date()).toLocaleString() + ')' + '清理房间数据' + changes + '条');
         });
         // roomIds.forEach(itemid => {
         //     rooms = rooms.filter(room => room.roomId !== itemid);
@@ -78,7 +78,7 @@ module.exports = (io, scoket) => {
     return {
         connection: (scoket) => {
             //console.log('接入链接-------------------------scoket.id ' + scoket.id);
-            
+
         },
         disconnect: () => {
             //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
@@ -95,8 +95,8 @@ module.exports = (io, scoket) => {
                         rooms = rooms.filter(_room => _room.id !== room.id);
                     } else {
                         setTimeout(() => {
-                            console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                            sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                            //console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                            sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
                             sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         }, 50);
                     }
@@ -127,7 +127,7 @@ module.exports = (io, scoket) => {
                         //没有在这个房间，那么需要加入
                         //如果人满了或者正在游戏中，拒绝加入
                         if (room.gamers.length === room.gamerNumber) {
-                            console.log(`房间人数已满~`);
+                            //console.log(`房间人数已满~`);
                             setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
                             //scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`);
                             return;
@@ -140,7 +140,7 @@ module.exports = (io, scoket) => {
                         setTimeout(() => {
                             sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                             setTimeout(() => {
-                                sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间ID:${room.roomId}"}`);
+                                sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间"}`);
                             }, 50);
                         }, 1000);
                     } else {
@@ -198,7 +198,7 @@ module.exports = (io, scoket) => {
                             rooms.push(room);
                             //data.user['catcher'] = true;
                             scoket.user = data.user;
-                            console.log(data.user.name + '开房成功，房间ID:' + room.roomId);
+                            console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '开房成功，房间ID:' + room.roomId);
                             //为用户注册scoket事件
                             //room.game.regAction(scoket);
                             room.game.regAction().forEach(item => {
@@ -209,7 +209,7 @@ module.exports = (io, scoket) => {
                             setTimeout(() => {
                                 sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                                 setTimeout(() => {
-                                    sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
+                                    sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间"}`);
                                 }, 100);
                             }, 500);
                         });
@@ -255,6 +255,14 @@ module.exports = (io, scoket) => {
             }
             // const room = getRoom(data.roomId);
             // room.game.sendData();
+        },
+        chatMsg: (data) => {
+            setTimeout(() => {
+                sendForRoom(data.roomId, `{"type":"chat","content":${JSON.stringify({
+                    name: data.name,
+                    content: data.content
+                })}}`);
+            }, 50);
         }
         //注册游戏客户端动作
         // regAction: (scoket) => {

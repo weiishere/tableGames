@@ -96,7 +96,7 @@ button {
     .gameInfoBar {
         position: absolute;
         z-index: 88;
-        width: 15rem;
+        width: 18rem;
         height: 2rem;
         right: 0;
         top: 0; // border-left: solid .1rem #ac5618;
@@ -128,11 +128,17 @@ button {
         button {
             width: 2rem;
             height: 2rem;
-            margin: 0;
             padding: 0;
             border: 0;
-            background: url('/images/games/majiang2/record.png');
+            margin: 0 .3rem;
             background-size: 100% 100%;
+            background-color: transparent;
+            &.record {
+                background-image: url('/images/games/majiang2/record.png');
+            }
+            &.msg {
+                background-image: url('/images/games/majiang2/msgBtu.png');
+            }
         }
     }
     .gameInfoPanel {
@@ -264,6 +270,137 @@ button {
             }
         }
     }
+    .msgPanel {
+        position: absolute;
+        z-index: 100;
+        width: 22rem; //height: -webkit-calc(100%-7rem);
+        right: 0;
+        top: 2.5rem;
+        bottom: 2.5rem;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff; //background: -webkit-linear-gradient(bottom, #2a2a2b2c, #25252588);
+        display: flex;
+        flex-direction: column;
+        transition: all .2s ease-out;
+        margin: auto;
+        border-radius: 1rem 0 0 1rem;
+        ul {
+            list-style: none;
+            li {
+                padding: .2rem .5rem;
+                svg {
+                    vertical-align: middle
+                }
+                &>b {
+                    color: #59f1b2;
+                    float: left;
+                    .ellipsis;
+                    max-width: 5rem;
+                }
+                &.sysMsg {
+                    span {
+                        color: #999 !important;
+                        vertical-align: middle
+                    }
+                }
+            }
+        }
+        &.hide {
+            transform: translate3d(22rem, 0, 0);
+        }
+        .mainList {
+            flex: 1;
+            overflow: auto;
+        }
+        .miniMsgPanel {
+            position: fixed;
+            top: 0rem;
+            right: 0;
+            background: rgba(0, 0, 0, 0.5);
+            min-height: 2rem;
+            line-height: 2rem;
+            padding: 0 .5rem;
+            width: 20rem;
+            //display: none;
+            transition: all .2s ease-out;
+            visibility: hidden;
+            border-radius: 5rem;
+            &>b {
+                color: #59f1b2;
+                float: left;
+                .ellipsis;
+                max-width: 5rem;
+            }
+            &.show {
+                //display: block;
+                transform: translate3d(-22rem, 0, 0) !important;
+                visibility: inherit;
+            }
+        }
+        &>header {
+            background: #000;
+            height: 3rem;
+            border-bottom: solid 1px #191919;
+            position: relative;
+            border-radius: 1rem 0 0 0;
+            input {
+                margin: 0.2rem;
+                width: 15rem;
+                padding: 0;
+                border: solid 1px #999;
+                background-color: transparent;
+                color: #eee;
+                height: 2rem;
+                border-radius: 1rem;
+                padding: 0 .5rem
+            }
+            button {
+                vertical-align: middle;
+                background: transparent;
+                border: none;
+                margin: 0 .5rem
+            }
+            div {
+                position: absolute;
+                transition: all .1s ease-out;
+                width: 18rem;
+                top: 2.5rem;
+                right: 0;
+                background: #000;
+                border: solid 1px #ccc;
+                border-radius: 1rem;
+                overflow: hidden;
+                ul {
+                    list-style: none;
+                }
+                &.hide {
+                    opacity: 0;
+                    transform: translate3d(0, 1rem, 0);
+                    visibility: hidden;
+                }
+                li {
+                    padding: 0 .5rem;
+                    height: 3rem;
+                    line-height: 3rem;
+                }
+                li:nth-child(2n) {
+                    background: #191919;
+                }
+            }
+        }
+        &>footer {
+            background: #000;
+            height: 3rem;
+            text-align: center;
+            border-top: solid 1px #191919;
+            &:active {
+                background: #191919
+            }
+            svg {
+                margin-top: .3rem;
+            }
+        }
+    }
     .tableCenter {
         position: absolute;
         width: 8rem;
@@ -365,6 +502,7 @@ button {
     .nameWrap {
         .ellipsis;
         font-size: .8rem;
+        line-height: 1.4rem;
         color: #ddf145;
         text-shadow: 0 0 1px #333;
     }
@@ -441,6 +579,7 @@ button {
 }
 
 .gamerWrap_mine {
+    //display: none;
     position: absolute;
     width: 100%;
     height: 8rem; //border: solid 1px #fff;
@@ -882,6 +1021,15 @@ button {
     /*横屏 css*/
     .orientationWeak {
         display: none
+    }
+}
+
+@media screen and (orientation: portrait) {
+    /*竖屏 css*/
+    .gamerWrap_mine {
+        .userDock {
+            top: -15rem
+        }
     }
 }
 
