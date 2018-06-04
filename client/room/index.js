@@ -19,7 +19,7 @@ String.prototype.trim = function () {
 
 let userInfo = {
     userid: getQueryString('uid'),
-    nickname: 'huangwei',
+    nickname: getQueryString('name') || 'huangwei',
     headimgurl: '/images/games/majiang/head.jpg'
 };
 let isBegin = false;
@@ -143,7 +143,7 @@ class Table extends Component {
         this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
         const __option = {
-            gamerNumber: 2,
+            gamerNumber: 4,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -218,7 +218,7 @@ class Table extends Component {
         //     gameCopy.gameState[`user_${this.state.user.uid}`].cards = [];
         //     this.setState({ game: gameCopy });
         // }
-        this.setState({ game: null });
+        this.setState({ game: null, showMsgPanel: false });
     }
     //玩家时间到，自动为其出牌
     showCardAuto() {
@@ -308,15 +308,15 @@ class Table extends Component {
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
-                {me && <Gamer_mine user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
+                {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-                {this.state.game && <div className='gameInfoBar'>
-                    <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>
+                <div className='gameInfoBar'>
+                    {this.state.game && <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
                     <button className='record' onClick={this.gameInfoOpenHandle}></button>
                     <button className='msg' onClick={() => { this.setState({ showMsgPanel: !this.state.showMsgPanel }); }}></button>
-                </div>}
+                </div>
                 {this.state.game && <div className='tableCenter'>
                     <Countdown time={this.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
                     {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
@@ -630,7 +630,7 @@ class Gamer_mine extends Component {
                     {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && this.state.activeCard.key && btu_showCard}
                     {
                         //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
-                        this.props.userState && this.props.userState.actionCode.map(action => {
+                        this.props.userState && !this.props.game.isOver && this.props.userState.actionCode.map(action => {
                             if (action === 'meet' && !this.props.userState.isPause) return btu_meet;
                             if (action === 'fullMeet' && !this.props.userState.isPause) return btu_fullMeet;
                             if (action === 'winning') return btu_win;
@@ -874,6 +874,7 @@ class MsgPanel extends Component {
         this.timer;
         this.logCount = this.props.roomLog.length;
         this.scrollHeight = 0;
+        this.send = this.send.bind(this);
     }
     getTotal(uid) {
         let total = 0;
@@ -892,7 +893,7 @@ class MsgPanel extends Component {
         }
         this.logCount = nextProps.roomLog.length;
     }
-    componentDidUpdate(){
+    componentDidUpdate() {
         $('.mainList').scrollTop($('.mainList').height());
     }
     componentDidMount() {
@@ -902,28 +903,35 @@ class MsgPanel extends Component {
             self.setState({ visible: false });
         })
     }
+    send() {
+        if (this.state.msgContent.trim() === '') return;
+        this.props.sendMsg(this.state.msgContent);
+        this.setState({ msgContent: '' });
+    }
     render() {
         return <div className={`msgPanel ${this.props.visible ? '' : 'hide'}`}>
             <header>
-                <input value={this.state.msgContent} type='text' maxLength='30' onChange={(e) => {
+                <input placeholder='在此输入，回车/换行发送消息' value={this.state.msgContent} type='text' maxLength='30' onChange={(e) => {
                     this.setState({ msgContent: e.target.value });
                 }} onKeyUp={(e) => {
                     if (e.keyCode === 13) {
-                        if (this.state.msgContent.trim() === '') return;
-                        this.props.sendMsg(this.state.msgContent);
-                        this.setState({ msgContent: '' });
+                        this.send();
                     }
                 }} />
+                <button onClick={this.send}>
+                    <svg t="1528129063145" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="994" width="25" height="25"><defs><style type="text/css"></style></defs><path d="M511.63136 1023.16032c-282.05056 0-511.52896-229.45792-511.52896-511.52896S229.5808 0.1024 511.63136 0.1024 1023.16032 229.5808 1023.16032 511.63136 793.7024 1023.16032 511.63136 1023.16032zM511.63136 61.93152c-247.97184 0-449.69984 201.728-449.69984 449.69984s201.728 449.69984 449.69984 449.69984S961.3312 759.6032 961.3312 511.63136 759.6032 61.93152 511.63136 61.93152z" p-id="995" fill="#ffffff"></path><path d="M428.544 706.10944c-8.15104 0-15.95392-3.23584-21.72928-8.99072l-153.8048-153.8048c-12.00128-12.00128-12.00128-31.45728 0-43.45856 12.00128-12.00128 31.4368-12.00128 43.43808 0l132.096 132.096 279.01952-279.04c12.00128-12.00128 31.4368-12.00128 43.43808 0 12.00128 11.9808 12.00128 31.4368 0 43.43808L450.2528 697.09824C444.49792 702.85312 436.69504 706.10944 428.544 706.10944z" p-id="996" fill="#ffffff"></path></svg>
+                </button>
                 <button onClick={() => { this.setState({ visible: !this.state.visible }) }}>
                     <svg t="1528108975819" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1886" width="25" height="25"><defs><style type="text/css"></style></defs><path d="M512 1024a512 512 0 1 1 512-512 512.531692 512.531692 0 0 1-512 512z m0-967.089231A455.089231 455.089231 0 1 0 967.108923 512 455.660308 455.660308 0 0 0 512 56.910769z m211.042462 506.683077A51.593846 51.593846 0 1 1 774.734769 512a51.613538 51.613538 0 0 1-51.692307 51.593846zM512 563.593846A51.593846 51.593846 0 1 1 563.692308 512 51.593846 51.593846 0 0 1 512 563.593846z m-211.042462 0A51.593846 51.593846 0 1 1 352.649846 512a51.593846 51.593846 0 0 1-51.692308 51.593846z" p-id="1887" fill="#ffffff"></path></svg>
                 </button>
                 <div className={`${this.state.visible ? '' : 'hide'}`}>
                     <ul id='selection'>
-                        <li>快点儿吧，都等到我花都结果啦！</li>
-                        <li>麻神驾到，各位还不颤抖！！</li>
+                        <li>快点儿吧，等到我花都结果啦！</li>
+                        <li>麻神驾到，还不尖叫！！</li>
                         <li>输遍天下无敌手的我居然赢了你</li>
-                        <li>再不下叫，狗学猪叫！</li>
-                        <li>麻匪，不要怂，再来两局！</li>
+                        <li>乖乖，麻将国粹无处不在！</li>
+                        <li>搏一搏，单车变摩托</li>
+                        <li>麻匪们，再来两局！</li>
                     </ul>
                 </div>
             </header>
@@ -972,7 +980,10 @@ class ImgLoader extends Component {
         //const host = 'https://yefeng-test.oss-cn-beijing.aliyuncs.com/images/';
         const host = '/images/games/majiang2/';
         this.imgList = [
-            { key: "b", url: host + "/b.png" },
+            
+            { key: "desktop1", url: host + "/desktop1.jpg" },
+            { key: "desktop2", url: host + "/desktop2.jpg" },
+            { key: "desktop3", url: host + "/desktop3.jpg" },
             { key: "bg_1", url: host + "/bg_1.jpg" },
             { key: "bg_2", url: host + "/bg_2.jpg" },
             { key: "bg_default", url: host + "/bg_default.jpg" },
@@ -997,6 +1008,7 @@ class ImgLoader extends Component {
             { key: "sideCard2", url: host + "/sideCard2.png" },
             { key: "t", url: host + "/t.png" },
             { key: "w", url: host + "/w.png" },
+            { key: "b", url: host + "/b.png" },
             { key: "win", url: host + "/win.png" },
             { key: "winner", url: host + "/winner.png" },
             { key: "remain", url: host + "/remain.png" },

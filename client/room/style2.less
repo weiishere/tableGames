@@ -4,6 +4,7 @@
     white-space: nowrap
 }
 
+
 ._transition {
     -webkit-transition: all 0.1s ease-out;
 }
@@ -72,7 +73,7 @@ button {
     width: 100%;
     margin: 0;
     height: 100%;
-    background: url('/images/games/majiang2/bg_2.jpg');
+    background: url('/images/games/majiang2/desktop1.jpg');
     background-size: 100% 100%;
     position: relative;
     .ruleNameBar {
@@ -106,10 +107,11 @@ button {
         //box-shadow: -0.2rem 0.2rem 0.6rem #000;
         line-height: 2rem;
         font-size: 1.1rem;
-        text-align: center;
+        text-align: right;
         text-shadow: 1px 1px 1px #333;
         .remain {
             //background: url('/images/games/majiang2/remain.png');
+            text-align: center;
             width: 11rem;
             height: 1.7rem;
             background-size: 100% 100%;
@@ -320,8 +322,7 @@ button {
             min-height: 2rem;
             line-height: 2rem;
             padding: 0 .5rem;
-            width: 20rem;
-            //display: none;
+            width: 20rem; //display: none;
             transition: all .2s ease-out;
             visibility: hidden;
             border-radius: 5rem;
@@ -345,14 +346,18 @@ button {
             border-radius: 1rem 0 0 0;
             input {
                 margin: 0.2rem;
-                width: 15rem;
+                width: 14rem;
                 padding: 0;
                 border: solid 1px #999;
                 background-color: transparent;
                 color: #eee;
                 height: 2rem;
                 border-radius: 1rem;
-                padding: 0 .5rem
+                padding: 0 .5rem;
+                &::-webkit-input-placeholder {
+                    color: #666;
+                    font-size: .8rem;
+                }
             }
             button {
                 vertical-align: middle;
