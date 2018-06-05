@@ -100,36 +100,7 @@ const tool.getCardShowTime = (cards) => {
     // }
     return { resultType_1, resultType_2 };
 }*/
-//返回去掉靠子的牌组（不存在单牌）
-const getSames = (cards) => {
-    let { resultType_1, resultType_2 } = tool.getCardShowTime(cards);
-    let copy_cards = clone(cards);
-    if (resultType_2.one.length === 0) {
-        //如果没有耍单的牌，直接通过
-        return copy_cards;
-    } else {
-        //取得耍单的牌，看是否能组成连子，有的话抽出3个，如果剩下的还有单，那么再抽，直到没有单
-        let frist, second;
-        let _card = resultType_1[resultType_2.one[0]].card;
-        frist = copy_cards.find(card => card.color === _card.color && card.number - _card.number == 1);
-        if (frist) {
-            second = copy_cards.find(card => card.color === frist.color && card.number - frist.number == 1);
-        }
-        if (frist && second) {
-            //如果有靠的，那么清除掉这三个，继续走
-            copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
-            let { resultType_1, resultType_2 } = tool.getCardShowTime(copy_cards);
-            if (resultType_2.one.length !== 0) {
-                return getSames(copy_cards);
-            } else {
-                return copy_cards;
-            }
-        } else {
-            //严格说，不应该存在这种情况（引入传入的牌组就应该是已经可以胡牌的牌型）
-            return copy_cards;
-        }
-    }
-}
+
 //板子判断
 const isBanzi = (cards) => {
     let { resultType_1, resultType_2 } = tool.getCardShowTime(cards);
@@ -220,7 +191,7 @@ const rules = [
     //板子、飞机
     ({ cards }) => {
         //大飞机、小飞机、大板子、小板子
-        const noSamesCards = getSames(cards.allCards);
+        const noSamesCards = tool.getSames(cards.allCards);
         let { resultType_1, resultType_2 } = tool.getCardShowTime(noSamesCards);
         const threeGroupCount = resultType_2.three.length;
         let name = '', multiple = 0;
@@ -335,7 +306,7 @@ const rules = [
                 grArr = grArr.concat(arr);
             });
             //存在1~9的同花色牌，这是首要条件，再验证剩下的牌是否是组
-            const remainCard = getSames(grArr);//去掉靠子，返回的如果还存在单牌，那么就不成立
+            const remainCard = tool.getSames(grArr);//去掉靠子，返回的如果还存在单牌，那么就不成立
             const { resultType_2 } = tool.getCardShowTime(remainCard);
             if (resultType_2.one.length === 0) {
                 return { name: '一条龙', multiple: 5 }
@@ -417,7 +388,7 @@ const trggleAction = (handCards, group, actionName) => {
     let _handCards = handCards.concat(group.winCard);
     let allCards = tool.concatCard(_handCards, group);//handCards.concat(compCard);
     //let { resultType_1, resultType_2 } = tool.getCardShowTime(allCards);
-    const res = getSames(allCards);
+    //const res = tool.getSames(allCards);
     let action = actions.find(item => item.code === actionName);
     allMultipl += action.multiple;
     rules.forEach(item => {

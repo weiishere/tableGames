@@ -9,7 +9,9 @@ import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 import $ from 'jquery';
+import './test';
 //import wechatConfig from '../wxConfig';
+const theGamerNumber = 2;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -30,7 +32,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-const ws = process.env.NODE_ENV === 'development' ? io('ws://127.20.10.9/') : io('ws://220.167.101.116:3300');
+const ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -94,6 +96,7 @@ class Table extends Component {
         this.readyCallback = this.readyCallback.bind(this);
         this.showCardAuto = this.showCardAuto.bind(this);
         this.heartBeat = this.heartBeat.bind(this);
+        this.lastData = { isOver: false };
     }
     heartBeat({ roomId, uid }) {
         //心跳
@@ -142,8 +145,9 @@ class Table extends Component {
         const roomOption = JSON.parse(room.jsonData);
         this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
+
         const __option = {
-            gamerNumber: 4,
+            gamerNumber: theGamerNumber,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -168,8 +172,10 @@ class Table extends Component {
                     if (data.content) {
                         newRecore = true;
                         if (data.content.isOver) {
+                            if (self.lastData.isOver === false) self.lastData = clone({ room: self.state.room, game: self.state.game, isOver: true });
                             self.setState({ game: data.content, showRecore: true });
                         } else {
+                            self.lastData = clone({ room: self.state.room, game: self.state.game, isOver: false });//将room和game缓存下来，用于展示游戏记录（不然其他玩家退出，会刷掉数据）
                             self.setState({ game: data.content });
                         }
                     } else {
@@ -327,18 +333,17 @@ class Table extends Component {
                 <QueueAnim delay={100} duration={400} animConfig={[
                     { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
                 ]}>
-                    {this.state.game && this.state.showRecore &&
-                        <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.state.room} game={this.state.game} />}
-                    <MsgPanel roomLog={this.state.roomLog} visible={this.state.showMsgPanel}
-                        onClose={() => { this.setState({ showMsgPanel: false }) }}
-                        sendMsg={(content) => {
-                            ws.emit('chatMsg', JSON.stringify({
-                                roomId: this.state.room.roomId,
-                                name: this.state.user.name,
-                                content: content
-                            }));
-                        }} />
+                    {this.state.showRecore && <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.lastData.room || this.state.room} isOver={this.state.game && this.state.game.isOver} />}
                 </QueueAnim>
+                <MsgPanel roomLog={this.state.roomLog} visible={this.state.showMsgPanel}
+                    onClose={() => { this.setState({ showMsgPanel: false }) }}
+                    sendMsg={(content) => {
+                        ws.emit('chatMsg', JSON.stringify({
+                            roomId: this.state.room.roomId,
+                            name: this.state.user.name,
+                            content: content
+                        }));
+                    }} />
             </div>
             {!this.state.keepVertical && <div className='orientationWeak'>
                 <span>
@@ -491,7 +496,7 @@ class Gamer_mine extends Component {
             //let allCard = concatCard(this.props.userState);
             //只要手牌有需要暗杠的就直接
             //是否是碰转杠，如果是的话要优先处理
-            const isMeetToFull = this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
+            const isMeetToFull = this.props.userState.fatchCard && this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
             if (!isMeetToFull) {
                 let { resultType_1, resultType_2 } = getCardShowTime(this.props.userState.cards);
                 if (resultType_2.four.length >= 2) {
@@ -602,8 +607,9 @@ class Gamer_mine extends Component {
                     }
                 </div>)}
                 {this.props.userState.cards.map(card =>
-                    <div style={{ display: 'inline-block' }} key={`card_${card.key}`}>
+                    <div className='mainCards' style={{ display: 'inline-block' }} key={`cardWrap_${card.key}`}>
                         <Card
+                            key={`card_mine_${card.key}`}
                             activeKey={this.state.activeCard.key}
                             clickHandle={this.clickHandle}
                             type={`mine_main ${(!this.isLack && this.props.userState.colorLack !== card.color) || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1) ? 'gray' : ''}`}
@@ -810,13 +816,13 @@ class GameInfo extends Component {
     constructor(props) {
         super(props);
     }
-    // ready() {
-    //     const self = this;
-    //     ws.emit('ready', JSON.stringify({
-    //         user: self.props.user,
-    //         roomId: this.props.room.roomId,
-    //         state: 'ready'
-    //     }));
+    // shouldComponentUpdate(nextProps, nextState) {
+    //     if (this.props.game.isOver) {
+    //         //如果是结束的时候，则不更新
+    //         return false;
+    //     } else {
+    //         return true
+    //     }
     // }
     getTotal(uid) {
         let total = 0;
@@ -826,7 +832,7 @@ class GameInfo extends Component {
     render() {
         return <div className='mask'>
             <div className='gameInfoPanel'>
-                <header></header>
+                {this.props.isOver && <header></header>}
                 <div className='contentWrap'>
                     {
                         this.props.room.gamers.map((gamer, index) => <div key={index} className='content'>
@@ -841,7 +847,7 @@ class GameInfo extends Component {
                                             <li key={`li_${_index}`}>
                                                 第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
                                                 {item.find(user => user.uid === gamer.uid).point}
-                                                <div><i>-{item.find(user => user.uid === gamer.uid).winDesc}</i></div>
+                                                <div><i>{item.find(user => user.uid === gamer.uid).winDesc || '---'}</i></div>
                                             </li>)
                                     }
                                 </ul>
@@ -919,10 +925,10 @@ class MsgPanel extends Component {
                     }
                 }} />
                 <button onClick={this.send}>
-                    <svg t="1528129063145" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="994" width="25" height="25" style={{width:'2rem',height:'2rem'}}><defs><style type="text/css"></style></defs><path d="M511.63136 1023.16032c-282.05056 0-511.52896-229.45792-511.52896-511.52896S229.5808 0.1024 511.63136 0.1024 1023.16032 229.5808 1023.16032 511.63136 793.7024 1023.16032 511.63136 1023.16032zM511.63136 61.93152c-247.97184 0-449.69984 201.728-449.69984 449.69984s201.728 449.69984 449.69984 449.69984S961.3312 759.6032 961.3312 511.63136 759.6032 61.93152 511.63136 61.93152z" p-id="995" fill="#ffffff"></path><path d="M428.544 706.10944c-8.15104 0-15.95392-3.23584-21.72928-8.99072l-153.8048-153.8048c-12.00128-12.00128-12.00128-31.45728 0-43.45856 12.00128-12.00128 31.4368-12.00128 43.43808 0l132.096 132.096 279.01952-279.04c12.00128-12.00128 31.4368-12.00128 43.43808 0 12.00128 11.9808 12.00128 31.4368 0 43.43808L450.2528 697.09824C444.49792 702.85312 436.69504 706.10944 428.544 706.10944z" p-id="996" fill="#ffffff"></path></svg>
+                    <svg t="1528129063145" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="994" width="25" height="25" style={{ width: '2rem', height: '2rem' }}><defs><style type="text/css"></style></defs><path d="M511.63136 1023.16032c-282.05056 0-511.52896-229.45792-511.52896-511.52896S229.5808 0.1024 511.63136 0.1024 1023.16032 229.5808 1023.16032 511.63136 793.7024 1023.16032 511.63136 1023.16032zM511.63136 61.93152c-247.97184 0-449.69984 201.728-449.69984 449.69984s201.728 449.69984 449.69984 449.69984S961.3312 759.6032 961.3312 511.63136 759.6032 61.93152 511.63136 61.93152z" p-id="995" fill="#ffffff"></path><path d="M428.544 706.10944c-8.15104 0-15.95392-3.23584-21.72928-8.99072l-153.8048-153.8048c-12.00128-12.00128-12.00128-31.45728 0-43.45856 12.00128-12.00128 31.4368-12.00128 43.43808 0l132.096 132.096 279.01952-279.04c12.00128-12.00128 31.4368-12.00128 43.43808 0 12.00128 11.9808 12.00128 31.4368 0 43.43808L450.2528 697.09824C444.49792 702.85312 436.69504 706.10944 428.544 706.10944z" p-id="996" fill="#ffffff"></path></svg>
                 </button>
                 <button onClick={() => { this.setState({ visible: !this.state.visible }) }}>
-                    <svg t="1528108975819" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1886" width="25" height="25" style={{width:'2rem',height:'2rem'}}><defs><style type="text/css"></style></defs><path d="M512 1024a512 512 0 1 1 512-512 512.531692 512.531692 0 0 1-512 512z m0-967.089231A455.089231 455.089231 0 1 0 967.108923 512 455.660308 455.660308 0 0 0 512 56.910769z m211.042462 506.683077A51.593846 51.593846 0 1 1 774.734769 512a51.613538 51.613538 0 0 1-51.692307 51.593846zM512 563.593846A51.593846 51.593846 0 1 1 563.692308 512 51.593846 51.593846 0 0 1 512 563.593846z m-211.042462 0A51.593846 51.593846 0 1 1 352.649846 512a51.593846 51.593846 0 0 1-51.692308 51.593846z" p-id="1887" fill="#ffffff"></path></svg>
+                    <svg t="1528108975819" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1886" width="25" height="25" style={{ width: '2rem', height: '2rem' }}><defs><style type="text/css"></style></defs><path d="M512 1024a512 512 0 1 1 512-512 512.531692 512.531692 0 0 1-512 512z m0-967.089231A455.089231 455.089231 0 1 0 967.108923 512 455.660308 455.660308 0 0 0 512 56.910769z m211.042462 506.683077A51.593846 51.593846 0 1 1 774.734769 512a51.613538 51.613538 0 0 1-51.692307 51.593846zM512 563.593846A51.593846 51.593846 0 1 1 563.692308 512 51.593846 51.593846 0 0 1 512 563.593846z m-211.042462 0A51.593846 51.593846 0 1 1 352.649846 512a51.593846 51.593846 0 0 1-51.692308 51.593846z" p-id="1887" fill="#ffffff"></path></svg>
                 </button>
                 <div className={`${this.state.visible ? '' : 'hide'}`}>
                     <ul id='selection'>
@@ -954,7 +960,7 @@ class MsgPanel extends Component {
             <footer onClick={this.props.onClose}>
                 <svg t="1528101175036" viewBox="0 0 1024 1024"
                     version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1884"
-                    width="30" height="30"  style={{width:'2.2rem',height:'2.2rem'}}><defs><style type="text/css"></style></defs>
+                    width="30" height="30" style={{ width: '2.2rem', height: '2.2rem' }}><defs><style type="text/css"></style></defs>
                     <path d="M702.3816269859672 511.8825858058409l-33.10658589284864-33.1274284925312-0.14173022098839289 0.1403411217033862L354.7249589068816 164.46143998578168l-33.10658589284869 33.10658589284864 314.4118260713292 314.43197412136965L321.6183730140326 826.4347529988735l33.10658589284865 33.10311178676787 314.40835196524887-314.43127889279253 0.1417302209883927 0.1403411217033864 33.106585892848685-33.13090259861198-0.11741419415920966-0.11671896558254967L702.3816269859672 511.8825858058409zM702.3816269859672 511.8825858058409" fill="#ffffff" p-id="1885">
                     </path>
                 </svg>
@@ -980,7 +986,7 @@ class ImgLoader extends Component {
         //const host = 'https://yefeng-test.oss-cn-beijing.aliyuncs.com/images/';
         const host = '/images/games/majiang2/';
         this.imgList = [
-            
+
             { key: "desktop1", url: host + "/desktop1.jpg" },
             { key: "desktop2", url: host + "/desktop2.jpg" },
             { key: "desktop3", url: host + "/desktop3.jpg" },
