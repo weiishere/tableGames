@@ -17,12 +17,18 @@ module.exports = (cards) => {
         }
     });
     let singleNumber = 0;
+    let twoNumber = 0;
+    let threeNumber = 0;
+    let fourNumber = 0;
     for (let item in group) {
         if (group[item].count === 1) singleNumber++;
+        if (group[item].count === 2) twoNumber++;
+        if (group[item].count === 3) threeNumber++;
+        if (group[item].count === 4) fourNumber++;
         if (group[item].count >= 5) return false;//用于查叫，因为是列出所有可以查的牌，如果手牌已经有4个，这里又验证它，那么肯定是不合法的，直接return false；
     }
-    //如果手上已经都没有单牌了，那么直接胡牌
-    if (singleNumber === 0) {
+    //如果手上已经都没有单牌了，那么要么必须是七对，或者是单吊的对子，或者大对子(后面的逻辑会验证，这里就不处理)
+    if (singleNumber === 0 && (twoNumber === 7 || twoNumber === 1)) {
         return true;
     }
     //2和和3个的开始计算

@@ -116,8 +116,6 @@ class Room {
     begin(scoket, sendForRoom, sendForUser) {
         try {
             const self = this;
-            this.sendForRoom = sendForRoom;
-            this.sendForUser = sendForUser;
             this.setSendMsg(function (content, uid) {
                 //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
                 self.gamers.forEach(gamer => {
@@ -153,6 +151,8 @@ class Room {
                 });
             })
             this.singleGameBegin(scoket);
+            this.sendForRoom = this.game.sendForRoom = sendForRoom;
+            this.sendForUser = this.game.sendForUser = sendForUser;
         } catch (e) {
             writeLog('begin', e);
         }
@@ -161,7 +161,7 @@ class Room {
     //全部局数结束
     end() {
         //结束时更新下房间状态
-        sqliteCommon.updateState({ roomId: self.roomId, state: 2 });
+        sqliteCommon.updateState({ roomId: this.roomId, state: 2 });
         this.state = 'end';
         this.endHandler && this.endHandler();
     }

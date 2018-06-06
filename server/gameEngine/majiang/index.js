@@ -524,12 +524,17 @@ class Majiang {
                                 //胡牌
                                 //let next;
                                 //如果是第一个人胡牌的，就是master
-                                if (this.gameState.filter(state => state.isWin).length === 0) {
+                                let winCount = 1;
+                                if (this.gameState.filter(state => {
+                                    if (state.isWin) winCount++;
+                                    return state.isWin;
+                                }).length === 0) {
                                     userState.master = true;
                                 } else {
                                     userState.master = false;
                                 }
                                 userState.groupCards.winCard = doCard;
+
                                 if (isMineAction) {
                                     //testWinType可能是天胡、地胡、杠上花之类的行为
                                     // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
@@ -542,7 +547,8 @@ class Majiang {
                                     userState.fatchCard = undefined;
                                     //next = this.getNaxtCacher(userState.uid);
                                     userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
-                                    userState.winDesc = `${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
+                                    userState.winDesc = `(${winCount})${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
+                                    this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}自摸"}`);
                                 } else {
                                     //别人点炮
                                     //testWinType可能是杠上炮、抢杠
@@ -553,11 +559,11 @@ class Majiang {
                                     // });
                                     let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin')
                                     userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
-                                    userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
+                                    userState.winDesc = `(${winCount})${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                                     //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
                                     //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
                                     this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
-                                    //next = this.getNaxtCacher(this.lastShowCardUserState.uid);//
+                                    this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}胡牌，${this.lastShowCardUserState.name}点炮"}`);
                                 }
                                 //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听userState.winDesc
                                 if (this.gameState.filter(item => {
@@ -638,27 +644,27 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-        //     this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
-        //     this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
-        //     this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
-        // // this.gameState[1].groupCards.meet = [[
-        // //     this.getSpecifiedCard('w', 6),
-        // //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        // // ]]
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 7), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 9)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
+            this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        ].sort(objectArraySort('key'));
+        // this.gameState[1].groupCards.meet = [[
+        //     this.getSpecifiedCard('w', 6),
+        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        // ]]
 
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
