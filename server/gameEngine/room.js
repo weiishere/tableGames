@@ -48,8 +48,13 @@ class Room {
         } else {
             gamerMaster = this.gamers[0];//第一局的话，第一个加入的人是庄家
         }
-
-        this.game = new Majiang({ colorType: this.optionSet.colorType, master: gamerMaster, rule: this.optionSet.rule });//庄家，上一次第一次胡牌的玩家
+        this.game = new Majiang({
+            colorType: this.optionSet.colorType,
+            master: gamerMaster,
+            rule: this.optionSet.rule,
+            roomId: this.roomId,
+            countdown: this.countdown
+        });//庄家，上一次第一次胡牌的玩家
         this.game.setSendMsg(function (content, uid) {
             //监听游戏发出的任何信息
             self.sendMsg && self.sendMsg(content, uid);
@@ -138,7 +143,8 @@ class Room {
                         })(),
                         lastShowCard: content.lastShowCard,
                         remainCardNumber: content.remainCardNumber,
-                        isOver: (content.isOver ? true : false)
+                        isOver: (content.isOver ? true : false),
+                        remainTime: content.remainTime
                     }
                     if (uid) {
                         if (gamer.uid === uid) {

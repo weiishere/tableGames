@@ -9,7 +9,7 @@ import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 import $ from 'jquery';
-import './test';
+//import './test';
 //import wechatConfig from '../wxConfig';
 const theGamerNumber = 2;
 const axios = require('axios');
@@ -143,15 +143,17 @@ class Table extends Component {
         const self = this;
         let once = true;
         const roomOption = JSON.parse(room.jsonData);
-        this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
+        //this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
 
+        //开发测试的时候这里可以对游戏做临时配置
         const __option = {
             gamerNumber: theGamerNumber,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
-            gameTime: roomOption.gameTime
+            gameTime: roomOption.gameTime,
+            countdown: roomOption.countdown
         }
         this.setState({
             option: __option
@@ -324,7 +326,12 @@ class Table extends Component {
                     <button className='msg' onClick={() => { this.setState({ showMsgPanel: !this.state.showMsgPanel }); }}></button>
                 </div>
                 {this.state.game && <div className='tableCenter'>
-                    <Countdown time={this.countdown} roomState={this.state.room.state} isOver={this.state.game.isOver} timeOverHander={this.showCardAuto} />
+                    <Countdown
+                        time={this.state.game.remainTime}
+                        roomState={this.state.room.state}
+                        isOver={this.state.game.isOver}
+                    //timeOverHander={this.showCardAuto} 
+                    />
                     {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
                     {rightGameState && <div className={`${rightGameState.catcher && 'right'}`}></div>}
                     {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
@@ -379,7 +386,7 @@ class Countdown extends Component {
                     window.clearInterval(this.timer);
                     this.timer = window.setInterval(() => {
                         if (this.state.countdown === 0) {
-                            this.props.timeOverHander();
+                            this.props.timeOverHander && this.props.timeOverHander();
                             window.clearInterval(this.timer);
                         } else {
                             this.setState({ countdown: --this.state.countdown });

@@ -180,20 +180,22 @@ module.exports = (io, scoket) => {
                         sqliteCommon.updateState({
                             roomId: data.roomId,
                             state: 1
-                        }, (result) => {
+                        }, (result2) => {
                             //开始初始化room到内存
+                            const jsonData = JSON.parse(result.jsonData);
                             data.user.point = 0;
                             data.user.state = 'wait';
                             const room = new Room({
-                                roomId: data.roomId,
+                                roomId: result.roomId,
                                 gamers: [data.user],
-                                gamerNumber: data.option.gamerNumber,
-                                mulriple: data.option.mulriple,//倍数
-                                gameTime: data.option.gameTime,
+                                gamerNumber: data.option.gamerNumber || jsonData.mulriple,//测试的时候这个可能会变
+                                mulriple: data.option.mulriple || jsonData.mulriple,//倍数
+                                gameTime: data.option.gameTime || jsonData.gameTime,
+                                countdown: data.option.countdown || jsonData.countdown,//倒计时
                                 state: 'wait',
                                 gameType: 'majiang',
-                                rule: data.option.rule,
-                                colorType: data.option.colorType || 3
+                                rule: data.option.rule || jsonData.rule,
+                                colorType: data.option.colorType || jsonData.colorType || 3
                             });
                             rooms.push(room);
                             //data.user['catcher'] = true;

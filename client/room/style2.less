@@ -369,7 +369,7 @@ button {
                 transition: all .1s ease-out;
                 width: 18rem;
                 top: 2.5rem;
-                right: 0;
+                right: .5rem;
                 background: #000;
                 border: solid 1px #ccc;
                 border-radius: 1rem;
@@ -603,9 +603,7 @@ button {
         width: 90%;
         height: 5rem;
         text-align: center;
-        .mainCards {
-            
-        }
+        .mainCards {}
         .group {
             text-align: left;
             display: inline-block;
@@ -1018,9 +1016,86 @@ button {
             right: 0;
             margin: auto;
             width: 80%;
-            height: 5rem;
-            font-size: 2rem;
+            height: 10rem;
+            font-size: 3rem;
             text-align: center;
+        }
+    }
+    .gamerWrap_mine {
+        height: 15rem;
+        .cardListWrap {
+            .fetchCard {
+                //display: inline-block;
+                position: absolute;
+                right: 0;
+                top: -100%;
+            }
+        }
+    }
+    .MainTable {
+        .gameInfoBar {
+            button {
+                height: 4rem;
+                width: 4rem;
+            }
+        }
+        .msgPanel {
+            width: 30rem;
+            &.hide {
+                transform: translate3d(30rem, 0, 0);
+            }
+            .miniMsgPanel {
+                width: 30rem; 
+                font-size: 2.5rem;
+                &>b {
+                    color: #59f1b2;
+                    float: left;
+                    .ellipsis;
+                    max-width: 5rem;
+                }
+                &.show {
+                    //display: block;
+                    transform: translate3d(-28rem, 0, 0) !important;
+                    visibility: inherit;
+                }
+            }
+            &>header {
+                height: 5rem;
+                input {
+                    width: 18rem;
+                    height: 3rem;
+                    margin: .8rem;
+                }
+                button {
+                    svg {
+                        width: 3.5rem !important;
+                        height: 3.5rem !important
+                    }
+                }
+                ul {
+                    li {
+                        font-size: 2rem
+                    }
+                }
+                div{
+                    top:4.5rem;
+                    width: 25rem;
+                    ul{
+                        li{
+                            font-size: 3rem;
+                        }
+                    }
+                }
+            }
+            ul {
+                li {
+                    svg {
+                        width: 2rem;
+                        height: 2rem;
+                    }
+                    font-size: 3rem;
+                }
+            }
         }
     }
 }
@@ -1036,7 +1111,7 @@ button {
     /*竖屏 css*/
     .gamerWrap_mine {
         .userDock {
-            top: -15rem
+            top: -15rem;
         }
     }
 }

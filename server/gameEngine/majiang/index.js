@@ -21,12 +21,44 @@ let sssIndex = 10;
 //         else return 0
 //     }
 // }
+const getRedomNum = (minNum, maxNum) => {
+    switch (arguments.length) {
+        case 1: return parseInt(Math.random() * minNum + 1);
+        case 2: return parseInt(Math.random() * (maxNum - minNum + 1) + minNum);
+        default: return 0;
+    }
+}
+class TimerManager {
+    constructor(countdown, timeOutEnent) {
+        this.countdown = countdown;
+        this.remainTime = countdown;//剩余时间
+        if (timeOutEnent) this.timeOutEnent = timeOutEnent;
+        this.timer = null;
+    }
+    start() {
+        clearInterval(this.timer);
+        this.remainTime = this.countdown;
+        setInterval(() => {
+            if (this.remainTime === 0) {
+                this.timeOutEnent.call(this);
+                clearInterval(this.timer);
+            } else {
+                this.remainTime--;
+            }
+        }, 1000);
+    }
+    setTimeOutEnent(fn) {
+        this.timeOutEnent = fn;
+    }
+    pause() { }
+}
 class Majiang {
     constructor(option) {
         rule = getRule(option.rule);
         const _option = Object.assign({
             gameId: (new UUID()).generateUUID(),
-            gameState: [{ uid: '1' }, { uid: '2' }, { uid: '3' }, { uid: '4' }],
+            roomId: 0
+            //gameState: [{ uid: '1' }, { uid: '2' }, { uid: '3' }, { uid: '4' }],
             // gameState: [
             //     { uid: '1', increase: 0, cards: [], groupCards: [] },
             //     { uid: '2', increase: 0, cards: [], groupCards: [] },
@@ -43,6 +75,47 @@ class Majiang {
         this.lastShowCard = undefined;
         this.isOver = false;
         this.master = option.master;
+        const self = this;
+        this.timer = new TimerManager(this.countdown, function () {
+            //时间用完后的操作
+            try {
+                const catcher = self.gameState.find(item => item.catcher);
+                if (catcher) {
+                    //优先打要定缺的牌，其次打出刚刚摸的牌
+                    const lackCards = catcher.cards.filter(card => card.color === catcher.colorLack);
+                    // if (lackCards.length === 0 && !catcher.fatchCard) {
+                    //     //没有刚刚抓的牌，又是出牌者，多半就是刚刚碰了，这种要随便抽一张牌
+                    // }
+                    const redomCard = lackCards.length === 0 ? (catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedomNum(0, catcher.cards.length - 1)]) : {}
+                    self.showCard({
+                        roomId: self.roomId,
+                        uid: catcher.uid,
+                        cardKey: lackCards.length === 0 ? redomCard.key : lackCards[0].key
+                    });
+                } else {
+                    //找到有actionCode的人
+                    self.gameState.forEach(state => {
+                        if (state.colorLack === '') {
+                            //选花色
+                            // ws.emit('chooseColor', JSON.stringify({
+                            //     roomId: this.props.room.roomId,
+                            //     uid: state.uid,
+                            //     color: ['b', 't', 'w'][getRedomNum(0, 2)]
+                            // }));
+                        } else if (state.actionCode.length !== 0) {
+                            //如果有胡，就胡，不然默认过
+                            // ws.emit('action', JSON.stringify({
+                            //     roomId: this.state.room.roomId,
+                            //     uid: state.uid,
+                            //     actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
+                            // }));
+                        }
+                    })
+                }
+            } catch (e) {
+                writeLog('timerEnd', e);
+            }
+        });
     }
     init(gameState) {
         //需要为state做一个排序，用于之后顺序摸牌(不排了)
@@ -124,7 +197,8 @@ class Majiang {
             } else {
                 item.catcher = true;
             }
-        })
+        });
+        this.timer.start();
     }
 
     concatCard(state, isGroup) {
@@ -232,6 +306,66 @@ class Majiang {
             loser.point -= score;
         }
     }
+    showCard(data) {
+        try {
+            const userState = this.gameState.find(item => item.uid === data.uid);
+            if (userState.testWinType && userState.testWinType !== 'robFullMeetWin') userState.testWinType = '';//出牌的时候解除胡牌类型监控，？？（抢杠有一个自动出牌，这里要排除掉）
+            let showCard;
+            if (userState.fatchCard && userState.fatchCard.key === data.cardKey) {
+                //直接打出了刚刚摸的牌
+                showCard = userState.fatchCard;
+                if (!showCard) return;
+                // console.log(showCard);
+                userState.outCards.push(clone(userState.fatchCard));
+                //userState.fatchCard = undefined;
+            } else {
+                showCard = userState.cards.find(item => item.key === data.cardKey);
+                // console.log(showCard);
+                if (!showCard) return;
+                userState.outCards.push(showCard);
+                userState.cards = userState.cards.filter(item => item.key !== data.cardKey);
+                //fatchCard可能为空（碰了之后不会摸牌）
+                userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
+                userState.cards = userState.cards.sort(objectArraySort('key'));
+                //userState.fatchCard = undefined;
+            }
+            this.lastShowCardUserState = userState;
+            //判断是否需要暂停
+            if (!this.doGameState(data.uid, showCard, 'other')) {
+                //无须暂定，下一个玩家抓牌
+                //this.setGamerCacher(nextCatcher);
+
+                const next = this.getNaxtCacher(userState.uid);
+                this.setGamerCacher(next);
+                if (!this.fatchCard({})) return false;
+                // if (this.cards.length === 0) {
+                //     //如果总牌数为0了，则结束游戏
+                //     //this.isOver = true;
+                //     this.checkCanWin();//请觉并结算
+                //     this.overHandler.call(this);
+                // } else {
+                //     this.fatchCard({});//发牌
+                // }
+            } else {
+                this.setGamerCacher();//都设置为false
+                //暂停，等待玩家做出动作，有动作的话
+                // let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
+                // if (winners.length !== 0) {
+                //     //说明有玩家有胡牌，那么需要暂时禁用掉其他有动作玩家的非胡牌操作
+                //     let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
+                //     others.forEach(item => {
+                //         item.isPause = true;
+                //     });
+                // }
+            }
+            this.lastShowCard = showCard;
+            userState.fatchCard = undefined;//清空玩家刚刚抓到的牌
+            this.sendData();
+        } catch (e) {
+            writeLog('showCard', e);
+        }
+    }
+    const
     regAction() {
 
         // ws.emit('showCard', JSON.stringify({
@@ -239,72 +373,12 @@ class Majiang {
         //     uid: this.props.user.uid,
         //     cardKey: this.state.activeCard.key
         // }));
-
-        const showCard = function (data) {
-            try {
-                const userState = this.gameState.find(item => item.uid === data.uid);
-                if (userState.testWinType && userState.testWinType !== 'robFullMeetWin') userState.testWinType = '';//出牌的时候解除胡牌类型监控，？？（抢杠有一个自动出牌，这里要排除掉）
-                let showCard;
-                if (userState.fatchCard && userState.fatchCard.key === data.cardKey) {
-                    //直接打出了刚刚摸的牌
-                    showCard = userState.fatchCard;
-                    if (!showCard) return;
-                    // console.log(showCard);
-                    userState.outCards.push(clone(userState.fatchCard));
-                    //userState.fatchCard = undefined;
-                } else {
-                    showCard = userState.cards.find(item => item.key === data.cardKey);
-                    // console.log(showCard);
-                    if (!showCard) return;
-                    userState.outCards.push(showCard);
-                    userState.cards = userState.cards.filter(item => item.key !== data.cardKey);
-                    //fatchCard可能为空（碰了之后不会摸牌）
-                    userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
-                    userState.cards = userState.cards.sort(objectArraySort('key'));
-                    //userState.fatchCard = undefined;
-                }
-                this.lastShowCardUserState = userState;
-                //判断是否需要暂停
-                if (!this.doGameState(data.uid, showCard, 'other')) {
-                    //无须暂定，下一个玩家抓牌
-                    //this.setGamerCacher(nextCatcher);
-
-                    const next = this.getNaxtCacher(userState.uid);
-                    this.setGamerCacher(next);
-                    if (!this.fatchCard({})) return false;
-                    // if (this.cards.length === 0) {
-                    //     //如果总牌数为0了，则结束游戏
-                    //     //this.isOver = true;
-                    //     this.checkCanWin();//请觉并结算
-                    //     this.overHandler.call(this);
-                    // } else {
-                    //     this.fatchCard({});//发牌
-                    // }
-                } else {
-                    this.setGamerCacher();//都设置为false
-                    //暂停，等待玩家做出动作，有动作的话
-                    // let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
-                    // if (winners.length !== 0) {
-                    //     //说明有玩家有胡牌，那么需要暂时禁用掉其他有动作玩家的非胡牌操作
-                    //     let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
-                    //     others.forEach(item => {
-                    //         item.isPause = true;
-                    //     });
-                    // }
-                }
-                this.lastShowCard = showCard;
-                userState.fatchCard = undefined;//清空玩家刚刚抓到的牌
-                this.sendData();
-            } catch (e) {
-                writeLog('showCard', e);
-            }
-        }
         return [
             {
                 actionName: 'showCard',
                 actionFn: function (_data) {
                     const data = JSON.parse(_data);
-                    showCard.call(this, data);
+                    this.showCard.call(this, data);
                 }
             },
             {
@@ -480,7 +554,7 @@ class Majiang {
                                         userState.testWinType = 'robFullMeetWin';//被抢杠等待
                                         userState.winDesc = '等待其他玩家选择抢杠~';
                                         userState.actionCode = [];
-                                        showCard.call(this, {
+                                        this.showCard.call(this, {
                                             roomId: data.roomId,
                                             uid: data.uid,
                                             cardKey: doCard.key
@@ -630,7 +704,8 @@ class Majiang {
             gameState: this.gameState,
             remainCardNumber: this.cards.length,
             lastShowCard: this.lastShowCard,
-            isOver: this.isOver
+            isOver: this.isOver,
+            remainTime: this.timer.remainTime
         }, uid);
     }
     //获取指定的牌（主要用于快速获取牌型用于测试）
