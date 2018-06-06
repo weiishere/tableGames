@@ -21,7 +21,6 @@ module.exports = (cards) => {
     let twoNumber = 0;
     let threeNumber = 0;
     let fourNumber = 0;
-    let lastComparentCard;
     for (let item in group) {
         if (group[item].count === 1) singleNumber++;
         if (group[item].count === 2) twoNumber++;
@@ -51,22 +50,16 @@ module.exports = (cards) => {
     const keBijiao = (cards, index) => {
         let copy_cards = clone(cards);
         let frist, second, _card = copy_cards[index];
-        if (lastComparentCard && lastComparentCard.color === _card.color && lastComparentCard.number === _card.number) {
-            //跟上次比较的一样，index+1并跳过
-            index++;
-        } else {
-            frist = copy_cards.find(card => card.color === _card.color && card.number - _card.number == 1);
-            if (frist) {
-                second = copy_cards.find(card => card.color === frist.color && card.number - frist.number == 1);
-            }
-            if (frist && second) {
-                //如果有靠的，那么清除掉这三个，继续走
-                copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
-            } else {
-                index++;
-            }
+        frist = copy_cards.find(card => card.color === _card.color && card.number - _card.number == 1);
+        if (frist) {
+            second = copy_cards.find(card => card.color === frist.color && card.number - frist.number == 1);
         }
-        lastComparentCard = _card;
+        if (frist && second) {
+            //如果有靠的，那么清除掉这三个，继续走
+            copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
+        } else {
+            index++;
+        }
         if (copy_cards.length > index) {
             return keBijiao(copy_cards, index);
         } else {
@@ -99,7 +92,6 @@ module.exports = (cards) => {
         //console.log('首先抽取的对子:' + duiziCard.number + duiziCard.color);
         //console.log(copy_cards.map(card => card.number + card.color));//抽了一个对和其他所有的克剩下的牌，做连子判断
         const tCard = copy_cards[0];
-        lastComparentCard = null;
         const remainCard = keBijiao(copy_cards, 0);
         if (remainCard.length === 0) {
             isWin = true;

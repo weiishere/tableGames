@@ -11,7 +11,7 @@ import Cookies from "js-cookie";
 import $ from 'jquery';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 2;
+const theGamerNumber = 3;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -32,7 +32,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-const ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.31.222/') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -77,7 +77,8 @@ class Table extends Component {
             newState: true,
             isBegin: false,
             showRecore: false,
-            showMsgPanel: true,
+            isFristLoad: true,
+            isConnectting: false,
             option: {}
         }
         // this.option = {
@@ -88,6 +89,7 @@ class Table extends Component {
         //     gameTime: 4,
 
         // }
+        this.isFristLoad = true;
         this.countdown = 60;
         this.ruleName = '';
         this.gameInit = this.gameInit.bind(this);
@@ -137,7 +139,7 @@ class Table extends Component {
                 }
             }
         });
-        ws.on('connect', function () { });
+
     }
     gameInit(room) {
         const self = this;
@@ -145,7 +147,6 @@ class Table extends Component {
         const roomOption = JSON.parse(room.jsonData);
         //this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
-
         //开发测试的时候这里可以对游戏做临时配置
         const __option = {
             gamerNumber: theGamerNumber,
@@ -163,12 +164,19 @@ class Table extends Component {
             roomId: room.roomId,
             option: __option
         }));
+        ws.on('connect', function () {
+            self.setState({ isConnectting: false })
+        });
         ws.on('message', function (msg) {
             const data = JSON.parse(msg);
             let log;
             switch (data.type) {
                 case 'roomData':
                     self.setState({ room: data.content });
+                    if (self.isFristLoad) {
+                        self.isFristLoad = false;
+                        self.setState({ showMsgPanel: data.content.state === 'wait' ? true : false });
+                    }
                     break;
                 case 'gameData':
                     if (data.content) {
@@ -200,6 +208,17 @@ class Table extends Component {
                     break;
             }
             process.env.NODE_ENV === 'development' && console.log(data.content);
+        });
+        ws.on('disconnect', function () {
+            //显示重连
+            self.setState({
+                isConnectting: true
+            })
+            ws.emit('reconnectting', JSON.stringify({
+                user: self.state.user,
+                roomId: room.roomId,
+                option: __option
+            }));
         });
         const timerforBegin = window.setInterval(() => {
             if (isBegin === true) {
@@ -311,7 +330,6 @@ class Table extends Component {
         const rightGameState = this.state.game && rightGamer ? this.state.game.gameState['user_' + rightGamer.uid] : null;
         const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
-
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
@@ -361,6 +379,9 @@ class Table extends Component {
                     }}>坚持竖屏</a>
                 </span>
             </div>}
+            {
+                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...</span></QueueAnim>
+            }
         </QueueAnim>
     }
 }
@@ -376,13 +397,13 @@ class Countdown extends Component {
     componentWillUnmount() {
         window.clearInterval(this.timer);
     }
-    componentWillReceiveProps() {
+    componentWillReceiveProps(nextProps) {
         if (!newRecore) { return false; }
-        if (this.props.isOver) {
+        if (nextProps.isOver) {
             window.clearInterval(this.timer);
         } else {
-            if (this.props.roomState === 'playing') {
-                this.setState({ countdown: this.props.time }, () => {
+            if (nextProps.roomState === 'playing') {
+                this.setState({ countdown: nextProps.time }, () => {
                     window.clearInterval(this.timer);
                     this.timer = window.setInterval(() => {
                         if (this.state.countdown === 0) {
@@ -394,14 +415,14 @@ class Countdown extends Component {
                     }, 1000);
                 });
             } else {
-                this.setState({ countdown: this.props.time });
+                this.setState({ countdown: nextProps.time });
                 window.clearInterval(this.timer);
             }
         }
         //if (this.timer) { return; }
     }
     render() {
-        return <div className='center'>{this.state.countdown}</div>
+        return <div className={`center ${this.state.countdown <= 5 && 'warn'}`}>{this.state.countdown}</div>
     }
 }
 class GamerDock extends Component {

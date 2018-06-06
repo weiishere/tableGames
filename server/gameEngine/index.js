@@ -87,7 +87,7 @@ module.exports = (io, scoket) => {
             if (room) {
                 if (room.state === 'playing') {
                     //正在进行的游戏
-                    room.game.regAction(scoket, this);
+                    //room.game.regAction(scoket, this);
                 } else {
                     room.gamerLeave(scoket.user.uid);
                     if (room.gamers.length === 0) {
@@ -102,6 +102,22 @@ module.exports = (io, scoket) => {
                     }
                 }
             }
+        },
+        reconnectting: (data) => {
+            scoket.user = data.user;
+            const room = findUserInRoom(data.user.uid);
+            if (room) {
+                room.game.regAction().forEach(item => {
+                    scoket.on(item.actionName, function (data) {
+                        item.actionFn.call(room.game, data);
+                    })
+                });
+                sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                setTimeout(() => {
+                    room.game.sendData();
+                }, 50);
+            }
+
         },
         checkin: (data) => {
             try {

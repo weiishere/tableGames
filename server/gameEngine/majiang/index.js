@@ -38,10 +38,10 @@ class TimerManager {
     start() {
         clearInterval(this.timer);
         this.remainTime = this.countdown;
-        setInterval(() => {
+        this.timer = setInterval(() => {
             if (this.remainTime === 0) {
-                this.timeOutEnent.call(this);
                 clearInterval(this.timer);
+                this.timeOutEnent.call(this);
             } else {
                 this.remainTime--;
             }
@@ -49,6 +49,10 @@ class TimerManager {
     }
     setTimeOutEnent(fn) {
         this.timeOutEnent = fn;
+    }
+    end(){
+        clearInterval(this.timer);
+        this.remainTime = this.countdown;
     }
     pause() { }
 }
@@ -97,18 +101,18 @@ class Majiang {
                     self.gameState.forEach(state => {
                         if (state.colorLack === '') {
                             //选花色
-                            // ws.emit('chooseColor', JSON.stringify({
-                            //     roomId: this.props.room.roomId,
-                            //     uid: state.uid,
-                            //     color: ['b', 't', 'w'][getRedomNum(0, 2)]
-                            // }));
+                            self.chooseColor.call({
+                                roomId: self.roomId,
+                                uid: state.uid,
+                                color: ['b', 't', 'w'][getRedomNum(0, 2)]
+                            });
                         } else if (state.actionCode.length !== 0) {
                             //如果有胡，就胡，不然默认过
-                            // ws.emit('action', JSON.stringify({
-                            //     roomId: this.state.room.roomId,
-                            //     uid: state.uid,
-                            //     actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
-                            // }));
+                            self.actionEvent({
+                                roomId: self.roomId,
+                                uid: state.uid,
+                                actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
+                            });
                         }
                     })
                 }
@@ -365,14 +369,300 @@ class Majiang {
             writeLog('showCard', e);
         }
     }
-    const
-    regAction() {
+    chooseColor(data) {
+        const userState = this.gameState.filter(item => item.uid === data.uid)[0];
+        userState.colorLack = data.color;
+        this.sendData();
+        setTimeout(() => {
+            if (this.gameState.filter(item => item.colorLack === '').length === 0) {
+                //如果所有人都选择了花色，那么开始发牌并设定抓牌人（庄家）
+                this.setFrist();
+                if (!this.fatchCard({ listenType: ['beginWin'] })) return false;//抓牌并监控天胡
+                this.sendData();
+            }
+        }, 20);
+    }
+    actionEvent(data) {
+        const userState = this.gameState.find(item => item.uid === data.uid);
+        let isMineAction = userState.fatchCard ? true : false;//是否是自己
+        let isFatchCard = false;//动作执行之后是否有摸牌，主要是为了处理摸了牌之后玩家可能又有动作，那么就不清空actionCode(此场景目前一般是杠了再摸牌)
+        if (data.actionType === 'pass') {
+            try {
+                //检查是否同时有其他杠、碰、胡
+                userState.actionCode = [];
+                if (!this.gameState.find(item => item.actionCode.length !== 0)) {
+                    //没有其他玩家有动作了，正常走
+                    //先检查有没有被抢杠或者抢胡等待的朋友，要恢复人家的杠/碰
+                    const hadRobFullMeet = this.gameState.find(state => state.testWinType === 'robFullMeet');//正常抢杠胡
+                    const hadRobFullMeetWinState = this.gameState.find(state => state.testWinType === 'robFullMeetWin');//抢杠
+                    const hadRobMeetState = this.gameState.find(state => state.testWinType === 'robMeet');
+                    if (hadRobFullMeet || hadRobFullMeetWinState) {
+                        //state.actionCode = ['fullMeet'];
+                        let hadRobState = hadRobFullMeet || hadRobFullMeetWinState;
+                        let meetToFull;
+                        //检查是否是碰升级为杠
+                        hadRobState.groupCards.meet.forEach(_meet => {
+                            if (_meet[0].color === this.lastShowCard.color && _meet[0].number === this.lastShowCard.number) {
+                                meetToFull = _meet;
+                                meetToFull.push(clone(this.lastShowCard));
+                                hadRobState.groupCards.fullMeet.push(clone(meetToFull));
+                                hadRobState.groupCards.meet = hadRobState.groupCards.meet.filter(_meet => _meet[0].color !== this.lastShowCard.color && _meet[0].number !== this.lastShowCard.number);
+                            }
+                        })
+                        if (!meetToFull) {
+                            let _fulMmeet = [clone(this.lastShowCard)];
+                            hadRobState.cards = hadRobState.cards.filter(card => {
+                                if (card.color === this.lastShowCard.color && card.number === this.lastShowCard.number) { _fulMmeet.push(card); return false; } else { return true; }
+                            });
+                            hadRobState.groupCards.fullMeet.push(_fulMmeet);
+                        }
+                        this.setGamerCacher(hadRobState);//把自己设置为下一个出牌的人
+                        if (!this.fatchCard({ uid: hadRobState.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;//自己再摸一张牌，并附上杠上花、杠上炮监听
+                        hadRobState.outCards = hadRobState.outCards.filter(card => card.key !== this.lastShowCard.key);
+                        hadRobState.winDesc = '';
+                        setTimeout(() => { this.sendData(); }, 10);
+                        return;
+                    } else if (hadRobMeetState) {
+                        let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
+                        let _meet = [this.lastShowCard];
+                        hadRobMeetState.cards = hadRobMeetState.cards.filter(card => {
+                            if (card.color === this.lastShowCard.color && card.number === this.lastShowCard.number && count < 2) {
+                                count++;
+                                _meet.push(card);
+                                return false;
+                            } else {
+                                return true;
+                            }
+                        });
+                        hadRobMeetState.groupCards.meet.push(_meet);
+                        this.setGamerCacher(hadRobMeetState);
+                        hadRobMeetState.winDesc = '';
+                        setTimeout(() => { this.sendData(); }, 10);
+                        return;
+                    } else {
+                        if (!isMineAction) {
+                            //如果不是自摸才下一个，不然还要出牌
+                            const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
+                            this.setGamerCacher(next);
+                            if (!this.fatchCard({})) return false;
+                            // if (this.cards.length === 0) {
+                            //     //如果总牌数为0了，则结束游戏
+                            //     //this.isOver = true;
+                            //     this.checkCanWin();//请觉并结算
+                            //     this.overHandler.call(this);
+                            // } else {
+                            //     this.fatchCard({});//找打下一个人并摸牌
+                            // }
+                        }
+                    }
+                } else {
+                    //先检查是否还有胡牌的玩家
+                    //如果所有的胡牌玩家都过，那么才处理其他玩家的动作
+                    // let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
+                    // if (winners.length === 0) {
+                    //     //解开其他玩家的动作
+                    //     let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
+                    //     others.forEach(item => {
+                    //         item.isPause = false;
+                    //     });
+                    // } else {
+                    //     //还有没做决定的胡牌玩家，那么继续走
+                    // }
+                }
+            } catch (e) {
+                writeLog('pass', e);
+            }
+        } else {
+            //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
+            let doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
+            if (data.actionType === 'meet' && !isMineAction) {
+                let robMeetWin = false;
+                //这里要判断是否有其他人要胡，如果有，先等待
+                let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1 && item.uid !== userState.uid);
+                if (winners.length !== 0) robMeetWin = true;
 
-        // ws.emit('showCard', JSON.stringify({
-        //     roomId: this.props.room.roomId,
-        //     uid: this.props.user.uid,
-        //     cardKey: this.state.activeCard.key
-        // }));
+                if (robMeetWin) {
+                    userState.testWinType = 'robMeet';//被抢胡等待
+                    userState.winDesc = '等待其他玩家选择是否胡牌~';
+                    userState.actionCode = [];
+                } else {
+                    //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
+                    let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
+                    let _meet = [doCard];
+                    userState.cards = userState.cards.filter(card => {
+                        if (card.color === doCard.color && card.number === doCard.number && count < 2) {
+                            count++;
+                            _meet.push(card);
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    });
+                    userState.groupCards.meet.push(_meet);
+                    // this.lastShowCardUserState.catcher = false;
+                    // userState.catcher = true;//把自己设置为下一个出牌的人，这里不能摸牌
+                    this.setGamerCacher(userState);
+                }
+            } else if (data.actionType === 'fullMeet') {
+
+                try {
+                    if (data.doCardKey) {
+                        //这个杠可能是暗杠，那么会传过来一张选定的牌型，然后进行杠
+                        doCard = clone(userState.cards.find(card => card.key === data.doCardKey));
+                        userState.cards.push(clone(userState.fatchCard));
+                        userState.cards = userState.cards.sort(objectArraySort('key'));
+                    }
+                    let meetToFull;
+                    //检查是否是碰升级为杠
+                    userState.groupCards.meet.forEach(_meet => {
+                        if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
+                            meetToFull = _meet;
+                        }
+                    })
+                    let robFullMeetWin = false;
+                    //这里要判断是否有其他人要胡，如果有，这种动作就是抢杠
+                    this.gameState.filter(state => !state.isWin && state.uid !== data.uid).forEach(state => {
+                        const _cards = state.cards.concat(doCard).sort(objectArraySort('key'));
+                        if (winCore(_cards)) {
+                            //state.actionCode.push('winning');//有胡牌
+                            robFullMeetWin = true;
+                        }
+                    })
+                    if (meetToFull) {
+                        //抢杠
+                        //如果有人要抢杠，那么就强制把这张牌出了，如果别人不抢，那么就再执行杠
+                        if (robFullMeetWin) {
+                            userState.testWinType = 'robFullMeetWin';//被抢杠等待
+                            userState.winDesc = '等待其他玩家选择抢杠~';
+                            userState.actionCode = [];
+                            this.showCard.call(this, {
+                                roomId: data.roomId,
+                                uid: data.uid,
+                                cardKey: doCard.key
+                            });
+                            return false;
+                        } else {
+                            meetToFull.push(doCard);
+                            userState.groupCards.fullMeet.push(clone(meetToFull));
+                            userState.groupCards.meet = userState.groupCards.meet.filter(_meet => _meet[0].color !== doCard.color && _meet[0].number !== doCard.number);
+                        }
+                    } else {
+                        //抢胡
+                        if (robFullMeetWin && !isMineAction) {//别人打的牌才会存在抢胡
+                            userState.testWinType = 'robFullMeet';//被抢胡等待
+                            userState.winDesc = '等待其他玩家选择是否胡牌~';
+                            userState.actionCode = [];
+                            setTimeout(() => { this.sendData(); }, 10);
+                            return false;
+                        } else {
+                            let _fulMmeet = data.doCardKey ? [] : [doCard];
+                            userState.cards = userState.cards.filter(card => {
+                                if (card.color === doCard.color && card.number === doCard.number) {
+                                    _fulMmeet.push(card);
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            });
+                            userState.groupCards.fullMeet.push(_fulMmeet);
+                        }
+                    }
+                    this.setGamerCacher(userState);//把自己设置为下一个出牌的人
+                    //自己再摸一张牌，并附上杠上花、杠上炮监听
+                    if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;
+                    isFatchCard = true;
+                } catch (e) {
+                    writeLog('fullMeet', e);
+                }
+            } else if (data.actionType === 'winning') {
+                try {
+                    //胡牌
+                    //let next;
+                    //如果是第一个人胡牌的，就是master
+                    let winCount = 1;
+                    if (this.gameState.filter(state => {
+                        if (state.isWin) winCount++;
+                        return state.isWin;
+                    }).length === 0) {
+                        userState.master = true;
+                    } else {
+                        userState.master = false;
+                    }
+                    userState.groupCards.winCard = doCard;
+
+                    if (isMineAction) {
+                        //testWinType可能是天胡、地胡、杠上花之类的行为
+                        // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
+                        // let roles_multiple = 1;
+                        // roles.forEach(role => {
+                        //     roles_multiple = roles_multiple * role.multiple;
+                        // });
+                        let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                        this.castAccounts(userState, 'all', allMultipl);
+                        userState.fatchCard = undefined;
+                        //next = this.getNaxtCacher(userState.uid);
+                        userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
+                        userState.winDesc = `(${winCount})${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
+                        this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}自摸"}`);
+                    } else {
+                        //别人点炮
+                        //testWinType可能是杠上炮、抢杠
+                        // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });//点炮
+                        // let roles_multiple = 1;
+                        // roles.forEach(role => {
+                        //     roles_multiple = roles_multiple * role.multiple;
+                        // });
+                        let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin')
+                        userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
+                        userState.winDesc = `(${winCount})${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
+                        //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
+                        //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
+                        this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
+                        this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}胡牌，${this.lastShowCardUserState.name}点炮"}`);
+                    }
+                    //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听userState.winDesc
+                    if (this.gameState.filter(item => {
+                        if (!item.isWin) item.winDesc = '';
+                        return item.isWin === false;
+                    }).length === 1) {
+                        //this.isOver = true;
+                        this.timer.end();
+                        this.overHandler.call(this);
+                    } else {
+                        //这里还要看有没有其他玩家要继续胡牌，没有才执行下一家人摸牌
+                        let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1 && item.uid !== data.uid);
+                        if (winners.length >= 1) {
+                            //继续等待
+                        } else {
+                            const next = this.getNaxtCacher(userState.uid);
+                            //找到下一个人并摸牌
+                            this.setGamerCacher(next);
+                            if (!this.fatchCard({})) return false;
+                        }
+                    }
+                } catch (e) {
+                    writeLog('winningAction', e);
+                }
+            }
+            //如果是自己摸的牌，因为已经clone了，这里要处理掉
+            //userState.fatchCard = undefined;//其实之后还是会统一处理掉，放这里为了好理解
+            //如果是别人打的牌，需要置空outCards里的那张牌
+            this.lastShowCardUserState && (this.lastShowCardUserState.outCards = this.lastShowCardUserState.outCards.filter(card => card.key !== doCard.key));
+
+        }
+
+        userState.actionCode = [];
+        // if (!isFatchCard) {
+        //     userState.actionCode = [];
+        // } else {
+        //     if (userState.actionCode.indexOf('winning') !== -1) {
+        //         //杠上花监听
+        //         //winActionListening.push({ uid: userState.uid, type: 'fullMeetWin' });
+        //     }
+        // }
+        setTimeout(() => { this.sendData(); }, 10);
+    }
+    regAction() {
         return [
             {
                 actionName: 'showCard',
@@ -385,300 +675,14 @@ class Majiang {
                 actionName: 'chooseColor',
                 actionFn: function (_data) {
                     const data = JSON.parse(_data);
-                    const userState = this.gameState.filter(item => item.uid === data.uid)[0];
-                    userState.colorLack = data.color;
-                    this.sendData();
-                    setTimeout(() => {
-                        if (this.gameState.filter(item => item.colorLack === '').length === 0) {
-                            //如果所有人都选择了花色，那么开始发牌并设定抓牌人（庄家）
-                            this.setFrist();
-                            if (!this.fatchCard({ listenType: ['beginWin'] })) return false;//抓牌并监控天胡
-                            this.sendData();
-                        }
-                    }, 20);
+                    this.chooseColor.call(this, data);
                 }
             },
             {
                 actionName: 'action',
                 actionFn: function (_data) {
                     const data = JSON.parse(_data);
-                    const userState = this.gameState.find(item => item.uid === data.uid);
-                    let isMineAction = userState.fatchCard ? true : false;//是否是自己
-                    let isFatchCard = false;//动作执行之后是否有摸牌，主要是为了处理摸了牌之后玩家可能又有动作，那么就不清空actionCode(此场景目前一般是杠了再摸牌)
-                    if (data.actionType === 'pass') {
-                        try {
-                            //检查是否同时有其他杠、碰、胡
-                            userState.actionCode = [];
-                            if (!this.gameState.find(item => item.actionCode.length !== 0)) {
-                                //没有其他玩家有动作了，正常走
-                                //先检查有没有被抢杠或者抢胡等待的朋友，要恢复人家的杠/碰
-                                const hadRobFullMeet = this.gameState.find(state => state.testWinType === 'robFullMeet');//正常抢杠胡
-                                const hadRobFullMeetWinState = this.gameState.find(state => state.testWinType === 'robFullMeetWin');//抢杠
-                                const hadRobMeetState = this.gameState.find(state => state.testWinType === 'robMeet');
-                                if (hadRobFullMeet || hadRobFullMeetWinState) {
-                                    //state.actionCode = ['fullMeet'];
-                                    let hadRobState = hadRobFullMeet || hadRobFullMeetWinState;
-                                    let meetToFull;
-                                    //检查是否是碰升级为杠
-                                    hadRobState.groupCards.meet.forEach(_meet => {
-                                        if (_meet[0].color === this.lastShowCard.color && _meet[0].number === this.lastShowCard.number) {
-                                            meetToFull = _meet;
-                                            meetToFull.push(clone(this.lastShowCard));
-                                            hadRobState.groupCards.fullMeet.push(clone(meetToFull));
-                                            hadRobState.groupCards.meet = hadRobState.groupCards.meet.filter(_meet => _meet[0].color !== this.lastShowCard.color && _meet[0].number !== this.lastShowCard.number);
-                                        }
-                                    })
-                                    if (!meetToFull) {
-                                        let _fulMmeet = [clone(this.lastShowCard)];
-                                        hadRobState.cards = hadRobState.cards.filter(card => {
-                                            if (card.color === this.lastShowCard.color && card.number === this.lastShowCard.number) { _fulMmeet.push(card); return false; } else { return true; }
-                                        });
-                                        hadRobState.groupCards.fullMeet.push(_fulMmeet);
-                                    }
-                                    this.setGamerCacher(hadRobState);//把自己设置为下一个出牌的人
-                                    if (!this.fatchCard({ uid: hadRobState.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;//自己再摸一张牌，并附上杠上花、杠上炮监听
-                                    hadRobState.outCards = hadRobState.outCards.filter(card => card.key !== this.lastShowCard.key);
-                                    hadRobState.winDesc = '';
-                                    setTimeout(() => { this.sendData(); }, 10);
-                                    return;
-                                } else if (hadRobMeetState) {
-                                    let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
-                                    let _meet = [this.lastShowCard];
-                                    hadRobMeetState.cards = hadRobMeetState.cards.filter(card => {
-                                        if (card.color === this.lastShowCard.color && card.number === this.lastShowCard.number && count < 2) {
-                                            count++;
-                                            _meet.push(card);
-                                            return false;
-                                        } else {
-                                            return true;
-                                        }
-                                    });
-                                    hadRobMeetState.groupCards.meet.push(_meet);
-                                    this.setGamerCacher(hadRobMeetState);
-                                    hadRobMeetState.winDesc = '';
-                                    setTimeout(() => { this.sendData(); }, 10);
-                                    return;
-                                } else {
-                                    if (!isMineAction) {
-                                        //如果不是自摸才下一个，不然还要出牌
-                                        const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
-                                        this.setGamerCacher(next);
-                                        if (!this.fatchCard({})) return false;
-                                        // if (this.cards.length === 0) {
-                                        //     //如果总牌数为0了，则结束游戏
-                                        //     //this.isOver = true;
-                                        //     this.checkCanWin();//请觉并结算
-                                        //     this.overHandler.call(this);
-                                        // } else {
-                                        //     this.fatchCard({});//找打下一个人并摸牌
-                                        // }
-                                    }
-                                }
-                            } else {
-                                //先检查是否还有胡牌的玩家
-                                //如果所有的胡牌玩家都过，那么才处理其他玩家的动作
-                                // let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1);
-                                // if (winners.length === 0) {
-                                //     //解开其他玩家的动作
-                                //     let others = this.gameState.filter(item => item.actionCode.length !== 0 && item.actionCode.indexOf('winning') === -1);
-                                //     others.forEach(item => {
-                                //         item.isPause = false;
-                                //     });
-                                // } else {
-                                //     //还有没做决定的胡牌玩家，那么继续走
-                                // }
-                            }
-                        } catch (e) {
-                            writeLog('pass', e);
-                        }
-                    } else {
-                        //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
-                        let doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
-                        if (data.actionType === 'meet' && !isMineAction) {
-                            let robMeetWin = false;
-                            //这里要判断是否有其他人要胡，如果有，先等待
-                            let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1 && item.uid !== userState.uid);
-                            if (winners.length !== 0) robMeetWin = true;
-
-                            if (robMeetWin) {
-                                userState.testWinType = 'robMeet';//被抢胡等待
-                                userState.winDesc = '等待其他玩家选择是否胡牌~';
-                                userState.actionCode = [];
-                            } else {
-                                //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
-                                let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
-                                let _meet = [doCard];
-                                userState.cards = userState.cards.filter(card => {
-                                    if (card.color === doCard.color && card.number === doCard.number && count < 2) {
-                                        count++;
-                                        _meet.push(card);
-                                        return false;
-                                    } else {
-                                        return true;
-                                    }
-                                });
-                                userState.groupCards.meet.push(_meet);
-                                // this.lastShowCardUserState.catcher = false;
-                                // userState.catcher = true;//把自己设置为下一个出牌的人，这里不能摸牌
-                                this.setGamerCacher(userState);
-                            }
-                        } else if (data.actionType === 'fullMeet') {
-
-                            try {
-                                if (data.doCardKey) {
-                                    //这个杠可能是暗杠，那么会传过来一张选定的牌型，然后进行杠
-                                    doCard = clone(userState.cards.find(card => card.key === data.doCardKey));
-                                    userState.cards.push(clone(userState.fatchCard));
-                                    userState.cards = userState.cards.sort(objectArraySort('key'));
-                                }
-                                let meetToFull;
-                                //检查是否是碰升级为杠
-                                userState.groupCards.meet.forEach(_meet => {
-                                    if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
-                                        meetToFull = _meet;
-                                    }
-                                })
-                                let robFullMeetWin = false;
-                                //这里要判断是否有其他人要胡，如果有，这种动作就是抢杠
-                                this.gameState.filter(state => !state.isWin && state.uid !== data.uid).forEach(state => {
-                                    const _cards = state.cards.concat(doCard).sort(objectArraySort('key'));
-                                    if (winCore(_cards)) {
-                                        //state.actionCode.push('winning');//有胡牌
-                                        robFullMeetWin = true;
-                                    }
-                                })
-                                if (meetToFull) {
-                                    //抢杠
-                                    //如果有人要抢杠，那么就强制把这张牌出了，如果别人不抢，那么就再执行杠
-                                    if (robFullMeetWin) {
-                                        userState.testWinType = 'robFullMeetWin';//被抢杠等待
-                                        userState.winDesc = '等待其他玩家选择抢杠~';
-                                        userState.actionCode = [];
-                                        this.showCard.call(this, {
-                                            roomId: data.roomId,
-                                            uid: data.uid,
-                                            cardKey: doCard.key
-                                        });
-                                        return false;
-                                    } else {
-                                        meetToFull.push(doCard);
-                                        userState.groupCards.fullMeet.push(clone(meetToFull));
-                                        userState.groupCards.meet = userState.groupCards.meet.filter(_meet => _meet[0].color !== doCard.color && _meet[0].number !== doCard.number);
-                                    }
-                                } else {
-                                    //抢胡
-                                    if (robFullMeetWin && !isMineAction) {//别人打的牌才会存在抢胡
-                                        userState.testWinType = 'robFullMeet';//被抢胡等待
-                                        userState.winDesc = '等待其他玩家选择是否胡牌~';
-                                        userState.actionCode = [];
-                                        setTimeout(() => { this.sendData(); }, 10);
-                                        return false;
-                                    } else {
-                                        let _fulMmeet = data.doCardKey ? [] : [doCard];
-                                        userState.cards = userState.cards.filter(card => {
-                                            if (card.color === doCard.color && card.number === doCard.number) {
-                                                _fulMmeet.push(card);
-                                                return false;
-                                            } else {
-                                                return true;
-                                            }
-                                        });
-                                        userState.groupCards.fullMeet.push(_fulMmeet);
-                                    }
-                                }
-                                this.setGamerCacher(userState);//把自己设置为下一个出牌的人
-                                //自己再摸一张牌，并附上杠上花、杠上炮监听
-                                if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;
-                                isFatchCard = true;
-                            } catch (e) {
-                                writeLog('fullMeet', e);
-                            }
-                        } else if (data.actionType === 'winning') {
-                            try {
-                                //胡牌
-                                //let next;
-                                //如果是第一个人胡牌的，就是master
-                                let winCount = 1;
-                                if (this.gameState.filter(state => {
-                                    if (state.isWin) winCount++;
-                                    return state.isWin;
-                                }).length === 0) {
-                                    userState.master = true;
-                                } else {
-                                    userState.master = false;
-                                }
-                                userState.groupCards.winCard = doCard;
-
-                                if (isMineAction) {
-                                    //testWinType可能是天胡、地胡、杠上花之类的行为
-                                    // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
-                                    // let roles_multiple = 1;
-                                    // roles.forEach(role => {
-                                    //     roles_multiple = roles_multiple * role.multiple;
-                                    // });
-                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
-                                    this.castAccounts(userState, 'all', allMultipl);
-                                    userState.fatchCard = undefined;
-                                    //next = this.getNaxtCacher(userState.uid);
-                                    userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
-                                    userState.winDesc = `(${winCount})${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
-                                    this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}自摸"}`);
-                                } else {
-                                    //别人点炮
-                                    //testWinType可能是杠上炮、抢杠
-                                    // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });//点炮
-                                    // let roles_multiple = 1;
-                                    // roles.forEach(role => {
-                                    //     roles_multiple = roles_multiple * role.multiple;
-                                    // });
-                                    let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin')
-                                    userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
-                                    userState.winDesc = `(${winCount})${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
-                                    //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
-                                    //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
-                                    this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
-                                    this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}胡牌，${this.lastShowCardUserState.name}点炮"}`);
-                                }
-                                //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听userState.winDesc
-                                if (this.gameState.filter(item => {
-                                    if (!item.isWin) item.winDesc = '';
-                                    return item.isWin === false;
-                                }).length === 1) {
-                                    //this.isOver = true;
-                                    this.overHandler.call(this);
-                                } else {
-                                    //这里还要看有没有其他玩家要继续胡牌，没有才执行下一家人摸牌
-                                    let winners = this.gameState.filter(item => item.actionCode.indexOf('winning') !== -1 && item.uid !== data.uid);
-                                    if (winners.length >= 1) {
-                                        //继续等待
-                                    } else {
-                                        const next = this.getNaxtCacher(userState.uid);
-                                        //找到下一个人并摸牌
-                                        this.setGamerCacher(next);
-                                        if (!this.fatchCard({})) return false;
-                                    }
-                                }
-                            } catch (e) {
-                                writeLog('winningAction', e);
-                            }
-                        }
-                        //如果是自己摸的牌，因为已经clone了，这里要处理掉
-                        //userState.fatchCard = undefined;//其实之后还是会统一处理掉，放这里为了好理解
-                        //如果是别人打的牌，需要置空outCards里的那张牌
-                        this.lastShowCardUserState && (this.lastShowCardUserState.outCards = this.lastShowCardUserState.outCards.filter(card => card.key !== doCard.key));
-
-                    }
-
-                    userState.actionCode = [];
-                    // if (!isFatchCard) {
-                    //     userState.actionCode = [];
-                    // } else {
-                    //     if (userState.actionCode.indexOf('winning') !== -1) {
-                    //         //杠上花监听
-                    //         //winActionListening.push({ uid: userState.uid, type: 'fullMeetWin' });
-                    //     }
-                    // }
-                    setTimeout(() => { this.sendData(); }, 10);
+                    this.actionEvent.call(this, data);
                 }
             }
         ]
@@ -722,6 +726,7 @@ class Majiang {
         this.gameState.forEach(userState => {
             userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
         });
+        this.timer.start();
         //获取指定的牌，主要还是快速调试
         // this.gameState[0].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
@@ -763,6 +768,7 @@ class Majiang {
                 //如果总牌数为0了，则结束游戏
                 this.isOver = true;
                 this.checkCanWin();//请觉并结算
+                this.timer.end();
                 this.overHandler.call(this);
                 return false;
             }

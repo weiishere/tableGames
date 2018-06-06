@@ -75,6 +75,7 @@ button {
     background: url('/images/games/majiang2/desktop1.jpg');
     background-size: 100% 100%;
     position: relative;
+    overflow: hidden;
     .ruleNameBar {
         position: absolute;
         right: 0;
@@ -169,13 +170,12 @@ button {
             margin-top: 3rem;
             display: flex;
             .content {
-                height: 21rem;
+                //height: 21rem;
                 box-sizing: border-box;
                 flex: 1;
                 &>div {
                     margin: .5rem;
-                    border: solid .3rem #d4ab7f;
-                    height: 18rem;
+                    border: solid .3rem #d4ab7f; //height: 18rem;
                     background: #fcfaed;
                     border-radius: 1rem;
                     overflow: hidden;
@@ -433,6 +433,11 @@ button {
             text-align: center;
             line-height: 4rem;
             font-size: 1.5rem;
+            &.warn {
+                color: red;
+                font-weight: bold;
+                -webkit-animation: effect_warn .5s infinite linear;
+            }
         }
         .bottom {
             background: url('/images/games/majiang2/center_bottom.png');
@@ -442,6 +447,7 @@ button {
             left: .5rem;
             width: 100%;
             background-size: 100% 100%;
+            -webkit-animation: effect_userPoint .5s infinite linear;
         }
         .left {
             background: url('/images/games/majiang2/center_left.png');
@@ -451,6 +457,7 @@ button {
             left: -1.3rem;
             width: 50%;
             background-size: 100% 100%;
+            -webkit-animation: effect_userPoint .5s infinite linear;
         }
         .right {
             background: url('/images/games/majiang2/center_right.png');
@@ -460,6 +467,7 @@ button {
             right: -1.3rem;
             width: 50%;
             background-size: 100% 100%;
+            -webkit-animation: effect_userPoint .5s infinite linear;
         }
         .top {
             background: url('/images/games/majiang2/center_top.png');
@@ -469,6 +477,7 @@ button {
             left: .4rem;
             width: 100%;
             background-size: 100% 100%;
+            -webkit-animation: effect_userPoint .5s infinite linear;
         }
     }
     &.hideLackIcon {
@@ -512,7 +521,8 @@ button {
         text-shadow: 0 0 1px #333;
     }
     .score {
-        color: #ccc
+        color: #ccc;
+        text-shadow: 1px 1px 0px #000;
     }
     &>img {
         width: 3rem;
@@ -837,7 +847,7 @@ button {
         position: absolute;
         left: 0;
         right: 0;
-        margin: auto;
+        margin: auto !important;
         &.active {
             opacity: 1;
             transform: translate3d(0, -.6rem, 0);
@@ -961,8 +971,8 @@ button {
     }
     &.card_mine_main {
         background-image: url('/images/games/majiang2/mainCard.png');
-        width: 3.4rem;
-        height: 4.5rem;
+        width: 3.5rem;
+        height: 4.7rem;
         margin-left: -.1rem;
         img {
             margin-top: .4rem;
@@ -999,8 +1009,35 @@ button {
     }
 }
 
+.importantWeak {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.5);
+    span {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+        width: 80%;
+        height: 10rem;
+        font-size: 3rem;
+        text-align: center;
+    }
+}
+
 @media screen and (orientation: portrait) {
     /*竖屏 css*/
+    .btu {
+        &.ready {
+            width: 9.5rem;
+            height: 5rem;
+        }
+    }
     .orientationWeak {
         position: fixed;
         left: 0;
@@ -1022,30 +1059,62 @@ button {
         }
     }
     .gamerWrap_mine {
+        z-index: 1;
         height: 15rem;
+        .userDock {
+            top: -25rem;
+        }
         .cardListWrap {
+            height: auto;
             .fetchCard {
                 //display: inline-block;
                 position: absolute;
                 right: 0;
-                top: -100%;
+                top: -50%;
+            }
+        }
+        .operateWrap {
+            .btu {
+                transform: scale(1.5, 1.5);
+                margin: 0 1rem;
             }
         }
     }
     .MainTable {
+        .gameInfoPanel {
+            .contentWrap {
+                flex-direction: column;
+                .content {
+                    &>div {
+                        ul {
+                            height: 10rem;
+                        }
+                    }
+                }
+            }
+        }
         .gameInfoBar {
             button {
                 height: 4rem;
                 width: 4rem;
             }
         }
+        .tableCenter {
+            width: 12rem;
+            height: 12rem;
+            .center {
+                font-size: 2.5rem
+            }
+        }
         .msgPanel {
             width: 30rem;
+            top: 4.5rem;
+            bottom: 4.5rem;
             &.hide {
                 transform: translate3d(30rem, 0, 0);
             }
             .miniMsgPanel {
-                width: 30rem; 
+                width: 30rem;
                 font-size: 2.5rem;
                 &>b {
                     color: #59f1b2;
@@ -1077,15 +1146,18 @@ button {
                         font-size: 2rem
                     }
                 }
-                div{
-                    top:4.5rem;
+                div {
+                    top: 4.5rem;
                     width: 25rem;
-                    ul{
-                        li{
-                            font-size: 3rem;
+                    ul {
+                        li {
+                            font-size: 1.5rem;
                         }
                     }
                 }
+            }
+            &>footer {
+                height: 5rem;
             }
             ul {
                 li {
@@ -1093,10 +1165,14 @@ button {
                         width: 2rem;
                         height: 2rem;
                     }
-                    font-size: 3rem;
+                    font-size: 1.5rem;
                 }
             }
         }
+    }
+    .card.card_mine_main {
+        width: 5rem;
+        height: 7rem;
     }
 }
 
@@ -1104,15 +1180,6 @@ button {
     /*横屏 css*/
     .orientationWeak {
         display: none
-    }
-}
-
-@media screen and (orientation: portrait) {
-    /*竖屏 css*/
-    .gamerWrap_mine {
-        .userDock {
-            top: -15rem;
-        }
     }
 }
 
@@ -1155,6 +1222,30 @@ button {
     }
     100% {
         background: rgba(145, 145, 145, 0.8);
+    }
+}
+
+@-webkit-keyframes effect_userPoint {
+    0% {
+        opacity: .2;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: .2;
+    }
+}
+
+@-webkit-keyframes effect_warn {
+    0% {
+        transform: scale(1, 1);
+    }
+    50% {
+        transform: scale(1.4, 1.4);
+    }
+    100% {
+        transform: scale(1, 1);
     }
 }
 

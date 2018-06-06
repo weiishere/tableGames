@@ -9,6 +9,9 @@ module.exports = (server) => {
         socket.on('disconnect', function () {
             gameEngine.disconnect();
         });
+        socket.on('reconnectting', function (_data) {
+            gameEngine.reconnectting(JSON.parse(_data));
+        });
         socket.on('checkin', function (_data) {
             //user, roomId, option
             gameEngine.checkin(JSON.parse(_data));
