@@ -135,7 +135,7 @@ const isFeiji = (cards) => {
     three = three.map(item => { return resultType_1[item].card }).sort((a, b) => { return a.number - b.number; });
     let dfjCount = 0, xfjCount = 0;
     for (let i = 0; i < three.length; i++) {
-        const frist = three[i];
+        let frist = three[i];
         if (!frist) continue;
         let second = three.find(item => item.color === frist.color && item.number - frist.number === 1);
         let third = three.find(item => item.color === frist.color && item.number - frist.number === 2);

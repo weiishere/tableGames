@@ -50,7 +50,7 @@ class TimerManager {
     setTimeOutEnent(fn) {
         this.timeOutEnent = fn;
     }
-    end(){
+    end() {
         clearInterval(this.timer);
         this.remainTime = this.countdown;
     }
@@ -86,6 +86,7 @@ class Majiang {
                 const catcher = self.gameState.find(item => item.catcher);
                 if (catcher) {
                     //优先打要定缺的牌，其次打出刚刚摸的牌
+                    if (!catcher.cards) return;
                     const lackCards = catcher.cards.filter(card => card.color === catcher.colorLack);
                     // if (lackCards.length === 0 && !catcher.fatchCard) {
                     //     //没有刚刚抓的牌，又是出牌者，多半就是刚刚碰了，这种要随便抽一张牌
@@ -247,6 +248,32 @@ class Majiang {
         }
         return false;
     }
+    //判断手牌能不能杠
+    hasFullMeet(userState, fatchCard) {
+        for (let i = 0; i < userState.groupCards.meet.length; i++) {
+            const _meet = userState.groupCards.meet[i];
+            if (fatchCard && _meet[0].color === fatchCard.color && _meet[0].number === fatchCard.number) {
+                //userState.actionCode.push('fullMeet');//自己摸的牌杠
+                return true;
+            }
+            //再看是否有非钢抓到的牌的杠可以碰升杠
+            if (userState.actionCode.indexOf('fullMeet') === -1) {
+                let isHas = false;
+                for (let j = 0; j < userState.cards.length; j++) {
+                    const card = userState.cards[j];
+                    if (_meet[0].color === card.color && _meet[0].number === card.number) {
+                        return true;
+                    }
+                }
+            }
+        }
+        //暗杠
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(userState.cards);
+        if (resultType_2.four.length !== 0 && userState.actionCode.indexOf('fullMeet') === -1) {
+            return true;
+        }
+        return false;
+    }
     //【核心算法函数】处理牌桌子上的各种情况，返回是否暂停，并发送消息
     doGameState(uid, showCrad, from) {
         try {
@@ -269,20 +296,39 @@ class Majiang {
                         userState.actionCode.push('meet');//别人打的牌，如果有杠，当然也可以选择碰
                     }
                 }
-
-                //判断是否有碰的碰牌加杠
-                if (from === 'self') {
-                    userState.groupCards.meet.forEach(_meet => {
-                        if (_meet[0].color === showCrad.color && _meet[0].number === showCrad.number) {
-                            userState.actionCode.push('fullMeet');//自己摸的牌杠
-                        }
-                    });
-                    let { resultType_1, resultType_2 } = tool.getCardShowTime(userState.cards);
-                    if (resultType_2.four.length !== 0 && userState.actionCode.indexOf('fullMeet') === -1) {
-                        //暗杠
-                        userState.actionCode.push('fullMeet');
+                //判断是否有碰的碰牌加杠和暗杠
+                if (from === 'self' && userState.actionCode.indexOf('fullMeet') === -1) {
+                    if (this.hasFullMeet(userState, showCrad)) {
+                        userState.actionCode.push('fullMeet');//有杠
                     }
                 }
+                // if (from === 'self') {
+                //     //碰转杠
+                //     loop:
+                //     for (let i = 0; i < userState.groupCards.meet.length; i++) {
+                //         const _meet = userState.groupCards.meet[i];
+                //         if (_meet[0].color === showCrad.color && _meet[0].number === showCrad.number) {
+                //             userState.actionCode.push('fullMeet');//自己摸的牌杠
+                //             break loop;
+                //         }
+                //         //再看是否有非钢抓到的牌的杠可以碰升杠
+                //         if (userState.actionCode.indexOf('fullMeet') === -1) {
+                //             let isHas = false;
+                //             for (let j = 0; j < userState.cards.length; j++) {
+                //                 const card = userState.cards[j];
+                //                 if (_meet[0].color === card.color && _meet[0].number === card.number) {
+                //                     userState.actionCode.push('fullMeet');//手牌的牌杠
+                //                     break loop;
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     //暗杠
+                //     let { resultType_1, resultType_2 } = tool.getCardShowTime(userState.cards);
+                //     if (resultType_2.four.length !== 0 && userState.actionCode.indexOf('fullMeet') === -1) {
+                //         userState.actionCode.push('fullMeet');
+                //     }
+                // }
                 //计算胡牌
                 const _cards = userState.cards.concat(showCrad).sort(objectArraySort('key'));
                 if (winCore(_cards)) {
@@ -509,7 +555,7 @@ class Majiang {
                     if (data.doCardKey) {
                         //这个杠可能是暗杠，那么会传过来一张选定的牌型，然后进行杠
                         doCard = clone(userState.cards.find(card => card.key === data.doCardKey));
-                        userState.cards.push(clone(userState.fatchCard));
+                        userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
                         userState.cards = userState.cards.sort(objectArraySort('key'));
                     }
                     let meetToFull;
@@ -567,10 +613,21 @@ class Majiang {
                             userState.groupCards.fullMeet.push(_fulMmeet);
                         }
                     }
-                    this.setGamerCacher(userState);//把自己设置为下一个出牌的人
-                    //自己再摸一张牌，并附上杠上花、杠上炮监听
-                    if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;
-                    isFatchCard = true;
+
+                    userState.actionCode = [];
+                    //如果用户还有杠，那么不摸牌，继续让用户选择
+                    if (this.hasFullMeet(userState)) {
+                        userState.actionCode.push('fullMeet');
+                        isFatchCard = true;
+                        this.setGamerCacher(userState);//把自己设置为下一个出牌的人
+                    } else {
+                        this.setGamerCacher(userState);//把自己设置为下一个出牌的人
+                        //自己再摸一张牌，并附上杠上花、杠上炮监听
+                        if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) {
+                            return false;
+                        }
+                        //isFatchCard = true;
+                    }
                 } catch (e) {
                     writeLog('fullMeet', e);
                 }
@@ -651,7 +708,7 @@ class Majiang {
 
         }
 
-        userState.actionCode = [];
+        if (!isFatchCard) userState.actionCode = [];
         // if (!isFatchCard) {
         //     userState.actionCode = [];
         // } else {
@@ -723,28 +780,28 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         this.timer.start();
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
-        //     this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
-        //     this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[1].groupCards.meet = [[
-        //     this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        // ]]
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 9)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
+            this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].groupCards.meet = [[
+            this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        ]]
 
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
@@ -766,11 +823,13 @@ class Majiang {
         try {
             if (this.cards.length === 0) {
                 //如果总牌数为0了，则结束游戏
-                this.isOver = true;
+                //this.isOver = true;
                 this.checkCanWin();//请觉并结算
                 this.timer.end();
                 this.overHandler.call(this);
+                setTimeout(() => { this.sendData(); }, 10);
                 return false;
+
             }
             const _uid = !uid ? this.gameState.find(item => item.catcher === true).uid : uid;
             const userState = this.gameState.find(item => item.uid === _uid);
