@@ -53,16 +53,19 @@ module.exports = (io, scoket) => {
     //寻找用户是否有没有参与其他的房间，有则返回房间信息
     const findUserInRoom = (uid) => {
         const roomsLength = rooms.length;
+        let resultRooms = [];
         for (let i = 0; i < roomsLength; i++) {
             const gamers = rooms[i].gamers;
             const gamersLength = gamers.length;
             for (let j = 0; j < gamersLength; j++) {
                 if (gamers[j].uid === uid) {
-                    return rooms[i];
+                    resultRooms.push(rooms[i]);
+                    break;
+                    //return rooms[i];
                 }
             }
         }
-        return null;
+        return resultRooms;
     }
     const getRoom = (roomId) => {
         let resultRooms;//user,roomId,state
@@ -83,29 +86,33 @@ module.exports = (io, scoket) => {
         disconnect: () => {
             //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
             if (!scoket.user) return;
-            const room = findUserInRoom(scoket.user.uid);
-            if (room) {
-                if (room.state === 'playing') {
-                    //正在进行的游戏
-                    //room.game.regAction(scoket, this);
-                } else {
-                    room.gamerLeave(scoket.user.uid);
-                    if (room.gamers.length === 0) {
-                        //如果人全部都离开了，清除room数据
-                        rooms = rooms.filter(_room => _room.id !== room.id);
+            const resultRooms = findUserInRoom(scoket.user.uid);
+            resultRooms.forEach(room => {
+                if (room) {
+                    if (room.state === 'playing') {
+                        //正在进行的游戏
+                        //room.game.regAction(scoket, this);
                     } else {
-                        setTimeout(() => {
-                            //console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                            sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
-                            sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                        }, 50);
+                        room.gamerLeave(scoket.user.uid);
+                        if (room.gamers.length === 0) {
+                            //如果人全部都离开了，清除room数据
+                            rooms = rooms.filter(_room => _room.id !== room.id);
+                        } else {
+                            setTimeout(() => {
+                                //console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                                sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
+                                sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                            }, 50);
+                        }
                     }
                 }
-            }
+            })
+
         },
         reconnectting: (data) => {
             scoket.user = data.user;
-            const room = findUserInRoom(data.user.uid);
+            //const room = findUserInRoom(data.user.uid);
+            const room = rooms.find(r => r.roomId === data.roomId);
             if (room) {
                 room.game.regAction().forEach(item => {
                     scoket.on(item.actionName, function (data) {
@@ -265,7 +272,7 @@ module.exports = (io, scoket) => {
             }, 50);
         },
         heartBeat: (data) => {
-            const room = findUserInRoom(data.uid);
+            const room = rooms.find(r => r.roomId === data.roomId);
             if (room) {
                 if (room.state === 'playing') {
                     room.game.sendData(data.uid);

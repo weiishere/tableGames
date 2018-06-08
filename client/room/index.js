@@ -11,7 +11,7 @@ import Cookies from "js-cookie";
 import $ from 'jquery';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const theGamerNumber = 3;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -32,7 +32,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.31.222/') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -68,6 +68,7 @@ class Table extends Component {
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 keepVertical: false,
                 state: 'wait',
+                winEffectShow: false
             },
             //roomId: getQueryString('roomId'),
             roomLog: [],
@@ -81,14 +82,6 @@ class Table extends Component {
             isConnectting: false,
             option: {}
         }
-        // this.option = {
-        //     gamerNumber: 4,
-        //     colorType: 3,//表示两黄牌还是三黄牌
-        //     mulriple: 1,//倍数
-        //     score: 0,//底分
-        //     gameTime: 4,
-
-        // }
         this.isFristLoad = true;
         this.countdown = 60;
         this.ruleName = '';
@@ -97,15 +90,17 @@ class Table extends Component {
         this.gameInfoOpenHandle = this.gameInfoOpenHandle.bind(this);
         this.readyCallback = this.readyCallback.bind(this);
         this.showCardAuto = this.showCardAuto.bind(this);
-        this.heartBeat = this.heartBeat.bind(this);
+        this.winEventEffect = this.winEventEffect.bind(this);
+        //this.heartBeat = this.heartBeat.bind(this);
         this.lastData = { isOver: false };
+        this.allGamers = {}
     }
-    heartBeat({ roomId, uid }) {
-        //心跳
-        window.setInterval(() => {
-            ws.emit('heartBeat', JSON.stringify({ roomId, uid }));
-        }, 10000);
-    }
+    // heartBeat({ roomId, uid }) {
+    //     //心跳
+    //     window.setInterval(() => {
+    //         ws.emit('heartBeat', JSON.stringify({ roomId, uid }));
+    //     }, 10000);
+    // }
     componentDidMount() {
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
         const self = this;
@@ -131,7 +126,7 @@ class Table extends Component {
                     return false;
                 } else {
                     self.gameInit(room);
-                    this.heartBeat({ roomId: room.roomId, uid: this.state.user.uid });
+                    //this.heartBeat({ roomId: room.roomId, uid: this.state.user.uid });
                     // self.gameInit({
                     //     roomId: '292f0a78-e304-48cc-9aea-4fd0a7341347',
                     //     jsonData: JSON.stringify({ countdown: 30, colorType: 3, mulriple: 1, gameTime: 4 })
@@ -140,6 +135,16 @@ class Table extends Component {
             }
         });
 
+    }
+    winEventEffect(data) {
+        this.setState({ winEffectShow: true });
+        window.setTimeout(() => {
+            $('.winEffect').addClass(this.allGamers['user_' + data.uid]);
+        }, 1500);
+        window.setTimeout(() => {
+            this.setState({ winEffectShow: false });
+            $('.winEffect').removeClass(this.allGamers['user_' + data.uid]);
+        }, 2500);
     }
     gameInit(room) {
         const self = this;
@@ -202,6 +207,11 @@ class Table extends Component {
                     log.push({ type: 'chat', name: data.content.name, content: data.content.content });
                     self.setState({ roomLog: log });
                     break;
+                case 'event':
+                    //碰杠胡事件
+                    console.log(data.content);
+                    self.winEventEffect({ uid: data.content.uid });
+                    break;
                 case 'errorInfo':
                     alert(data.content);
                     //history.back();
@@ -231,7 +241,7 @@ class Table extends Component {
         newRecore = false;
         if (this.state.room.state === 'end') {
             //关闭连接
-            ws.emit('disconnect');
+            //ws.emit('disconnect');
         }
         this.setState({ showRecore: false });
     }
@@ -247,7 +257,7 @@ class Table extends Component {
         // }
         this.setState({ game: null, showMsgPanel: false });
     }
-    //玩家时间到，自动为其出牌
+    //玩家时间到，自动为其出牌（已弃用）
     showCardAuto() {
         //获取应该出牌的玩家
         const mine = this.state.game.gameState['user_' + this.state.user.uid];
@@ -315,6 +325,10 @@ class Table extends Component {
             if (!rightGamer) rightGamer = frontGamer[frontGamer.length - 1];
             if (!topGamer) topGamer = frontGamer[frontGamer.length - 2];
             if (!leftGamer) leftGamer = frontGamer[frontGamer.length - 3];
+            if (me) this.allGamers['user_' + me.uid] = 'bottom';
+            if (leftGamer) this.allGamers['user_' + leftGamer.uid] = 'left';
+            if (rightGamer) this.allGamers['user_' + rightGamer.uid] = 'right';
+            if (topGamer) this.allGamers['user_' + topGamer.uid] = 'top';
         }
         //只要有一个人没选择就要禁用
         let isAllcolorLack = '';
@@ -332,7 +346,7 @@ class Table extends Component {
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack}`}>
+        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -382,6 +396,9 @@ class Table extends Component {
             {
                 this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...</span></QueueAnim>
             }
+            <div className={`winEffect ${this.state.winEffectShow ? 'effectActive' : 'hide'}`}>
+                <span></span>
+            </div>
         </QueueAnim>
     }
 }
@@ -389,13 +406,28 @@ class Countdown extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            countdown: 20
+            countdown: this.props.time
         }
         this.isEnd = false;
         this.timer = undefined;
+        this.bagin = this.bagin.bind(this);
+    }
+    componentDidMount() {
+        this.bagin();
     }
     componentWillUnmount() {
         window.clearInterval(this.timer);
+    }
+    bagin() {
+        window.clearInterval(this.timer);
+        this.timer = window.setInterval(() => {
+            if (this.state.countdown === 0) {
+                this.props.timeOverHander && this.props.timeOverHander();
+                window.clearInterval(this.timer);
+            } else {
+                this.setState({ countdown: --this.state.countdown });
+            }
+        }, 1000);
     }
     componentWillReceiveProps(nextProps) {
         if (!newRecore) { return false; }
@@ -404,15 +436,16 @@ class Countdown extends Component {
         } else {
             if (nextProps.roomState === 'playing') {
                 this.setState({ countdown: nextProps.time }, () => {
-                    window.clearInterval(this.timer);
-                    this.timer = window.setInterval(() => {
-                        if (this.state.countdown === 0) {
-                            this.props.timeOverHander && this.props.timeOverHander();
-                            window.clearInterval(this.timer);
-                        } else {
-                            this.setState({ countdown: --this.state.countdown });
-                        }
-                    }, 1000);
+                    this.bagin();
+                    // window.clearInterval(this.timer);
+                    // this.timer = window.setInterval(() => {
+                    //     if (this.state.countdown === 0) {
+                    //         this.props.timeOverHander && this.props.timeOverHander();
+                    //         window.clearInterval(this.timer);
+                    //     } else {
+                    //         this.setState({ countdown: --this.state.countdown });
+                    //     }
+                    // }, 1000);
                 });
             } else {
                 this.setState({ countdown: nextProps.time });
@@ -436,7 +469,7 @@ class GamerDock extends Component {
         return (total > 0 ? '+' : '') + total;
     }
     render() {
-        return <div className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
+        return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
             <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
@@ -452,7 +485,8 @@ class Gamer_mine extends Component {
         this.state = {
             activeCard: {},
             buttonVisible: false,
-            fmChooseCardKey: [] //用于多杠的情况
+            fmChooseCardKey: [], //用于多杠的情况
+            hadOutCardKey: ''//用于马上打出去的牌
         }
         this.cardHandler = false;
         this.isLack = false;
@@ -461,6 +495,7 @@ class Gamer_mine extends Component {
         this.clickHandle = this.clickHandle.bind(this);
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
+
     }
     ready() {
         if (this.cardHandler) return;
@@ -479,7 +514,8 @@ class Gamer_mine extends Component {
         this.cardHandler = false;
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
-            activeCard: nextProps.userState && nextProps.userState.fatchCard || {}
+            activeCard: nextProps.userState && nextProps.userState.fatchCard || {},
+            hadOutCardKey: ''
         });
 
 
@@ -508,13 +544,15 @@ class Gamer_mine extends Component {
         }
         //必须在打缺了的情况下，或者打的缺花色的牌，才通过
         if (_showCard.color === this.props.userState.colorLack || this.isLack) {
-            this.setState({ activeCard: {} });
+            this.setState({ activeCard: {}, hadOutCardKey: this.state.activeCard.key });
             this.cardHandler = false;
             ws.emit('showCard', JSON.stringify({
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
                 cardKey: this.state.activeCard.key
             }));
+            //考虑到流畅性，打完前端马上去掉这个牌
+
         }
     }
     actionHandler(type) {
@@ -522,25 +560,36 @@ class Gamer_mine extends Component {
         let doCardKey = undefined;
         if (type === 'fullMeet') {
             //let allCard = concatCard(this.props.userState);
-            //只要手牌有需要暗杠的就直接
-            //是否是碰转杠，如果是的话要优先处理
-            const isMeetToFull = this.props.userState.fatchCard && this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
-            if (!isMeetToFull) {
+            //只要手牌有需要暗杠的就直
+            // const isMeetToFull = this.props.userState.fatchCard && this.props.userState.groupCards.meet.find(meets => meets[0].key === this.props.userState.fatchCard.key) ? true : false;
+            // if (!isMeetToFull) {
+            if (this.props.userState.catcher) {
+                //碰升级杠的牌
+                const _cacrdsAddfatchCard = this.props.userState.fatchCard ? this.props.userState.cards.concat(this.props.userState.fatchCard) : this.props.userState.cards;
+                let meetToFulls = []
+                this.props.userState.groupCards.meet.forEach(meets => {
+                    const _c = _cacrdsAddfatchCard.find(c => c.color === meets[0].color && c.number === meets[0].number);
+                    if (_c) meetToFulls.push(_c);
+                });
+                //手牌原手4张的
                 let { resultType_1, resultType_2 } = getCardShowTime(this.props.userState.cards);
-                if (resultType_2.four.length >= 2) {
+                if (resultType_2.four.length + meetToFulls.length >= 2) {
                     //需要选择杠哪张牌，置灰其他牌
                     let _fmChooseCardKey = resultType_2.four.map(item => {
                         return resultType_1[item].card.key;
                     });
+                    if (meetToFulls.lengt !== 0) _fmChooseCardKey = _fmChooseCardKey.concat(meetToFulls.map(c => c.key));
                     this.setState({
                         fmChooseCardKey: _fmChooseCardKey
                     });
                     return;
-                } else if (resultType_2.four.length >= 1) {
-                    doCardKey = resultType_1[resultType_2.four[0]].card.key;
+                } else if (resultType_2.four.length + meetToFulls.length === 1) {
+                    doCardKey = meetToFulls.length === 1 ? meetToFulls[0].key : resultType_1[resultType_2.four[0]].card.key;
                 }
             }
         }
+        //}
+        //}
         this.cardHandler = true;
         //点击了就马上隐藏按钮，免得再多生事端
         this.setState({ buttonVisible: true, fmChooseCardKey: [] });
@@ -634,7 +683,7 @@ class Gamer_mine extends Component {
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
                 </div>)}
-                {this.props.userState.cards.map(card =>
+                {this.props.userState.cards.filter(c => c.key !== this.state.hadOutCardKey).map(card =>
                     <div className='mainCards' style={{ display: 'inline-block' }} key={`cardWrap_${card.key}`}>
                         <Card
                             key={`card_mine_${card.key}`}
@@ -646,7 +695,9 @@ class Gamer_mine extends Component {
                 }
 
                 {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard' type={`mine_main ${!this.isLack && this.props.userState.colorLack !== this.props.userState.fatchCard.color ? 'gray' : ''} stress`} card={this.props.userState.fatchCard}></Card>
+                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard'
+                        type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
+                        card={this.props.userState.fatchCard}></Card>
                 </div>}
                 <div className='winDesc'>{this.props.userState.winDesc}</div>
             </QueueAnim>}
@@ -1049,7 +1100,8 @@ class ImgLoader extends Component {
             { key: "record", url: host + "/record.png" },
             { key: "close_btu", url: host + "/close_btu.png" },
             { key: "msg", url: host + "/msg.png" },
-            { key: "msgBtu", url: host + "/msgBtu.png" }
+            { key: "msgBtu", url: host + "/msgBtu.png" },
+            { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {

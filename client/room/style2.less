@@ -485,6 +485,11 @@ button {
             display: none
         }
     }
+    &.effectActive {
+        -webkit-transition: all 0.1s ease-out;
+        -webkit-animation: dropDownForBg .2s ease-out;
+        animation-delay: .4s;
+    }
 }
 
 .userDock {
@@ -606,11 +611,11 @@ button {
     .cardListWrap {
         .clearfix;
         position: absolute;
-        right: 2rem;
+        right: 1rem;
         top: 0;
         bottom: 0;
         margin: auto; //background: rgba(255, 255, 255, 0.1);
-        width: 90%;
+        width: 95%;
         height: 5rem;
         text-align: center;
         .mainCards {}
@@ -971,7 +976,7 @@ button {
     }
     &.card_mine_main {
         background-image: url('/images/games/majiang2/mainCard.png');
-        width: 3.5rem;
+        width: 3.4rem;
         height: 4.7rem;
         margin-left: -.1rem;
         img {
@@ -1027,6 +1032,58 @@ button {
         height: 10rem;
         font-size: 3rem;
         text-align: center;
+    }
+}
+
+.winEffect {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 50000;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    &.hide{
+        transform: translate3d(0, -200%, 0);
+    }
+    span {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        font-size: 6rem;
+        text-align: center;
+        width: 20rem;
+        height: 15rem;
+        background-image: url(/images/games/majiang2/bigEvent/bug_hu.png);
+        background-size: cover;
+        background-position: center;
+        transform: translate3d(0, -200%, 0);
+    }
+    &.effectActive {
+        transform: translate3d(0, 0, 0);
+        span {
+            -webkit-animation: dropDown 1s ease-out;
+            -webkit-animation-fill-mode:forwards;
+        }
+        &.left {
+            transition: all .5s ease-out;
+            transform: translate3d(-100%, 0, 0) scale(.1, .1);
+        }
+        &.right {
+            transition: all .5s ease-out;
+            transform: translate3d(100%, 0, 0) scale(.1, .1);
+        }
+        &.top {
+            transition: all .5s ease-out;
+            transform: translate3d(0, -100%, 0) scale(.1, .1);
+        }
+        &.bottom {
+            transition: all .5s ease-out;
+            transform: translate3d(0, 100%, 0) scale(.1, .1);
+        }
     }
 }
 
@@ -1243,6 +1300,38 @@ button {
     }
     50% {
         transform: scale(1.4, 1.4);
+    }
+    100% {
+        transform: scale(1, 1);
+    }
+}
+
+@-webkit-keyframes dropDown {
+    0% {
+        transform: scale(15, 15) rotate(0deg);
+        ;
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1, 1) rotate(0deg);
+        opacity: .7;
+    }
+    70% {
+        transform: scale(1.2, 1.2) rotate(20deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1, 1) rotate(10deg);
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes dropDownForBg {
+    0% {
+        transform: scale(1, 1);
+    }
+    70% {
+        transform: scale(.95, .95);
     }
     100% {
         transform: scale(1, 1);

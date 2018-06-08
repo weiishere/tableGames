@@ -91,8 +91,10 @@ module.exports = (cards) => {
         }
         //console.log('首先抽取的对子:' + duiziCard.number + duiziCard.color);
         //console.log(copy_cards.map(card => card.number + card.color));//抽了一个对和其他所有的克剩下的牌，做连子判断
-        const tCard = copy_cards[0];
-        const remainCard = keBijiao(copy_cards, 0);
+        
+        let remainCard = tool.getSames(copy_cards);
+        const tCard = remainCard[0];
+        remainCard=keBijiao(remainCard, 0);
         if (remainCard.length === 0) {
             isWin = true;
             break;

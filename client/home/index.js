@@ -18,7 +18,7 @@ let userInfo = {
 if (process.env.NODE_ENV !== 'development') {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {
-        location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
+        location.href = '/auth?target=home';
     } else {
         console.log(JSON.parse(userInfoCookie));
         userInfo = JSON.parse(userInfoCookie);
