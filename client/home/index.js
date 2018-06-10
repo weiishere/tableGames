@@ -34,7 +34,9 @@ class LayOut extends Component {
         }
     }
     componentDidMount() {
-
+        window.addEventListener('popstate', function () {
+            history.pushState(null, null, document.URL);
+        });
         // axios.post('/api/login', {
         //     openId: openId
         // }).then(function (response) {
@@ -101,10 +103,16 @@ class NewRoom extends Component {
             colorType: this.state.colorType[0],
             countdown: this.state.countdown[0]
         }).then((data) => {
-            this.setState({
-                roomInfo_visible: true,
-                roomId: data.data
+            history.pushState(null, null, document.URL);
+            window.addEventListener('popstate', function () {
+                history.pushState(null, null, document.URL);
             });
+            history.pushState(null, null, document.URL);
+            location.href = `http://localhost/room?roomId=${data.data}`;
+            // this.setState({
+            //     roomInfo_visible: true,
+            //     roomId: data.data
+            // });
         });
     }
     render() {

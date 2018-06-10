@@ -656,7 +656,13 @@ class Majiang {
                         userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
                         userState.winDesc = `${winCount}：${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                         //this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}自摸"}`);
-                        this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({ type: 'win', uid: userState.uid, desc: '' })}`);
+                        //this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({ type: 'win', uid: userState.uid, desc: '' })}`);
+                        this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({
+                            type: 'win',
+                            uid: userState.uid,
+                            relevanceUid: this.lastShowCardUserState.uid,
+                            desc: userState.name + '自摸'
+                        })}}`);
                     } else {
                         //别人点炮
                         //testWinType可能是杠上炮、抢杠
@@ -677,7 +683,7 @@ class Majiang {
                             type: 'win',
                             uid: userState.uid,
                             relevanceUid: this.lastShowCardUserState.uid,
-                            desc: ''
+                            desc: this.lastShowCardUserState.name + '点炮'
                         })}}`);
                     }
                     //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听userState.winDesc

@@ -62,14 +62,14 @@ module.exports = (app) => {
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
 
-        //console.log("userInfo:" + userInfo);
+        console.log("userInfo:" + userInfo);
         axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.niceName}&head=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
-            //console.log(response.data)
+            console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);

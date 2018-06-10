@@ -11,7 +11,7 @@ import Cookies from "js-cookie";
 import $ from 'jquery';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 3;
+const theGamerNumber = 4;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -102,6 +102,7 @@ class Table extends Component {
     //     }, 10000);
     // }
     componentDidMount() {
+        history.pushState(null, null, document.URL)
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
         const self = this;
         var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
