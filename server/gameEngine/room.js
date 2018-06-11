@@ -55,9 +55,9 @@ class Room {
             roomId: this.roomId,
             countdown: this.countdown
         });//庄家，上一次第一次胡牌的玩家
-        this.game.setSendMsg(function (content, uid) {
+        this.game.setSendMsg(function (content, option) {
             //监听游戏发出的任何信息
-            self.sendMsg && self.sendMsg(content, uid);
+            self.sendMsg && self.sendMsg(content, option);
         })
         this.game.setOverHander(function () {
             //监听单局游戏结束，进入下一局
@@ -121,10 +121,11 @@ class Room {
     begin(scoket, sendForRoom, sendForUser) {
         try {
             const self = this;
-            this.setSendMsg(function (content, uid) {
+            this.setSendMsg(function (content, option = {}) {
+                const { uid, event, payload } = option;
                 //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
                 self.gamers.forEach(gamer => {
-                    const _data = {
+                    let _data = {
                         gameState: (() => {
                             let result = new Object(), l = content.gameState.length;
                             for (let i = 0; i < l; i++) {
@@ -145,6 +146,10 @@ class Room {
                         remainCardNumber: content.remainCardNumber,
                         isOver: (content.isOver ? true : false),
                         remainTime: content.remainTime
+                    }
+                    if (event) {
+                        _data['event'] = event;
+                        _data['payload'] = payload;
                     }
                     if (uid) {
                         if (gamer.uid === uid) {

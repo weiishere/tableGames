@@ -275,7 +275,7 @@ module.exports = (io, scoket) => {
             const room = rooms.find(r => r.roomId === data.roomId);
             if (room) {
                 if (room.state === 'playing') {
-                    room.game.sendData(data.uid);
+                    room.game.sendData({ uid: data.uid });
                 }
             }
             // const room = getRoom(data.roomId);

@@ -11,11 +11,20 @@ import Cookies from "js-cookie";
 import $ from 'jquery';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const theGamerNumber = 2;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
 };
+
+
+const playSound = (type) => {
+    document.getElementById(type).play();
+}
+var u = navigator.userAgent;
+var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
+var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+
 //const Wechat = require('wechat-jssdk');
 //const wx = new Wechat(wechatConfig);
 
@@ -32,7 +41,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost/') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.31.222/') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -94,6 +103,8 @@ class Table extends Component {
         //this.heartBeat = this.heartBeat.bind(this);
         this.lastData = { isOver: false };
         this.allGamers = {}
+        this.isUpdateTime = false;
+        this.bgPlaying = false;
     }
     // heartBeat({ roomId, uid }) {
     //     //心跳
@@ -185,6 +196,7 @@ class Table extends Component {
                     }
                     break;
                 case 'gameData':
+                    self.isUpdateTime = true;
                     if (data.content) {
                         newRecore = true;
                         if (data.content.isOver) {
@@ -196,6 +208,9 @@ class Table extends Component {
                         }
                     } else {
                         self.setState({ game: undefined });
+                    }
+                    if (data.content.event) {
+                        playSound(data.content.event);
                     }
                     break;
                 case 'notified':
@@ -306,6 +321,14 @@ class Table extends Component {
             }
         }
     }
+    componentDidUpdate() {
+        this.isUpdateTime = false;
+        // if(this.state.isBegin){
+        //     $('body .MainTable').delegate('','click',function(){
+
+        //     })
+        // }
+    }
     render() {
         let me, leftGamer, topGamer, rightGamer;
         if (this.state.room) {
@@ -345,9 +368,18 @@ class Table extends Component {
         const rightGameState = this.state.game && rightGamer ? this.state.game.gameState['user_' + rightGamer.uid] : null;
         const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
+
         return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
+        ]} onClick={() => {
+            //playSound('bgMusic');
+            if (this.bgPlaying === false) {
+                this.bgPlaying = document.getElementById('bgMusic');
+                this.bgPlaying.play();
+            } else if (this.bgPlaying.paused) {
+                //this.bgPlaying.play();
+            }
+        }} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -363,6 +395,7 @@ class Table extends Component {
                         time={this.state.game.remainTime}
                         roomState={this.state.room.state}
                         isOver={this.state.game.isOver}
+                        isUpdateTime={this.isUpdateTime}
                     //timeOverHander={this.showCardAuto} 
                     />
                     {meGameState && <div className={`${meGameState.catcher && 'bottom'}`}></div>}
@@ -395,11 +428,16 @@ class Table extends Component {
                 </span>
             </div>}
             {
-                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...</span></QueueAnim>
+                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...</span>
+                    <a href='javascript:;' onClick={() => {
+                        location.reload();
+                    }}>刷新</a>
+                </QueueAnim>
             }
             <div className={`winEffect ${this.state.winEffectShow ? 'effectActive' : 'hide'}`}>
                 <span></span>
             </div>
+            <Sound />
         </QueueAnim>
     }
 }
@@ -432,6 +470,7 @@ class Countdown extends Component {
     }
     componentWillReceiveProps(nextProps) {
         if (!newRecore) { return false; }
+        if (!nextProps.isUpdateTime) return false;
         if (nextProps.isOver) {
             window.clearInterval(this.timer);
         } else {
@@ -543,6 +582,7 @@ class Gamer_mine extends Component {
             this.cardHandler = false;
             return false;
         }
+
         //必须在打缺了的情况下，或者打的缺花色的牌，才通过
         if (_showCard.color === this.props.userState.colorLack || this.isLack) {
             this.setState({ activeCard: {}, hadOutCardKey: this.state.activeCard.key });
@@ -553,7 +593,9 @@ class Gamer_mine extends Component {
                 cardKey: this.state.activeCard.key
             }));
             //考虑到流畅性，打完前端马上去掉这个牌
-
+            if (isIOS) {
+                playSound('showCard');
+            }
         }
     }
     actionHandler(type) {
@@ -600,6 +642,9 @@ class Gamer_mine extends Component {
             actionType: type,
             doCardKey: doCardKey
         }));
+        if (isIOS && (type === 'meet' || type === 'fullMeet')) {
+            playSound(type);
+        }
     }
     clickHandle(e, card) {
         // if (e.target.className.indexOf('gray') == -1) {
@@ -632,6 +677,7 @@ class Gamer_mine extends Component {
                 //如果有操作选项在，则禁用双击打牌，不然有点麻烦
                 if (this.props.userState.actionCode.length !== 0) { return; }
                 this.showCard();
+
                 if (this.props.userState.catcher) {
                     this.setState({ activeCard: card });
                 }
@@ -639,6 +685,7 @@ class Gamer_mine extends Component {
                 this.setState({ activeCard: card });
             }
         }
+        playSound('click');
     }
     chooseColor(color) {
         this.setState({ buttonVisible: true });
@@ -1142,11 +1189,32 @@ class ImgLoader extends Component {
         </div>;
     }
 }
+class Sound extends Component {
+    constructor(props) {
+        super(props);
+        this.isLoad = false;
+    }
+    shouldComponentUpdate() {
+        return !this.isLoad;
+    }
+    componentDidMount() {
+        this.isLoad = true;
+    }
+    render() {
+        return <div>
+            <audio controls="controls" src="sound/give.mp3" id="showCard" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/meet.mp3" id="meet" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/fullMeet.mp3" id="fullMeet" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/win.mp3" id="win" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/click.mp3" id="click" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/bgMusic.mp3" autoPlay="autoplay" id="bgMusic" loop="loop" preload="auto" style={{ display: 'none' }}></audio>
+        </div>
+    }
+}
+
 
 
 render(
     <Table />,
     document.getElementById('layout')
 )
-
-
