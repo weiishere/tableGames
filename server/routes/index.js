@@ -5,6 +5,8 @@ const OAuth = require('node-wechat-oauth');
 const getToken = require('../util/token');
 const cookie = require('cookie');
 const axios = require('axios');
+const request = require('request');
+const sha1 = require('../util/sha1');
 const appid = 'wxf6a4e87064c3fbd2';
 const secret = '7fb75eea66988061a1ed9578e7d8fef4';
 let tokens = {};
@@ -35,7 +37,7 @@ module.exports = (app) => {
     app.get('/room/', function (req, res, next) {
         res.render('room.ejs', {
             title: '掌派桌游-房间',
-            scripts: `<script src='/frame/socket.io-1.4.5.js'></script><script src='/dist/room.bundle.js?dist=043003'></script>`
+            scripts: `<script src='http://res.wx.qq.com/open/js/jweixin-1.2.0.js'></script><script src='/frame/socket.io-1.4.5.js'></script><script src='/dist/room.bundle.js?dist=043003'></script>`
         });
     });
     app.get('/auth/', function (req, res, next) {
@@ -62,14 +64,14 @@ module.exports = (app) => {
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
 
-        console.log("userInfo:" + userInfo);
+        //console.log("userInfo:" + userInfo);
         axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.niceName}&head=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
-            console.log(response.data)
+            //console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
@@ -99,7 +101,7 @@ module.exports = (app) => {
                 token: getToken()
             }
         }).then(function (response) {
-            console.log(response.data)
+            //console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)));
             res.redirect(`/${state}`);
@@ -117,13 +119,28 @@ module.exports = (app) => {
     });
 
 
-    // app.post('/api/login', function (req, res) {
-    //     // 输出 JSON 格式
-    //     response = {
-    //         first_name: req.body.first_name,
-    //         last_name: req.body.last_name
-    //     };
-    //     console.log(response);
-    //     res.end(JSON.stringify(response));
-    // })
+    app.get('/wechat/ticket', function (req, res) {
+        var page =  req.protocol + '://' + req.host + req.originalUrl;
+        //console.log('page:' + page);
+        var t = {};
+        var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
+        //2、获取access_token;
+        request.get(url, function (err, response, body) {
+            var token = JSON.parse(body);
+            //console.log('token:' + body);
+            var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
+            //3、获取ticket并且生成随机字符串,时间戳,签名
+            request.get(ticketUrl, function (err, response, ticket) {
+                var data = JSON.parse(ticket);
+                //console.log('ticket:' + ticket);
+                var timestamp = parseInt(new Date().getTime() / 1000);
+                t.ticket = data.ticket;
+                t.noncestr = sha1(new Date());
+                t.timestamp = timestamp;
+                var string = 'jsapi_ticket=' + t.ticket + '&noncestr=' + t.noncestr + '&timestamp=' + timestamp + '&url=' + page;
+                t.signature = sha1(string);
+                res.json(t);
+            });
+        });
+    })
 };

@@ -428,10 +428,10 @@ class Table extends Component {
                 </span>
             </div>}
             {
-                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...</span>
+                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...
                     <a href='javascript:;' onClick={() => {
                         location.reload();
-                    }}>刷新</a>
+                    }}>刷新</a></span>
                 </QueueAnim>
             }
             <div className={`winEffect ${this.state.winEffectShow ? 'effectActive' : 'hide'}`}>
