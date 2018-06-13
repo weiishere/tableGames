@@ -9,6 +9,7 @@ import loadImage from 'image-promise';
 import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 import $ from 'jquery';
+import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
 const theGamerNumber = 2;
@@ -16,10 +17,22 @@ const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
 };
-
-
+let disableSound = false;
+let bgMusicDisable = false;
+const bgPlay = () => {
+    const bgAudio = document.getElementById('bgMusic');
+    if (bgAudio.paused) {
+        bgAudio.play();
+        bgMusicDisable = false;
+    } else {
+        bgAudio.pause();
+        bgMusicDisable = true;
+    }
+}
 const playSound = (type) => {
-    document.getElementById(type).play();
+    if (!disableSound) {
+        document.getElementById(type).play();
+    }
 }
 var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
@@ -60,10 +73,33 @@ if (process.env.NODE_ENV !== 'development') {
     if (!userInfoCookie) {
         location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
     } else {
-        console.log(JSON.parse(userInfoCookie));
         userInfo = JSON.parse(userInfoCookie);
     }
 }
+axios.get('/wechat/ticket', {}).then((req) => {
+    const data = req.data;
+    wx.config({
+        debug: true, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+        appId: data.appId, // 必填，公众号的唯一标识
+        timestamp: data.timestamp, // 必填，生成签名的时间戳
+        nonceStr: data.noncestr, // 必填，生成签名的随机串
+        signature: data.signature,// 必填，签名
+        jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage'] // 必填，需要使用的JS接口列表
+    });
+});
+
+wx.ready(function(){
+    wx.onMenuShareAppMessage({
+        title: '麻友们邀您来战', // 分享标题
+        desc: '您准备好了吗？点击直接开始游戏-掌派桌游', // 分享描述
+        link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+        imgUrl: '', // 分享图标
+        success: function () {
+            alert('success');
+        }
+    });
+});
+
 
 
 class Table extends Component {
@@ -89,7 +125,9 @@ class Table extends Component {
             showRecore: false,
             isFristLoad: true,
             isConnectting: false,
-            option: {}
+            option: {},
+            toast: '',
+            notice: true
         }
         this.isFristLoad = true;
         this.countdown = 60;
@@ -112,6 +150,16 @@ class Table extends Component {
     //         ws.emit('heartBeat', JSON.stringify({ roomId, uid }));
     //     }, 10000);
     // }
+    static childContextTypes = {
+        room: PropTypes.object,
+        game: PropTypes.object
+    }
+    getChildContext() {
+        return {
+            room: this.state.room,
+            game: this.state.game
+        }
+    }
     componentDidMount() {
         history.pushState(null, null, document.URL)
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
@@ -146,7 +194,9 @@ class Table extends Component {
                 }
             }
         });
-
+        window.setTimeout(() => {
+            this.setState({ notice: false })
+        }, 30000);
     }
     winEventEffect(data) {
         this.setState({ winEffectShow: true });
@@ -329,6 +379,11 @@ class Table extends Component {
         //     })
         // }
     }
+    toasthander() {
+        // const toast = React.createElement('div', {
+        //     className: 'toast'
+        // }, 'toast Content');
+    }
     render() {
         let me, leftGamer, topGamer, rightGamer;
         if (this.state.room) {
@@ -369,16 +424,16 @@ class Table extends Component {
         const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
 
-        return !this.state.isBegin ? <ImgLoader /> : <QueueAnim delay={300} duration={800} animConfig={[
+        return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} onClick={() => {
             //playSound('bgMusic');
-            if (this.bgPlaying === false) {
-                this.bgPlaying = document.getElementById('bgMusic');
-                this.bgPlaying.play();
-            } else if (this.bgPlaying.paused) {
-                //this.bgPlaying.play();
-            }
+            // if (this.bgPlaying === false) {
+            //     this.bgPlaying = document.getElementById('bgMusic');
+            //     this.bgPlaying.play();
+            // } else if (this.bgPlaying.paused) {
+            //     //this.bgPlaying.play();
+            // }
         }} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
@@ -389,6 +444,18 @@ class Table extends Component {
                     {this.state.game && <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
                     <button className='record' onClick={this.gameInfoOpenHandle}></button>
                     <button className='msg' onClick={() => { this.setState({ showMsgPanel: !this.state.showMsgPanel }); }}></button>
+                    <button className='music' onClick={() => {
+                        bgPlay();
+                        this.setState({
+                            toast: bgMusicDisable ? '背景音乐关' : '背景音乐开'
+                        });
+                    }}></button>
+                    <button className='sound' onClick={() => {
+                        disableSound = !disableSound;
+                        this.setState({
+                            toast: disableSound ? '音效关' : '音效开'
+                        });
+                    }}></button>
                 </div>
                 {this.state.game && <div className='tableCenter'>
                     <Countdown
@@ -437,8 +504,12 @@ class Table extends Component {
             <div className={`winEffect ${this.state.winEffectShow ? 'effectActive' : 'hide'}`}>
                 <span></span>
             </div>
-            <Sound />
+
         </QueueAnim>
+            <Sound />
+            <Toast key='toast' content={this.state.toast} onHide={() => { this.setState({ toast: '' }) }} />
+            {this.state.notice && <div className='notice'><marquee >掌派桌游正式公测，欢迎玩家踊跃试玩，公测期间免房卡，若发现bug请提交至公众号，验证为有效bug将奖励50张房卡</marquee></div>}
+        </div>
     }
 }
 class Countdown extends Component {
@@ -503,12 +574,33 @@ class GamerDock extends Component {
         super(props);
         this.getTotal = this.getTotal.bind(this);
     }
+    static contextTypes = {
+        game: PropTypes.object
+    };
     getTotal() {
         let total = 0;
         this.props.room.recode.map(item => total += item.find(user => this.props.uid === user.uid).point);
         return (total > 0 ? '+' : '') + total;
     }
     render() {
+        let myEvent = undefined;
+        if (this.context.game && this.context.game.event) {
+            const payLoad = JSON.parse(this.context.game.payload);
+            //玩家自己不现实气泡
+            if (payLoad.uid === this.props.userState.uid && this.props.userState.uid !== userInfo.userid) {
+                myEvent = {}
+                if (this.context.game.event === 'showCard') {
+                    myEvent['card'] = payLoad.card;
+                } else {
+                    myEvent['name'] = {
+                        'meet': '碰',
+                        'fullMeet': '杠',
+                        'win': '胡牌',
+                    }[this.context.game.event]
+                }
+            }
+        }
+
         return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
             <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
@@ -516,6 +608,8 @@ class GamerDock extends Component {
             <div className='score'>{this.getTotal()}</div>
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
+            {/* {myEvent && (myEvent.card ? <div className='showCardWeak'><img src={`/images/games/majiang2/cards/${myEvent.card.color}${myEvent.card.number}.png`} /></div> : <div className='showCardWeak'>{myEvent.name}</div>)} */}
+            <div className={`showCardWeak ${myEvent && 'show'}`}>{myEvent && (myEvent.card ? <img src={`/images/games/majiang2/cards/${myEvent.card.color}${myEvent.card.number}.png`} /> : <span>{myEvent.name}</span>)}</div>
         </div>
     }
 }
@@ -747,7 +841,7 @@ class Gamer_mine extends Component {
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
-                <div className='winDesc'>{this.props.userState.winDesc}</div>
+                <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf('：') ? this.props.userState.winDesc.split('：')[1] : this.props.userState.winDesc}</div>
             </QueueAnim>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
@@ -995,6 +1089,32 @@ class GameInfo extends Component {
         </div>
     }
 }
+class Toast extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            content: this.props.content,
+        }
+        this.timer = undefined;
+    }
+    shouldComponentUpdate(nextProps) {
+        return nextProps.content !== this.state.content
+    }
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.content !== this.state.content) {
+            if (this.timer) window.clearTimeout(this.timer);
+            this.setState({
+                content: nextProps.content,
+            });
+            this.timer = window.setTimeout(() => {
+                this.props.onHide();
+            }, 2000);
+        }
+    }
+    render() {
+        return <div key='toast' className={`toast ${this.state.content && 'show'}`}>{this.state.content}</div>
+    }
+}
 class MsgPanel extends Component {
     constructor(props) {
         super(props);
@@ -1149,6 +1269,9 @@ class ImgLoader extends Component {
             { key: "close_btu", url: host + "/close_btu.png" },
             { key: "msg", url: host + "/msg.png" },
             { key: "msgBtu", url: host + "/msgBtu.png" },
+            { key: "music", url: host + "/music.png" },
+            { key: "sound", url: host + "/sound.png" },
+            { key: "msgs", url: host + "/msgs.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
@@ -1195,12 +1318,16 @@ class Sound extends Component {
         this.isLoad = false;
     }
     shouldComponentUpdate() {
-        return !this.isLoad;
+        return false;
+    }
+    componentDidUpdate() {
+        this.isLoad = false;
     }
     componentDidMount() {
         this.isLoad = true;
     }
     render() {
+        console.log('load');
         return <div>
             <audio controls="controls" src="sound/give.mp3" id="showCard" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/meet.mp3" id="meet" preload="auto" style={{ display: 'none' }}></audio>

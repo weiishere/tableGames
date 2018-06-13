@@ -103,16 +103,14 @@ class NewRoom extends Component {
             colorType: this.state.colorType[0],
             countdown: this.state.countdown[0]
         }).then((data) => {
-            history.pushState(null, null, document.URL);
-            window.addEventListener('popstate', function () {
-                history.pushState(null, null, document.URL);
-            });
-            history.pushState(null, null, document.URL);
-            location.href = `http://localhost/room?roomId=${data.data}`;
-            // this.setState({
-            //     roomInfo_visible: true,
-            //     roomId: data.data
-            // });
+            if (process.env.NODE_ENV === 'development') {
+                this.setState({
+                    roomInfo_visible: true,
+                    roomId: data.data
+                });
+            } else {
+                location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+            }
         });
     }
     render() {

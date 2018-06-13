@@ -6,7 +6,8 @@ const getToken = require('../util/token');
 const cookie = require('cookie');
 const axios = require('axios');
 const request = require('request');
-const sha1 = require('../util/sha1');
+//const sha1 = require('../util/sha1');
+const sha1 = require('js-sha1');
 const appid = 'wxf6a4e87064c3fbd2';
 const secret = '7fb75eea66988061a1ed9578e7d8fef4';
 let tokens = {};
@@ -120,7 +121,7 @@ module.exports = (app) => {
 
 
     app.get('/wechat/ticket', function (req, res) {
-        var page =  req.protocol + '://' + req.host + req.originalUrl;
+        var page = req.protocol + '://' + req.host + req.originalUrl;
         //console.log('page:' + page);
         var t = {};
         var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
@@ -134,6 +135,7 @@ module.exports = (app) => {
                 var data = JSON.parse(ticket);
                 //console.log('ticket:' + ticket);
                 var timestamp = parseInt(new Date().getTime() / 1000);
+                t.appId = appid;
                 t.ticket = data.ticket;
                 t.noncestr = sha1(new Date());
                 t.timestamp = timestamp;

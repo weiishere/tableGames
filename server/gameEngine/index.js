@@ -114,15 +114,19 @@ module.exports = (io, scoket) => {
             //const room = findUserInRoom(data.user.uid);
             const room = rooms.find(r => r.roomId === data.roomId);
             if (room) {
-                room.game.regAction().forEach(item => {
-                    scoket.on(item.actionName, function (data) {
-                        item.actionFn.call(room.game, data);
-                    })
-                });
-                sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                 setTimeout(() => {
-                    room.game.sendData();
+                    sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                 }, 50);
+                if (room.game) {
+                    room.game.regAction().forEach(item => {
+                        scoket.on(item.actionName, function (data) {
+                            item.actionFn.call(room.game, data);
+                        })
+                    });
+                    setTimeout(() => {
+                        room.game.sendData();
+                    }, 70);
+                }
             }
 
         },
