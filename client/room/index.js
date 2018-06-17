@@ -93,7 +93,7 @@ axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
             link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
             imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg', // 分享图标
             success: function () {
-                alert('success');
+                //alert('success');
             }
         });
     });
