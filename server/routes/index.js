@@ -121,8 +121,8 @@ module.exports = (app) => {
 
 
     app.get('/wechat/ticket', function (req, res) {
-        var page = req.protocol + '://' + req.host + req.originalUrl;
-        //console.log('page:' + page);
+        //var page = req.protocol + '://' + req.host + req.originalUrl;
+        var { page } = req.query;
         var t = {};
         var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
         //2、获取access_token;
@@ -134,12 +134,14 @@ module.exports = (app) => {
             request.get(ticketUrl, function (err, response, ticket) {
                 var data = JSON.parse(ticket);
                 //console.log('ticket:' + ticket);
-                var timestamp = parseInt(new Date().getTime() / 1000);
+                const timestamp = parseInt(new Date().getTime() / 1000);
                 t.appId = appid;
                 t.ticket = data.ticket;
                 t.noncestr = sha1(new Date());
                 t.timestamp = timestamp;
                 var string = 'jsapi_ticket=' + t.ticket + '&noncestr=' + t.noncestr + '&timestamp=' + timestamp + '&url=' + page;
+                console.log('string' + string);
+                //console.log('timestamp' + t.timestamp);
                 t.signature = sha1(string);
                 res.json(t);
             });
