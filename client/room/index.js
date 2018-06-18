@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const theGamerNumber = 2;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -54,7 +54,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.31.222/') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -78,25 +78,27 @@ if (process.env.NODE_ENV !== 'development') {
 }
 axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
     const data = req.data;
-    wx.config({
-        debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
-        appId: data.appId, // 必填，公众号的唯一标识
-        timestamp: data.timestamp, // 必填，生成签名的时间戳
-        nonceStr: data.noncestr, // 必填，生成签名的随机串
-        signature: data.signature,// 必填，签名
-        jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage'] // 必填，需要使用的JS接口列表
-    });
-    wx.ready(function () {
-        wx.onMenuShareAppMessage({
-            title: '麻友们邀您来战', // 分享标题
-            desc: '您准备好了吗？点击直接开始游戏-掌派桌游', // 分享描述
-            link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
-            imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg', // 分享图标
-            success: function () {
-                //alert('success');
-            }
+    if (window.hasOwnProperty('wx')) {
+        wx.config({
+            debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+            appId: data.appId, // 必填，公众号的唯一标识
+            timestamp: data.timestamp, // 必填，生成签名的时间戳
+            nonceStr: data.noncestr, // 必填，生成签名的随机串
+            signature: data.signature,// 必填，签名
+            jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage'] // 必填，需要使用的JS接口列表
         });
-    });
+        wx.ready(function () {
+            wx.onMenuShareAppMessage({
+                title: '麻友们邀您来战', // 分享标题
+                desc: '您准备好了吗？点击直接开始游戏-掌派桌游', // 分享描述
+                link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
+                imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg', // 分享图标
+                success: function () {
+                    //alert('success');
+                }
+            });
+        });
+    }
 });
 
 
@@ -276,7 +278,7 @@ class Table extends Component {
                     break;
                 case 'event':
                     //碰杠胡事件
-                    console.log(data.content);
+                    //console.log(data.content);
                     self.winEventEffect({ uid: data.content.uid });
                     break;
                 case 'errorInfo':
@@ -314,6 +316,7 @@ class Table extends Component {
     }
     gameInfoOpenHandle() {
         newRecore = false;
+        playSound('click');
         this.setState({ showRecore: true });
     }
     readyCallback() {
@@ -444,7 +447,10 @@ class Table extends Component {
                 <div className='gameInfoBar'>
                     {this.state.game && <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
                     <button className='record' onClick={this.gameInfoOpenHandle}></button>
-                    <button className='msg' onClick={() => { this.setState({ showMsgPanel: !this.state.showMsgPanel }); }}></button>
+                    <button className='msg' onClick={() => {
+                        playSound('click');
+                        this.setState({ showMsgPanel: !this.state.showMsgPanel });
+                    }}></button>
                     <button className='music' onClick={() => {
                         bgPlay();
                         this.setState({
@@ -488,7 +494,7 @@ class Table extends Component {
             </div>
             {!this.state.keepVertical && <div className='orientationWeak'>
                 <span>
-                    为了更好的游戏体验，请打开手机的允许屏幕旋转开关，Android用户还需在微信中进行设置：我-设置-通用-开启横屏模式
+                    为了更好的游戏体验，请打开手机的允许屏幕旋转开关，Android用户还需在微信中进行设置：我->设置->通用->开启横屏模式
                     <br /><br />
                     <a href='javascript:;' onClick={() => {
                         this.setState({ keepVertical: true })
@@ -594,9 +600,9 @@ class GamerDock extends Component {
                     myEvent['card'] = payLoad.card;
                 } else {
                     myEvent['name'] = {
-                        'meet': '碰',
-                        'fullMeet': '杠',
-                        'win': '胡牌',
+                        'meet': <img src="/images/games/majiang2/meet.png" />,
+                        'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
+                        'win': <img src="/images/games/majiang2/win.png" />,
                     }[this.context.game.event]
                 }
             }
@@ -644,6 +650,7 @@ class Gamer_mine extends Component {
                 state: 'ready'
             }));
         }, 50);
+        playSound('click');
     }
     componentWillReceiveProps(nextProps) {
         this.cardHandler = false;
@@ -780,7 +787,7 @@ class Gamer_mine extends Component {
                 this.setState({ activeCard: card });
             }
         }
-        playSound('click');
+        playSound('select');
     }
     chooseColor(color) {
         this.setState({ buttonVisible: true });
@@ -1328,13 +1335,15 @@ class Sound extends Component {
         this.isLoad = true;
     }
     render() {
-        console.log('load');
+        //console.log('load');
         return <div>
             <audio controls="controls" src="sound/give.mp3" id="showCard" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/meet.mp3" id="meet" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/fullMeet.mp3" id="fullMeet" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/win.mp3" id="win" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/click.mp3" id="click" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/gameStart.mp3" id="gameStart" preload="auto" style={{ display: 'none' }}></audio>
+            <audio controls="controls" src="sound/select.mp3" id="select" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/bgMusic.mp3" autoPlay="autoplay" id="bgMusic" loop="loop" preload="auto" style={{ display: 'none' }}></audio>
         </div>
     }

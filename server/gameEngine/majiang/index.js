@@ -36,14 +36,16 @@ class TimerManager {
         this.timer = null;
     }
     start() {
-        clearInterval(this.timer);
         this.remainTime = this.countdown;
+        const slef = this;
+        clearInterval(slef.timer);
         this.timer = setInterval(() => {
-            if (this.remainTime === 0) {
-                clearInterval(this.timer);
-                this.timeOutEnent.call(this);
+            //console.log(this.remainTime);
+            if (slef.remainTime === 0) {
+                clearInterval(slef.timer);
+                slef.timeOutEnent.call(this);
             } else {
-                this.remainTime--;
+                slef.remainTime--;
             }
         }, 1000);
     }
@@ -552,8 +554,99 @@ class Majiang {
                     }
                     eventObj = { event: 'meet', payload: JSON.stringify({ card: doCard, uid: userState.uid }) }
                 } else if (data.actionType === 'fullMeet') {
-
                     try {
+                        const fullMeetDo = (_doCard) => {
+                            let _fulMmeet = [];
+                            //const _concatCard = userState.fatchCard ? userState.cards.concat(userState.fatchCard) : userState.cards;
+                            userState.cards = userState.cards.filter(card => {
+                                if (card.color === _doCard.color && card.number === _doCard.number) {
+                                    _fulMmeet.push(card);
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            });
+                            userState.groupCards.fullMeet.push(_fulMmeet);
+                        }
+                        const isRobFullMeetWin = (_doCard) => {
+                            //他人引杠
+                            let robFullMeetWin = false;
+                            //这里要判断是否有其他人要胡马上要杠的牌
+                            this.gameState.filter(state => !state.isWin && state.uid !== data.uid).forEach(state => {
+                                const _cards = state.cards.concat(_doCard).sort(objectArraySort('key'));
+                                if (winCore(_cards)) {
+                                    robFullMeetWin = true;
+                                }
+                            })
+                            return robFullMeetWin;
+                        }
+
+                        if (!isMineAction) {
+                            if (!isRobFullMeetWin(doCard)) {
+                                userState.cards.push(clone(doCard));
+                                userState.cards = userState.cards.sort(objectArraySort('key'));
+                                fullMeetDo(doCard);
+                            } else {
+                                userState.testWinType = 'robFullMeet';//被抢胡等待
+                                userState.winDesc = '等待其他玩家选择是否胡牌~';
+                                userState.actionCode = [];
+                                setTimeout(() => { this.sendData(); }, 10);
+                                return false;
+                            }
+                        } else {
+                            //自己摸到牌，要杠
+                            //检查是否是碰升级为杠
+                            let meetToFull;
+                            userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
+                            userState.cards = userState.cards.sort(objectArraySort('key'));
+                            //可能存在于手牌或者刚刚摸到的牌中
+                            const _concatCard = this.concatCard(userState);
+                            doCard = data.doCardKey ? _concatCard.find(card => card.key === data.doCardKey) : doCard;
+                            userState.groupCards.meet.forEach(_meet => {
+                                if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
+                                    meetToFull = _meet;
+                                }
+                            });
+                            if (!meetToFull) {
+                                fullMeetDo(doCard);
+                            } else {
+                                //碰升杠
+                                if (isRobFullMeetWin(doCard)) {
+                                    //抢杠流程
+                                    userState.testWinType = 'robFullMeetWin';//被抢杠等待
+                                    userState.winDesc = '等待其他玩家选择抢杠~';
+                                    userState.actionCode = [];
+                                    this.showCard.call(this, {
+                                        roomId: data.roomId,
+                                        uid: data.uid,
+                                        cardKey: doCard.key
+                                    });
+                                    return false;
+                                } else {
+                                    meetToFull.push(doCard);
+                                    userState.groupCards.fullMeet.push(clone(meetToFull));
+                                    //userState.groupCards.meet = userState.groupCards.meet.filter(_meet => _meet[0].color !== doCard.color && _meet[0].number !== doCard.number);
+                                    userState.groupCards.meet = userState.groupCards.meet.filter(_meet => {
+                                        if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
+                                            return false;
+                                        } else {
+                                            return true;
+                                        }
+                                    });
+                                    userState.cards = userState.cards.filter(card => card.key !== doCard.key);
+                                }
+                            }
+                        }
+
+
+
+
+
+
+
+
+
+                        /*
                         if (data.doCardKey) {
                             //暗杠，而且不等于刚刚摸到的牌，那么会传过来一张选定的牌型，然后进行杠
                             const _concatCard = userState.fatchCard ? this.concatCard(userState).concat(userState.fatchCard) : this.concatCard(userState);
@@ -617,6 +710,8 @@ class Majiang {
                                 userState.groupCards.fullMeet.push(_fulMmeet);
                             }
                         }
+                        */
+
                         userState.actionCode = [];
                         isFatchCard = true;
                         this.setGamerCacher(userState);//把自己设置为下一个出牌的人
@@ -796,28 +891,31 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard(callback) {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
         //获取指定的牌，主要还是快速调试
 
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), /*this.getSpecifiedCard('t', 7),*/
-        //     this.getSpecifiedCard('w', 4), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 9),
-        //     this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[0].groupCards.meet = [[
-        //     this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        // ]];
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
-        //     this.getSpecifiedCard('w', 9)
-        // ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), /*this.getSpecifiedCard('t', 7),*/
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 7)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].groupCards.meet = [[
+            this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        ], [
+            this.getSpecifiedCard('w', 9),
+            this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        ]
+        ];
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 8)
+        ].sort(objectArraySort('key'));
 
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
@@ -862,7 +960,7 @@ class Majiang {
             //sssIndex++;
             //let cardByCatch = sssIndex <= 14 ? { key: 'card-w-4-' + sssIndex, number: 4, color: 'w' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
             // sssIndex++;
-            //let cardByCatch = sssIndex <= 6 ? { key: 'card-t-8-' + sssIndex, number: 8, color: 't' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
+            // let cardByCatch = sssIndex <= 6 ? { key: 'card-w-9-' + sssIndex, number: 9, color: 'w' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
             userState.fatchCard = cardByCatch;
             if (userState.testWinType) userState.testWinType = '';
             if (userState.winDesc) userState.winDesc = '';

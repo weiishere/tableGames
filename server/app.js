@@ -17,7 +17,7 @@ app.use(bodyParser.text());
 //--------------------------------------------------------------------------
 // 静态文件配置
 app.use(express.static(path.join(__dirname, '../public')));
-const prot = 80;
+const prot = 8800;
 const webpackConfig = require('../webpack.config.babel');
 const compiler = webpack(webpackConfig);
 //热部署，自动刷新，需要结合 webpack.config.dev.babel 中的定义

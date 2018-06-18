@@ -13,6 +13,7 @@ const secret = '7fb75eea66988061a1ed9578e7d8fef4';
 let tokens = {};
 const oauth = new OAuth(appid, secret);
 const apiUrl = 'http://220.167.101.116:8080';
+
 // const oauth = new OAuth(appid, secret, 
 //     (openid) => {
 //     //用于获取token的方法 异步操作需返回Promise
@@ -38,7 +39,7 @@ module.exports = (app) => {
     app.get('/room/', function (req, res, next) {
         res.render('room.ejs', {
             title: '掌派桌游-房间',
-            scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'>
+            scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'></script>
             <script src='http://res.wx.qq.com/open/js/jweixin-1.2.0.js'></script>
             <script src='/frame/socket.io-1.4.5.js'></script>
             <script src='/dist/room.bundle.js?dist=043003'></script>`
@@ -96,7 +97,9 @@ module.exports = (app) => {
         //     console.log('getAccessToken error');
         // })
     });
-
+    app.get('/playing', function (req, res, next) {
+        res.redirect();
+    });
     app.get('/cookieTest/', function (req, res, next) {
         axios({
             method: 'post',
@@ -121,8 +124,6 @@ module.exports = (app) => {
         //     }));
         // res.redirect(`/home`);
     });
-
-
     app.get('/wechat/ticket', function (req, res) {
         //var page = req.protocol + '://' + req.host + req.originalUrl;
         var { page } = req.query;
@@ -143,7 +144,7 @@ module.exports = (app) => {
                 t.noncestr = sha1(new Date());
                 t.timestamp = timestamp;
                 var string = 'jsapi_ticket=' + t.ticket + '&noncestr=' + t.noncestr + '&timestamp=' + timestamp + '&url=' + page;
-                console.log('string' + string);
+                //console.log('string' + string);
                 //console.log('timestamp' + t.timestamp);
                 t.signature = sha1(string);
                 res.json(t);

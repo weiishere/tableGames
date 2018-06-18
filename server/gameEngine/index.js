@@ -130,18 +130,21 @@ module.exports = (io, scoket) => {
             }
 
         },
+        findUserInRoom: () => {
+            findUserInRoom();
+        },
         checkin: (data) => {
             try {
-                //判断是否在其他牌局当中（暂时取消这个约束）
-                // const otherRoom = findUserInRoom(data.user.uid);
-                // if (otherRoom && otherRoom.roomId !== data.roomId) {
-                //     setTimeout(() => {
-                //         console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                //         scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
-                //         //scoket.emit('message', `{"type":"errorInfo","content":"您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
-                //     }, 2000);
-                //     return;
-                // }
+                //判断是否在其他牌局当中
+                const otherRoom = findUserInRoom(data.user.uid);
+                if (otherRoom.length !== 0 && otherRoom[0].roomId !== data.roomId) {
+                    setTimeout(() => {
+                        //console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
+                        //scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
+                        scoket.emit('message', `{"type":"errorInfo","content":"您已经在其他房间中切未完成单局游戏，不能加入其他房间，请完成单局游戏后再加入，谢谢"}`);
+                    }, 500);
+                    return;
+                }
                 //const _rooms = rooms.filter(item => item.roomId + '' === data.roomId);
                 const _rooms = getRoom(data.roomId);
                 if (_rooms) {
@@ -262,7 +265,12 @@ module.exports = (io, scoket) => {
                 //准备人数等于规定人数，游戏开始
                 room.state = 'playing';
                 //room.setEnd(function () { });
-                room.begin(scoket, sendForRoom, sendForUser);
+                if (room.allTime === room.gameTime + 1) {
+                    //第一次开始，使用begin（避免两次初始化game））
+                    room.begin(scoket, sendForRoom, sendForUser);
+                } else {
+                    room.singleGameBegin();
+                }
             } else {
                 if (room.game.isOver) {
                     sendForUser(data.user.uid, `{"type":"gameData","content":""} `);//重置gameData
@@ -293,10 +301,5 @@ module.exports = (io, scoket) => {
                 })}}`);
             }, 50);
         }
-        //注册游戏客户端动作
-        // regAction: (scoket) => {
-        //     const room = this.getRoom(data.roomId);
-        //     room.game.regAction(scoket, this);
-        // }
     }
 }

@@ -191,7 +191,7 @@ const rules = [
     //板子、飞机
     ({ cards }) => {
         //大飞机、小飞机、大板子、小板子
-        const noSamesCards = tool.getSames(cards.allCards);
+        const noSamesCards = tool.getSames(cards.fullHandCards);
         let { resultType_1, resultType_2 } = tool.getCardShowTime(noSamesCards);
         const threeGroupCount = resultType_2.three.length;
         let name = '', multiple = 0;

@@ -54,13 +54,13 @@ const rules = [
         let name = '', multiple = 0;
         let outFullMeet = cards.groupCards.fullMeet.length;
         multiple += outFullMeet;
-        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.handCards);
         let inFullMeet = resultType_2.four.length;
         multiple += inFullMeet;
         if (multiple !== 0) {
             name = '杠×' + multiple;
         }
-        return { name: name, multiple: (multiple * 2) }
+        return { name: name, multiple: Math.pow(2, multiple) }
     },
 ]
 const actions = [

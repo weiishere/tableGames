@@ -16,7 +16,7 @@ class Room {
             state: 'wait',//wait、playing、next、end,
             recode: [],
             gameType: 'majiang',//‘jinhua’
-            game: {},//正在进行的游戏
+            game: undefined,//正在进行的游戏
             rule: 'chengdu'
         }, option);
         this.allTime = this.gameTime = this.optionSet.gameTime;//可以玩的次数，备份下，用于显示
@@ -47,6 +47,10 @@ class Room {
             }
         } else {
             gamerMaster = this.gamers[0];//第一局的话，第一个加入的人是庄家
+        }
+        if (this.game) {
+            this.game.timer.end();
+            this.game = null;
         }
         this.game = new Majiang({
             colorType: this.optionSet.colorType,
@@ -115,6 +119,8 @@ class Room {
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
         this.initGame();
+        this.game.sendForRoom = this.sendForRoom;
+        this.game.sendForUser = this.sendForUser;
         this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }));
         this.game.assignCard();//分发牌
     }
@@ -161,7 +167,9 @@ class Room {
 
                 });
             })
-            this.singleGameBegin(scoket);
+            //this.singleGameBegin(scoket);
+            this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }));
+            this.game.assignCard();//分发牌
             this.sendForRoom = this.game.sendForRoom = sendForRoom;
             this.sendForUser = this.game.sendForUser = sendForUser;
         } catch (e) {
