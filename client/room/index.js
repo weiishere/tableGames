@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 2;
+const theGamerNumber = 4;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -68,14 +68,24 @@ window.addEventListener("onsize", function () {
 });
 
 
+
 if (process.env.NODE_ENV !== 'development') {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {
         location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
     } else {
         userInfo = JSON.parse(userInfoCookie);
+        if (!getQueryString('roomId')) {
+            location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
+        }
+    }
+} else {
+    if (!getQueryString('roomId')) {
+        location.href = '/playing?uid=' + getQueryString('uid');
     }
 }
+
+
 axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
     const data = req.data;
     if (window.hasOwnProperty('wx')) {
@@ -169,6 +179,9 @@ class Table extends Component {
         const self = this;
         var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
         //var r = getQueryString('roomId').match(reg);
+        if (!getQueryString('roomId')) {
+            return;
+        }
         if (!reg.test(getQueryString('roomId'))) {
             alert('对不起，房间号不合法!');
             return;
@@ -430,7 +443,7 @@ class Table extends Component {
 
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]}  style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
+        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}

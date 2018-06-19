@@ -98,7 +98,27 @@ module.exports = (app) => {
         // })
     });
     app.get('/playing', function (req, res, next) {
-        res.redirect();
+        const { uid } = req.query;
+        let rooms = global.allRooms;
+        const roomsLength = rooms.length;
+        let resultRooms = null;
+        for (let i = 0; i < roomsLength; i++) {
+            const gamers = rooms[i].gamers;
+            const gamersLength = gamers.length;
+            for (let j = 0; j < gamersLength; j++) {
+                if (gamers[j].uid === uid) {
+                    resultRooms = rooms[i];
+                    break;
+                    //return rooms[i];
+                }
+            }
+        }
+        if (resultRooms) {
+            res.redirect('/rooms?roomId=' + resultRooms.roomId);
+        }else{
+            res.header("Content-Type", "text/html;charset=utf-8");
+            res.end('<h2 style="font-size:30px;margin-top:50%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
+        }
     });
     app.get('/cookieTest/', function (req, res, next) {
         axios({
@@ -110,7 +130,9 @@ module.exports = (app) => {
         }).then(function (response) {
             //console.log(response.data)
             userInfo['userid'] = response.data.userid;
-            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)));
+            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)), {
+                maxAge: 60 * 60 * 24 * 7 // 1 week
+            });
             res.redirect(`/${state}`);
         }).catch(function (error) {
             console.log('----------------login api error start----------------------');

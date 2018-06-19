@@ -2,7 +2,8 @@ const Room = require('./room');
 const clone = require('clone');
 const writeLog = require('../util/errorLog');
 const sqliteCommon = require('../sqliteCommon');
-let rooms = [];
+global.allRooms = [];
+let rooms = global.allRooms;
 
 
 
