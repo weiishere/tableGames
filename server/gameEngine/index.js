@@ -114,11 +114,21 @@ module.exports = (io, scoket) => {
             scoket.user = data.user;
             //const room = findUserInRoom(data.user.uid);
             const room = rooms.find(r => r.roomId === data.roomId);
+
             if (room) {
-                setTimeout(() => {
-                    sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                }, 50);
-                if (room.game) {
+                if (room.gamers.length === room.gamerNumber) {
+                    setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
+                } else {
+                    //加入
+                    room.gamerJoin(data.user);
+                    setTimeout(() => {
+                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                        setTimeout(() => {
+                            sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间"}`);
+                        }, 50);
+                    }, 1000);
+                }
+                if (room.game && !room.game.isOver) {
                     room.game.regAction().forEach(item => {
                         scoket.on(item.actionName, function (data) {
                             item.actionFn.call(room.game, data);

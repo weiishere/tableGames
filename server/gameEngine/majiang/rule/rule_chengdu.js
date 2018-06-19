@@ -60,7 +60,7 @@ const rules = [
         if (multiple !== 0) {
             name = '杠×' + multiple;
         }
-        return { name: name, multiple: Math.pow(2, multiple) }
+        return { name: name, multiple: multiple === 0 ? 0 : Math.pow(2, multiple) }
     },
 ]
 const actions = [

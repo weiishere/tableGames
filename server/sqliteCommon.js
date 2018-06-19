@@ -15,7 +15,7 @@ module.exports = {
         db.serialize(function () {
             //数据库对象的run函数可以执行任何的SQL语句，该函数一般不用来执行查询
             var insert = db.prepare("INSERT OR REPLACE INTO rooms (roomId,checkinTime,updateTime,state,checkiner,jsonData) VALUES (?,?,?,?,?,?)"); //插入或者替换数据
-            const uuid = (new UUID()).generateUUID();
+            const uuid = parseInt((new Date()).getSeconds() * 150000 + Math.random() * 10000000);//(new UUID()).generateUUID();
             insert.run(uuid, Date.now(), Date.now(), state, uid, jsonData, function (err, result) {
                 if (err) {
                     if (error) error(err);

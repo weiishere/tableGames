@@ -54,7 +54,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.1.169:8800') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -174,18 +174,19 @@ class Table extends Component {
         }
     }
     componentDidMount() {
-        history.pushState(null, null, document.URL)
+        //history.pushState(null, null, document.URL)
         //验证roomId是否在内存中，如果有的话就加入，若没有就去sqlite中去找，如果找到了，房间信息中的uid与玩家uid一至就建房，如果不一致就报错（房主还未激活），如果sqlite也没找到就报房间号无效
         const self = this;
-        var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
         //var r = getQueryString('roomId').match(reg);
         if (!getQueryString('roomId')) {
             return;
         }
-        if (!reg.test(getQueryString('roomId'))) {
-            alert('对不起，房间号不合法!');
-            return;
-        }
+        // var reg = /^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+        // if (!reg.test(getQueryString('roomId'))) {
+        //     alert('对不起，房间号不合法!');
+        //     return;
+        // }
+        document.title = '掌派桌游-房间:' + getQueryString('roomId');
         axios.post('/api/getRoom', {
             roomId: getQueryString('roomId'),
         }).then(({ data }) => {
@@ -451,23 +452,23 @@ class Table extends Component {
                 {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 <div className='gameInfoBar'>
                     {this.state.game && <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
-                    <button className='record' onClick={this.gameInfoOpenHandle}></button>
-                    <button className='msg' onClick={() => {
-                        playSound('click');
-                        this.setState({ showMsgPanel: !this.state.showMsgPanel });
-                    }}></button>
-                    <button className='music' onClick={() => {
-                        bgPlay();
-                        this.setState({
-                            toast: bgMusicDisable ? '背景音乐关' : '背景音乐开'
-                        });
-                    }}></button>
-                    <button className='sound' onClick={() => {
-                        disableSound = !disableSound;
-                        this.setState({
-                            toast: disableSound ? '音效关' : '音效开'
-                        });
-                    }}></button>
+                    <div className='buttonWrap'><button className='record' onClick={this.gameInfoOpenHandle}></button>
+                        <button className='msg' onClick={() => {
+                            playSound('click');
+                            this.setState({ showMsgPanel: !this.state.showMsgPanel });
+                        }}></button>
+                        <button className='music' onClick={() => {
+                            bgPlay();
+                            this.setState({
+                                toast: bgMusicDisable ? '背景音乐关' : '背景音乐开'
+                            });
+                        }}></button>
+                        <button className='sound' onClick={() => {
+                            disableSound = !disableSound;
+                            this.setState({
+                                toast: disableSound ? '音效关' : '音效开'
+                            });
+                        }}></button></div>
                 </div>
                 {this.state.game && <div className='tableCenter'>
                     <Countdown
@@ -876,7 +877,7 @@ class Gamer_mine extends Component {
                             if (action === 'winning') return btu_win;
                         })
                     }
-                    {this.props.userState && !this.props.userState.isPause && this.props.userState.actionCode.length !== 0 && btu_pass}
+                    {this.props.userState && this.props.user.state !== 'wait' && !this.props.userState.isPause && this.props.userState.actionCode.length !== 0 && btu_pass}
                 </div> : ''}
                 {<div className={`loadingPanel ${this.state.buttonVisible && 'action'}`}>loading</div>}
             </QueueAnim>
@@ -1246,13 +1247,7 @@ class ImgLoader extends Component {
         //const host = 'https://yefeng-test.oss-cn-beijing.aliyuncs.com/images/';
         const host = '/images/games/majiang2/';
         this.imgList = [
-
-            { key: "desktop1", url: host + "/desktop1.jpg" },
-            { key: "desktop2", url: host + "/desktop2.jpg" },
-            { key: "desktop3", url: host + "/desktop3.jpg" },
-            { key: "bg_1", url: host + "/bg_1.jpg" },
-            { key: "bg_2", url: host + "/bg_2.jpg" },
-            { key: "bg_default", url: host + "/bg_default.jpg" },
+            { key: "desktop1", url: host + "/desktop/desktop7.jpg" },
             { key: "center", url: host + "/center.png" },
             { key: "center_bottom", url: host + "/center_bottom.png" },
             { key: "center_left", url: host + "/center_left.png" },
