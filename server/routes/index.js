@@ -99,7 +99,7 @@ module.exports = (app) => {
     });
     app.get('/playing', function (req, res, next) {
         const { uid } = req.query;
-        let rooms = global.allRooms;
+        let rooms = global.allRooms || [];
         const roomsLength = rooms.length;
         let resultRooms = null;
         for (let i = 0; i < roomsLength; i++) {
@@ -115,9 +115,11 @@ module.exports = (app) => {
         }
         if (resultRooms) {
             res.redirect('/rooms?roomId=' + resultRooms.roomId);
-        }else{
-            res.header("Content-Type", "text/html;charset=utf-8");
-            res.end('<h2 style="font-size:30px;margin-top:50%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
+        } else {
+            res.header('Content-Type', 'text/html');
+            res.send('<h2 style="font-size:30px;margin-top:30%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
+            // res.header("Content-Type", "text/html;charset=utf-8");
+            // res.end('<h2 style="font-size:30px;margin-top:50%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
         }
     });
     app.get('/cookieTest/', function (req, res, next) {
