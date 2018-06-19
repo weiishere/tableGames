@@ -430,15 +430,7 @@ class Table extends Component {
 
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]} onClick={() => {
-            //playSound('bgMusic');
-            // if (this.bgPlaying === false) {
-            //     this.bgPlaying = document.getElementById('bgMusic');
-            //     this.bgPlaying.play();
-            // } else if (this.bgPlaying.paused) {
-            //     //this.bgPlaying.play();
-            // }
-        }} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
+        ]}  style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
