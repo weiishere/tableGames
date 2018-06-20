@@ -32,13 +32,14 @@ module.exports = (app) => {
     apiRoute(app);
     app.get('/checkIn/', function (req, res, next) {
         res.render('index.ejs', {
-            title: '掌派桌游-创建房间',
-            scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'></script><script src='/dist/home.bundle.js'></script>`
+            title: '创建房间-掌派桌游',
+            scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'></script>
+            <script src='/dist/home.bundle.js'></script>`
         });
     });
     app.get('/room/', function (req, res, next) {
         res.render('room.ejs', {
-            title: '掌派桌游-房间',
+            title: '房间-掌派桌游',
             scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'></script>
             <script src='http://res.wx.qq.com/open/js/jweixin-1.2.0.js'></script>
             <script src='/frame/socket.io-1.4.5.js'></script>

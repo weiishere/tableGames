@@ -54,7 +54,7 @@ window.addEventListener("onorientationchange" in window ? "orientationchange" : 
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://192.168.1.169:8800') : io('ws://220.167.101.116:3300');
+let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
 //console.log(window.orientation);//打印屏幕的默认方向  
@@ -186,7 +186,7 @@ class Table extends Component {
         //     alert('对不起，房间号不合法!');
         //     return;
         // }
-        document.title = '掌派桌游-房间:' + getQueryString('roomId');
+        document.title = '房间[' + getQueryString('roomId')+']-掌派桌游';
         axios.post('/api/getRoom', {
             roomId: getQueryString('roomId'),
         }).then(({ data }) => {
