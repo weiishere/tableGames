@@ -271,11 +271,18 @@ const rules = [
     },
     //大对子(手牌全是3个，加一对)
     ({ cards }) => {
-        let { resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
+        let { resultType_2 } = tool.getCardShowTime(cards.allCards);
         if (resultType_2.one.length === 0 && resultType_2.four.length === 0 && resultType_2.two.length === 1 && resultType_2.three.length >= 1) {
             return { name: '大对子', multiple: 5 }
         }
         return { name: '', multiple: 0 }
+
+
+        // //n个三对加一对 AAA BBB CCC DDD EE
+        // if (cardsTime2.one.length === 0 && cardsTime2.two.length === 1 && cardsTime2.three.length >= 1) {
+        //     return { name: '大对子', multiple: 2 };
+        // }
+        // return { multiple: 0 };
     },
     //暗杠
     ({ cards }) => {
@@ -410,4 +417,4 @@ const trggleAction = (handCards, group, actionName) => {
 //     winCard: thisCompCard
 // }));
 
-module.exports = { trggleAction, option: { zfb: true, ruleName: '广安麻将' } };
+module.exports = { trggleAction, option: { zfb: true, ruleName: '广安麻将', isRain: false } };

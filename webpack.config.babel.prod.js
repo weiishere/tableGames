@@ -8,7 +8,7 @@ const version = 'v1'
 
 const pro_config = extend(config, {
   entry: {
-    dll: ['antd-mobile', 'react', 'react-dom', 'react-router-dom'],
+    //dll: ['antd-mobile', 'react', 'react-dom', 'react-router-dom'],
     home: ['./client/home/index'],
     room: ['./client/room/index']
   },

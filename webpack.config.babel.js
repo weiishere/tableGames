@@ -28,7 +28,7 @@ const webpackConfig = {
   },
   entry: {
     //app: './server/app.js',
-    dll: ['antd-mobile', 'react', 'react-dom', 'react-router-dom'],
+    //dll: ['antd-mobile', 'react', 'react-dom', 'react-router-dom'],
     home: ['./client/home/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true'],
     room: ['./client/room/index','webpack-hot-middleware/client?path=/__webpack_hmr&timeout=5000&reload=true']
   },

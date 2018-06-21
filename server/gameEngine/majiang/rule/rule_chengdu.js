@@ -153,4 +153,4 @@ const trggleAction = (handCards, group, actionName) => {
     return { action, result, allMultipl };
 }
 
-module.exports = { trggleAction, option: { zfb: false, ruleName: '成都麻将' } };
+module.exports = { trggleAction, option: { zfb: false, ruleName: '成都麻将', isRain: true } };

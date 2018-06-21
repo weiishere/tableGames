@@ -70,8 +70,7 @@ button {
 
 .toast {
     position: absolute;
-    z-index: 20000;
-    //background: #f6d9bb;
+    z-index: 20000; //background: #f6d9bb;
     background: rgba(244, 184, 88, 0.7);
     color: #000;
     width: 50%;
@@ -81,7 +80,7 @@ button {
     right: 0;
     top: 0;
     margin: auto;
-    border-radius: 0 0 .5rem .5rem; 
+    border-radius: 0 0 .5rem .5rem;
     transform: translate3d(0, -100%, 0);
     transition: all .2s ease-out;
     visibility: hidden;
@@ -95,7 +94,7 @@ button {
 .notice {
     position: absolute;
     z-index: 19999;
-    background: #1f667c54;
+    background: rgba(41, 108, 93, .7);
     color: #000;
     width: 50%;
     height: 1.5rem;
@@ -154,7 +153,7 @@ button {
             background-size: 100% 100%;
             float: left;
             margin: .15rem 0 0 .5rem;
-            background: #296c5d80;
+            background: rgba(41, 108, 93, .5);
             border-radius: 1.7rem;
             color: #fcfcfc;
             line-height: 1.7rem;
@@ -164,12 +163,12 @@ button {
                 color: #edf397;
             }
         }
-        .buttonWrap{
+        .buttonWrap {
             position: absolute;
             right: .5rem;
             width: 3rem;
             top: 3rem;
-            background: rgba(255,255,255,.3);
+            background: rgba(255, 255, 255, .3);
             text-align: center;
             border-radius: 1rem;
         }
@@ -220,8 +219,8 @@ button {
         }
         .contentWrap {
             //height: 100%;
-            margin: 3rem 0 4rem 0;
-            flex:1;
+            margin: 2.5rem 0 4rem 0;
+            flex: 1;
             display: flex;
             .content {
                 //height: 21rem;
@@ -239,7 +238,6 @@ button {
                     &.self {
                         border-color: #ce632d;
                         background: #d8ebee;
-                        
                     }
                     header {
                         //height: 3rem;
@@ -262,20 +260,19 @@ button {
                     }
                     ul {
                         list-style: none;
-                        margin: 0;
-                        //height: 12rem;
+                        margin: 0; //height: 12rem;
                         flex: 6;
                         overflow: auto;
                         li {
                             color: #a4723d;
                             text-align: left;
-                            margin: 0 auto;
-                            padding-left: .5rem;
-                            //height: 2.6rem;
-                            &:nth-child(2n) {
+                            margin: 0 auto; //padding-left: .5rem; //height: 2.6rem;
+                            border-bottom: dashed .05rem #ad9d92;
+                            padding: .2rem;
+                            &:nth-child(2n-1) {
                                 background: #f1d8c5;
                             }
-                            i {
+                            label {
                                 font-size: .7rem; // width: 7rem;
                                 // display: inline-block;
                                 color: #666; // margin-left: .2rem;
@@ -344,8 +341,7 @@ button {
         display: flex;
         flex-direction: column;
         transition: all .2s ease-out;
-        margin: auto;
-        //border-radius: 1rem 0 0 1rem;
+        margin: auto; //border-radius: 1rem 0 0 1rem;
         ul {
             list-style: none;
             li {
@@ -400,8 +396,7 @@ button {
         }
         &>header {
             //background: #000;
-            height: 3rem;
-            //border-bottom: solid 1px #191919;
+            height: 3rem; //border-bottom: solid 1px #191919;
             position: relative;
             border-radius: 1rem 0 0 0;
             input {
@@ -469,12 +464,11 @@ button {
             }
             svg {
                 position: absolute;
-                top:0;
+                top: 0;
                 bottom: 0;
                 left: 0;
                 right: 0;
-                margin: auto;
-                //margin-top: .3rem;
+                margin: auto; //margin-top: .3rem;
             }
         }
     }
@@ -593,8 +587,7 @@ button {
     .nameWrap {
         .ellipsis;
         font-size: .8rem;
-        line-height: 1.4rem;
-        //color: #ddf145;
+        line-height: 1.4rem; //color: #ddf145;
         color: #fff;
         text-shadow: 1px 0 1px #000;
         margin: 0 auto;
@@ -678,7 +671,7 @@ button {
     left: 0;
     right: 0;
     bottom: -.5rem;
-    background: -webkit-linear-gradient(transparent,#06060685);
+    background: -webkit-linear-gradient(transparent, #06060685);
     margin: auto;
     color: #ffc;
     text-shadow: 1px 1px .1em #000; // position: absolute;
@@ -722,8 +715,7 @@ button {
         .clearfix;
         position: absolute;
         right: 0;
-        left: 0;
-        //top: 0;
+        left: 0; //top: 0;
         bottom: .5rem;
         margin: auto; //background: rgba(255, 255, 255, 0.1);
         width: 96%;
@@ -761,7 +753,7 @@ button {
     .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
-        width: 20rem;
+        width: 28rem;
         height: 5rem;
         left: -3rem;
         right: 0;
@@ -820,11 +812,11 @@ button {
         }
         .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
-            width: 2rem;
+            width: 1.8rem;
             height: 1.6rem;
             margin-left: -.1rem;
             float: left;
-            margin-top: -.7rem;
+            margin-top: -.6rem;
             img {
                 -webkit-transform: translate3d(.1rem, -.1rem, 0) rotate(90deg);
                 width: 70%;
@@ -835,8 +827,8 @@ button {
     .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
-        width: 12rem;
-        top: 3rem;
+        width: 14rem;
+        top: 3.5rem;
         bottom: 3rem;
         margin: auto;
         left: 100%;
@@ -858,7 +850,7 @@ button {
         .clearfix;
         position: absolute;
         top: -2rem;
-        left: 1rem;
+        left: 2rem;
         bottom: 0;
         margin: auto;
         height: 14.5rem;
@@ -876,11 +868,11 @@ button {
         }
         .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
-            width: 2rem;
+            width: 1.8rem;
             height: 1.6rem;
             margin-left: -.1rem;
             float: left;
-            margin-top: -.7rem;
+            margin-top: -.6rem;
             img {
                 -webkit-transform: translate3d(-.1rem, -.1rem, 0) rotate(-90deg);
                 width: 70%;
@@ -891,11 +883,11 @@ button {
     .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
-        width: 12rem;
-        top: 3rem;
+        width: 14rem;
+        top: 3.5rem;
         bottom: 3rem;
         margin: auto;
-        left: -8rem;
+        left: -12rem;
     }
     .showCardWeak {
         right: auto;
@@ -923,8 +915,8 @@ button {
         .clearfix;
         position: absolute;
         top: .5rem;
-        left: 10rem;
-        right: 1rem;
+        left: 15rem;
+        right: 5rem;
         margin: auto;
         bottom: 0;
         margin: auto;
@@ -934,8 +926,7 @@ button {
             transform: rotate(0deg)
         }
         .fetchCard {
-            margin-left: .5rem;
-            //float: left;
+            margin-left: .5rem; //float: left;
             display: inline-block
         }
         .group {
@@ -944,8 +935,8 @@ button {
             float: left;
         }
         .card_group {
-            width: 2.5rem;
-            height: 3.3rem;
+            width: 2rem;
+            height: 2.5rem;
             img {
                 -webkit-transform: rotate(180deg);
                 margin-top: .3rem
@@ -955,7 +946,7 @@ button {
     .outCardListWrap {
         //background: rgba(255, 255, 255, 0.5);
         position: absolute;
-        width: 20rem;
+        width: 26rem;
         height: 5rem;
         left: 11rem;
         right: .5rem;
@@ -1081,8 +1072,7 @@ button {
         background-image: url('/images/games/majiang2/faceCard.png');
         width: 2rem;
         height: 3rem;
-        margin-left: -.2rem;
-        //float: left;
+        margin-left: -.2rem; //float: left;
         &.stress {
             border-radius: .2rem;
         }
@@ -1164,7 +1154,7 @@ button {
     }
 }
 
-.winEffect {
+.effectWrapper {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -1172,6 +1162,10 @@ button {
     left: 0;
     top: 0;
     overflow: hidden;
+}
+
+.winEffect {
+    .effectWrapper;
     &.hide {
         transform: translate3d(0, -200%, 0);
     }
@@ -1213,6 +1207,29 @@ button {
             transition: all .5s ease-out;
             transform: translate3d(0, 100%, 0) scale(.1, .1);
         }
+    }
+}
+
+.rainEffect {
+    .effectWrapper;
+    &.hide {
+        transform: translate3d(0, -200%, 0);
+    }
+    span {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        margin: auto;
+        font-size: 6rem;
+        text-align: center;
+        width: 20rem;
+        height: 15rem;
+        background-image: url(/images/games/majiang2/bigEvent/bug_hu.png);
+        background-size: cover;
+        background-position: center;
+        transform: translate3d(0, -200%, 0);
     }
 }
 

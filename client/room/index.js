@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const theGamerNumber = 2;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -99,7 +99,7 @@ axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
         });
         wx.ready(function () {
             wx.onMenuShareAppMessage({
-                title: '麻友们邀您来战', // 分享标题
+                title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】', // 分享标题
                 desc: '您准备好了吗？点击直接开始游戏-掌派桌游', // 分享描述
                 link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
                 imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg', // 分享图标
@@ -126,7 +126,7 @@ class Table extends Component {
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 keepVertical: false,
                 state: 'wait',
-                winEffectShow: false
+                effectShow: ''
             },
             //roomId: getQueryString('roomId'),
             roomLog: [],
@@ -151,6 +151,7 @@ class Table extends Component {
         this.readyCallback = this.readyCallback.bind(this);
         this.showCardAuto = this.showCardAuto.bind(this);
         this.winEventEffect = this.winEventEffect.bind(this);
+        this.rainEventEffect = this.rainEventEffect.bind(this);
         //this.heartBeat = this.heartBeat.bind(this);
         this.lastData = { isOver: false };
         this.allGamers = {}
@@ -186,7 +187,7 @@ class Table extends Component {
         //     alert('对不起，房间号不合法!');
         //     return;
         // }
-        document.title = '房间[' + getQueryString('roomId')+']-掌派桌游';
+        document.title = '房间[' + getQueryString('roomId') + ']-掌派桌游';
         axios.post('/api/getRoom', {
             roomId: getQueryString('roomId'),
         }).then(({ data }) => {
@@ -215,14 +216,26 @@ class Table extends Component {
             this.setState({ notice: false })
         }, 30000);
     }
+    //胡牌特效
     winEventEffect(data) {
-        this.setState({ winEffectShow: true });
+        this.setState({ effectShow: 'effectActive' });
         window.setTimeout(() => {
             $('.winEffect').addClass(this.allGamers['user_' + data.uid]);
         }, 1500);
         window.setTimeout(() => {
-            this.setState({ winEffectShow: false });
+            this.setState({ effectShow: '' });
             $('.winEffect').removeClass(this.allGamers['user_' + data.uid]);
+        }, 2500);
+    }
+    //下雨特效
+    rainEventEffect() {
+        this.setState({ effectShow: 'effectActive' });
+        window.setTimeout(() => {
+            $('.rainEffect').addClass(this.allGamers['user_' + data.uid]);
+        }, 1500);
+        window.setTimeout(() => {
+            this.setState({ effectShow: '' });
+            $('.rainEffect').removeClass(this.allGamers['user_' + data.uid]);
         }, 2500);
     }
     gameInit(room) {
@@ -291,9 +304,13 @@ class Table extends Component {
                     self.setState({ roomLog: log });
                     break;
                 case 'event':
-                    //碰杠胡事件
+                    //事件
                     //console.log(data.content);
-                    self.winEventEffect({ uid: data.content.uid });
+                    if (data.content.type === 'win') {
+                        self.winEventEffect({ uid: data.content.uid });
+                    } else if (data.content.type === 'rain') {
+                        self.rainEventEffect({ uid: data.content.uid });
+                    }
                     break;
                 case 'errorInfo':
                     alert(data.content);
@@ -444,7 +461,7 @@ class Table extends Component {
 
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.winEffectShow && 'effectActive'}`}>
+        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -514,14 +531,16 @@ class Table extends Component {
                     }}>刷新</a></span>
                 </QueueAnim>
             }
-            <div className={`winEffect ${this.state.winEffectShow ? 'effectActive' : 'hide'}`}>
+            <div className={`winEffect ${this.state.effectShow ? this.state.effectShow : 'hide'}`}>
                 <span></span>
             </div>
-
+            <div className={`rainEffect ${this.state.effectShow ? this.state.effectShow : 'hide'}`}>
+                <span></span>
+            </div>
         </QueueAnim>
             <Sound />
             <Toast key='toast' content={this.state.toast} onHide={() => { this.setState({ toast: '' }) }} />
-            {this.state.notice && <div className='notice'><marquee >掌派桌游正式公测，欢迎玩家踊跃试玩，公测期间免房卡，若发现bug请提交至公众号，验证为有效bug将奖励50张房卡</marquee></div>}
+            {this.state.notice && <div className='notice'><marquee >掌派桌游正式公测，无需房卡免费开房，欢迎玩家踊跃试玩，测试版本可能存在尚未发现的错误，若游戏期间出现问题望请理解，同时您也可以将问题截图发到我们的公众号，验证为有效bug将奖励50张房卡(公测期间每晚1:00~2:00点为固定系统维护期，可能会出现不稳定的情况，玩家请尽量绕开此时段游戏，感谢您的试玩！)</marquee></div>}
         </div>
     }
 }
@@ -599,8 +618,8 @@ class GamerDock extends Component {
         let myEvent = undefined;
         if (this.context.game && this.context.game.event) {
             const payLoad = JSON.parse(this.context.game.payload);
-            //玩家自己不现实气泡
-            if (payLoad.uid === this.props.userState.uid && this.props.userState.uid !== userInfo.userid) {
+            //不是lose输分的时候玩家自己不现实气泡
+            if (payLoad.uid.find(_uid => _uid === this.props.userState.uid) && (this.props.userState.uid !== userInfo.userid || payLoad.name === 'lose')) {
                 myEvent = {}
                 if (this.context.game.event === 'showCard') {
                     myEvent['card'] = payLoad.card;
@@ -609,6 +628,7 @@ class GamerDock extends Component {
                         'meet': <img src="/images/games/majiang2/meet.png" />,
                         'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
                         'win': <img src="/images/games/majiang2/win.png" />,
+                        'lose': '-' + payLoad.score
                     }[this.context.game.event]
                 }
             }
@@ -855,7 +875,7 @@ class Gamer_mine extends Component {
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
-                <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf('：') ? this.props.userState.winDesc.split('：')[1] : this.props.userState.winDesc}</div>
+                <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf(':') ? this.props.userState.winDesc.split(':')[1] : this.props.userState.winDesc}</div>
             </QueueAnim>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
@@ -1065,6 +1085,12 @@ class GameInfo extends Component {
         return (total > 0 ? '+' : '') + total;
     }
     render() {
+
+        let recode = clone(this.props.room.recode);
+        //console.log(JSON.stringify(recode));
+        console.log(this.props.room.recode);
+        recode = recode.reverse();
+        console.log(recode);
         return <div className='mask'>
             <div className='gameInfoPanel'>
                 {this.props.isOver && <header></header>}
@@ -1078,11 +1104,11 @@ class GameInfo extends Component {
                                 </header>
                                 <ul className='list'>
                                     {
-                                        this.props.room.recode.map((item, _index) =>
+                                        recode.map((item, _index) =>
                                             <li key={`li_${_index}`}>
-                                                第{_index + 1}局：{item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
+                                                第{recode.length - _index}局： {item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
                                                 {item.find(user => user.uid === gamer.uid).point}
-                                                <div><i>{item.find(user => user.uid === gamer.uid).winDesc || '---'}</i></div>
+                                                <div><label>{item.find(user => user.uid === gamer.uid).winDesc || '---'}</label></div>
                                             </li>)
                                     }
                                 </ul>
@@ -1280,7 +1306,8 @@ class ImgLoader extends Component {
             { key: "music", url: host + "/music.png" },
             { key: "sound", url: host + "/sound.png" },
             { key: "msgs", url: host + "/msgs.png" },
-            { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" }
+            { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
+            { key: "effect_rain", url: host + "/bigEvent/effect_rain.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {

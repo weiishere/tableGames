@@ -117,7 +117,7 @@ module.exports = (io, scoket) => {
 
             if (room) {
                 if (room.gamers.length === room.gamerNumber) {
-                    setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
+                    //setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
                 } else {
                     //加入
                     room.gamerJoin(data.user);

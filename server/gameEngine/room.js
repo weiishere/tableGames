@@ -57,7 +57,8 @@ class Room {
             master: gamerMaster,
             rule: this.optionSet.rule,
             roomId: this.roomId,
-            countdown: this.countdown
+            countdown: this.countdown,
+            mulriple: this.optionSet.mulriple
         });//庄家，上一次第一次胡牌的玩家
         this.game.setSendMsg(function (content, option) {
             //监听游戏发出的任何信息
@@ -205,7 +206,7 @@ class Room {
                 uid: item.uid,
                 name: item.name,
                 point: item.point,
-                winDesc: item.winDesc,
+                winDesc: item.winDesc + (item.fullMeetRecode ? `+(${item.fullMeetRecode.join(',')})` : ''),
                 master: item.master
             }
         }));
