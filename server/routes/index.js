@@ -71,7 +71,7 @@ module.exports = (app) => {
         let userInfo = await oauth.getUser(openid);
 
         //console.log("userInfo:" + userInfo);
-        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.niceName}&head=${userInfo.headimgurl}`, {
+        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nicename}&headUrl=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,

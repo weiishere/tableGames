@@ -18,7 +18,7 @@ setInterval(function () {
             }
         });
         sqliteCommon.deleteRoom({ roomIds }, (changes) => {
-            console.log('(' + (new Date()).toLocaleString() + ')' + '清理房间数据' + changes + '条');
+            //console.log('(' + (new Date()).toLocaleString() + ')' + '清理房间数据' + changes + '条');
             //console.log(roomIds)
         });
         // roomIds.forEach(itemid => {

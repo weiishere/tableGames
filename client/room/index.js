@@ -653,7 +653,6 @@ class GamerDock extends Component {
                 }
             }
             if (payLoad.lose && payLoad.lose.uid.find(_uid => _uid === this.props.userState.uid)) {
-                console.log(this.props.userState.uid);
                 //如果在扣分列表里面//扣分提示
                 this.myEvent = {}
                 this.myEvent['name'] = -payLoad.lose.score;
@@ -1112,10 +1111,7 @@ class GameInfo extends Component {
     render() {
 
         let recode = clone(this.props.room.recode);
-        //console.log(JSON.stringify(recode));
-        console.log(this.props.room.recode);
         recode = recode.reverse();
-        console.log(recode);
         return <div className='mask'>
             <div className='gameInfoPanel'>
                 {this.props.isOver && <header></header>}
