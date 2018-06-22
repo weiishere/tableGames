@@ -90,19 +90,19 @@ axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
     const data = req.data;
     if (window.hasOwnProperty('wx')) {
         wx.config({
-            debug: false, // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
-            appId: data.appId, // 必填，公众号的唯一标识
-            timestamp: data.timestamp, // 必填，生成签名的时间戳
-            nonceStr: data.noncestr, // 必填，生成签名的随机串
-            signature: data.signature,// 必填，签名
-            jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage'] // 必填，需要使用的JS接口列表
+            debug: false,
+            appId: data.appId,
+            timestamp: data.timestamp,
+            nonceStr: data.noncestr,
+            signature: data.signature,
+            jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage', 'getLocation']
         });
         wx.ready(function () {
             wx.onMenuShareAppMessage({
-                title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】', // 分享标题
-                desc: '您准备好了吗？点击直接开始游戏-掌派桌游', // 分享描述
-                link: location.href, // 分享链接，该链接域名或路径必须与当前页面对应的公众号JS安全域名一致
-                imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg', // 分享图标
+                title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】',
+                desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
+                link: location.href,
+                imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
                 success: function () {
                     //alert('success');
                 }
