@@ -536,6 +536,8 @@ class Majiang {
                         userState.testWinType = 'robMeet';//被抢胡等待
                         userState.winDesc = '等待其他玩家选择是否胡牌~';
                         userState.actionCode = [];
+                        setTimeout(() => { this.sendData(); }, 10);
+                        return false;
                     } else {
                         //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
                         let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
@@ -649,84 +651,23 @@ class Majiang {
                             //下雨结算（成都麻将才下雨）
                             if (fmc) {
                                 const scoreResult = this.castAccounts(userState, fmc.payUser === 0 ? 'all' : fmc.payUser, fmc.multipl);
-                                const desc = (fmc.payUser === 0 ? '自杠' : fmc.payUser.name + '引杠') + '，刮风下雨(' + fmc.name + fmc.multipl + '倍)'
+                                const desc = (fmc.payUser === 0 ? '自杠' : fmc.payUser.name + '引杠') + '下雨[' + fmc.name + fmc.multipl + '倍]'
                                 this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({
                                     type: 'rain',
                                     uid: userState.uid,
                                     desc: desc
                                 })}}`);
-                                eventObj = { event: 'lose', payload: JSON.stringify({ score: scoreResult, uid: fmc.payUser === 0 ? this.gameState.filter(u => !u.isWin).map(u => u.uid) : [fmc.payUser.uid] }) }
+                                eventObj = {
+                                    event: 'fullMeet', payload: JSON.stringify({
+                                        card: doCard, uid: [userState.uid],
+                                        lose: { score: scoreResult, uid: fmc.payUser === 0 ? this.gameState.filter(u => !(u.isWin || u.uid === userState.uid)).map(u => u.uid) : [fmc.payUser.uid] }
+                                    })
+                                }
                                 userState.fullMeetRecode = userState.fullMeetRecode ? userState.fullMeetRecode.push(desc) : [desc];
                             }
-
-                        }
-
-                        /*
-                        if (data.doCardKey) {
-                            //暗杠，而且不等于刚刚摸到的牌，那么会传过来一张选定的牌型，然后进行杠
-                            const _concatCard = userState.fatchCard ? this.concatCard(userState).concat(userState.fatchCard) : this.concatCard(userState);
-                            doCard = clone(_concatCard.find(card => card.key === data.doCardKey));
-                            userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
-                            userState.cards = userState.cards.sort(objectArraySort('key'));
-                        }
-                        let meetToFull;
-                        //检查是否是碰升级为杠
-                        userState.groupCards.meet.forEach(_meet => {
-                            if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
-                                meetToFull = _meet;
-                            }
-                        })
-                        let robFullMeetWin = false;
-                        //这里要判断是否有其他人要胡，如果有，这种动作就是抢杠
-                        this.gameState.filter(state => !state.isWin && state.uid !== data.uid).forEach(state => {
-                            const _cards = state.cards.concat(doCard).sort(objectArraySort('key'));
-                            if (winCore(_cards)) {
-                                //state.actionCode.push('winning');//有胡牌
-                                robFullMeetWin = true;
-                            }
-                        })
-                        if (meetToFull) {
-                            //抢杠
-                            //如果有人要抢杠，那么就强制把这张牌出了，如果别人不抢，那么就再执行杠
-                            if (robFullMeetWin) {
-                                userState.testWinType = 'robFullMeetWin';//被抢杠等待
-                                userState.winDesc = '等待其他玩家选择抢杠~';
-                                userState.actionCode = [];
-                                this.showCard.call(this, {
-                                    roomId: data.roomId,
-                                    uid: data.uid,
-                                    cardKey: doCard.key
-                                });
-                                return false;
-                            } else {
-                                meetToFull.push(doCard);
-                                userState.groupCards.fullMeet.push(clone(meetToFull));
-                                userState.groupCards.meet = userState.groupCards.meet.filter(_meet => _meet[0].color !== doCard.color && _meet[0].number !== doCard.number);
-                                userState.cards = userState.cards.filter(card => card.key !== doCard.key);
-                            }
                         } else {
-                            //抢胡
-                            if (robFullMeetWin && !isMineAction) {//别人打的牌才会存在抢胡
-                                userState.testWinType = 'robFullMeet';//被抢胡等待
-                                userState.winDesc = '等待其他玩家选择是否胡牌~';
-                                userState.actionCode = [];
-                                setTimeout(() => { this.sendData(); }, 10);
-                                return false;
-                            } else {
-                                let _fulMmeet = data.doCardKey ? [] : [doCard];
-                                userState.cards = userState.cards.filter(card => {
-                                    if (card.color === doCard.color && card.number === doCard.number) {
-                                        _fulMmeet.push(card);
-                                        return false;
-                                    } else {
-                                        return true;
-                                    }
-                                });
-                                userState.groupCards.fullMeet.push(_fulMmeet);
-                            }
+                            eventObj = { event: 'fullMeet', payload: JSON.stringify({ card: doCard, uid: [userState.uid] }) };
                         }
-                        */
-
                         userState.actionCode = [];
                         isFatchCard = true;
                         this.setGamerCacher(userState);//把自己设置为下一个出牌的人
@@ -736,7 +677,7 @@ class Majiang {
                         // if (this.hasFullMeet(userState)) {
                         //     userState.actionCode.push('fullMeet');
                         // }
-                        eventObj = { event: 'fullMeet', payload: JSON.stringify({ card: doCard, uid: [userState.uid] }) }
+
                     } catch (e) {
                         writeLog('fullMeet', e);
                     }
@@ -755,7 +696,7 @@ class Majiang {
                             userState.master = false;
                         }
                         userState.groupCards.winCard = doCard;
-
+                        let scoreResult = 0;
                         if (isMineAction) {
                             //testWinType可能是天胡、地胡、杠上花之类的行为
                             // let { action, roles, fullMeetCount } = trggleAction('role_chengdu', userState.testWinType ? userState.testWinType : 'selfWin', { cards: userState.cards, groupCards: userState.groupCards, cardByCatch: doCard });
@@ -764,7 +705,7 @@ class Majiang {
                             //     roles_multiple = roles_multiple * role.multiple;
                             // });
                             let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
-                            const scoreResult = this.castAccounts(userState, 'all', allMultipl);
+                            scoreResult = this.castAccounts(userState, 'all', allMultipl);
                             userState.fatchCard = undefined;
                             //next = this.getNaxtCacher(userState.uid);
                             userState.isWin = true;//注意这里要放在下一个后面，不然next为空（赢家里面已经没有此人了，无法获取我的下一个玩家是谁了）
@@ -776,7 +717,6 @@ class Majiang {
                                 uid: userState.uid,
                                 desc: userState.name + '自摸'
                             })}}`);
-                            eventObj = { event: 'lose', payload: JSON.stringify({ score: scoreResult, uid: this.gameState.filter(u => !u.isWin).map(u => u.uid) }) };
                         } else {
                             //别人点炮
                             //testWinType可能是杠上炮、抢杠
@@ -790,7 +730,7 @@ class Majiang {
                             userState.winDesc = `${winCount}:${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                             //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
                             //this.castAccounts(userState, this.lastShowCardUserState, action.multiple * roles_multiple * (fullMeetCount !== 0 ? fullMeetCount * 2 : 1));
-                            const scoreResult = this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
+                            scoreResult = this.castAccounts(userState, this.lastShowCardUserState, allMultipl);
                             this.sendForRoom(data.roomId, `{"type":"notified","content":"${userState.name}胡牌，${this.lastShowCardUserState.name}点炮"}`);
                             //this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({ type: 'win', uid: userState.uid, relevanceUid: this.lastShowCardUserState.uid, desc: '' })}`);
                             this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({
@@ -799,7 +739,6 @@ class Majiang {
                                 relevanceUid: this.lastShowCardUserState.uid,
                                 desc: this.lastShowCardUserState.name + '点炮'
                             })}}`);
-                            eventObj = { event: 'lose', payload: JSON.stringify({ score: scoreResult, uid: this.lastShowCardUserState.uid }) };
                         }
                         //winActionListening = winActionListening.filter(item.uid !== userState.uid);//去掉此玩家的监听userState.winDesc
                         if (this.gameState.filter(item => {
@@ -821,7 +760,12 @@ class Majiang {
                                 if (!this.fatchCard({})) return false;
                             }
                         }
-                        eventObj = { event: 'win', payload: JSON.stringify({ card: doCard, uid: [userState.uid] }) }
+                        eventObj = {
+                            event: 'win', payload: JSON.stringify({
+                                card: doCard, uid: [userState.uid],
+                                lose: { score: scoreResult, uid: isMineAction ? this.gameState.filter(u => !(u.isWin || u.uid === userState.uid)).map(u => u.uid) : [this.lastShowCardUserState.uid] }
+                            }),
+                        }
                     } catch (e) {
                         writeLog('winningAction', e);
                     }
@@ -908,31 +852,31 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard() {
-        // this.gameState.forEach(userState => {
-        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        // });
+        this.gameState.forEach(userState => {
+            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        });
         //获取指定的牌，主要还是快速调试
 
-        this.gameState[1].cards = [
-            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
-            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7)
-        ].sort(objectArraySort('key'));
-        this.gameState[1].groupCards.meet = [[
-            this.getSpecifiedCard('w', 6),
-            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        ], [
-            this.getSpecifiedCard('w', 9),
-            this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
-        ]
-        ];
-        this.gameState[0].cards = [
-            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
-            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
-            this.getSpecifiedCard('w', 8)
-        ].sort(objectArraySort('key'));
+        // this.gameState[1].cards = [
+        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
+        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7)
+        // ].sort(objectArraySort('key'));
+        // this.gameState[1].groupCards.meet = [[
+        //     this.getSpecifiedCard('w', 6),
+        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        // ], [
+        //     this.getSpecifiedCard('w', 9),
+        //     this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        // ]
+        // ];
+        // this.gameState[0].cards = [
+        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
+        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+        //     this.getSpecifiedCard('w', 8)
+        // ].sort(objectArraySort('key'));
 
         // this.gameState[2].cards = [
         //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
@@ -966,7 +910,7 @@ class Majiang {
             const _uid = !uid ? this.gameState.find(item => item.catcher === true).uid : uid;
             const userState = this.gameState.find(item => item.uid === _uid);
 
-            //let cardByCatch = this.cards.splice(0, 1)[0];
+            let cardByCatch = this.cards.splice(0, 1)[0];
             if (this.cards.length === 0) {
                 //最后一张牌了，海底
                 if (!listenType) listenType = [];
@@ -975,7 +919,7 @@ class Majiang {
             sssIndex++;
             //let cardByCatch = sssIndex <= 11 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
             //sssIndex++;
-            let cardByCatch = sssIndex <= 11 ? { key: 'card-t-4-' + sssIndex, number: 4, color: 't' } : { key: 'card-w-7-' + sssIndex, number: 7, color: 'w' };
+            //let cardByCatch = sssIndex <= 11 ? { key: 'card-t-4-' + sssIndex, number: 4, color: 't' } : { key: 'card-w-7-' + sssIndex, number: 7, color: 'w' };
             // sssIndex++;
             // let cardByCatch = sssIndex <= 6 ? { key: 'card-w-9-' + sssIndex, number: 9, color: 'w' } : { key: 'card-t-6-' + sssIndex, number: 6, color: 't' };
             userState.fatchCard = cardByCatch;

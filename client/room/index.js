@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 2;
+const theGamerNumber = 4;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -214,7 +214,8 @@ class Table extends Component {
         });
         window.setTimeout(() => {
             this.setState({ notice: false })
-        }, 30000);
+        }, 40000);
+
     }
     //胡牌特效
     winEventEffect(data) {
@@ -229,13 +230,16 @@ class Table extends Component {
     }
     //下雨特效
     rainEventEffect() {
-        this.setState({ effectShow: 'effectActive' });
-        window.setTimeout(() => {
-            $('.rainEffect').addClass(this.allGamers['user_' + data.uid]);
-        }, 1500);
-        window.setTimeout(() => {
-            this.setState({ effectShow: '' });
-            $('.rainEffect').removeClass(this.allGamers['user_' + data.uid]);
+        $('.rainEffect').removeClass('hide').addClass('effectActive');
+        const raintimer = window.setInterval(function () {
+            let s = document.createElement('s');
+            s.style.left = (Math.random() * 70) + 'rem';
+            $('.rainEffect').append(s);
+        }, 10);
+        window.setTimeout(function () {
+            $('.rainEffect').removeClass('effectActive').addClass('hide');
+            window.clearInterval(raintimer);
+            $('.rainEffect s').remove();
         }, 2500);
     }
     gameInit(room) {
@@ -534,8 +538,9 @@ class Table extends Component {
             <div className={`winEffect ${this.state.effectShow ? this.state.effectShow : 'hide'}`}>
                 <span></span>
             </div>
-            <div className={`rainEffect ${this.state.effectShow ? this.state.effectShow : 'hide'}`}>
+            <div className='rainEffect hide'>
                 <span></span>
+                <s></s>
             </div>
         </QueueAnim>
             <Sound />
@@ -604,6 +609,8 @@ class Countdown extends Component {
 class GamerDock extends Component {
     constructor(props) {
         super(props);
+        this.myEvent = undefined;
+        this.showWeakTimer;
         this.getTotal = this.getTotal.bind(this);
     }
     static contextTypes = {
@@ -614,26 +621,44 @@ class GamerDock extends Component {
         this.props.room.recode.map(item => total += item.find(user => this.props.uid === user.uid).point);
         return (total > 0 ? '+' : '') + total;
     }
+    componentDidUpdate() {
+        if (this.myEvent) {
+            $(this.refs.showCardWeak).removeClass('show').addClass('show');
+            window.clearTimeout(this.showWeakTimer);
+            this.showWeakTimer = window.setTimeout(() => {
+                $(this.refs.showCardWeak).removeClass('show');
+            }, 5500);
+        } else {
+            $(this.refs.showCardWeak).removeClass('show');
+        }
+    }
     render() {
-        let myEvent = undefined;
+        this.myEvent = undefined;
         if (this.context.game && this.context.game.event) {
             const payLoad = JSON.parse(this.context.game.payload);
-            //不是lose输分的时候玩家自己不现实气泡
-            if (payLoad.uid.find(_uid => _uid === this.props.userState.uid) && (this.props.userState.uid !== userInfo.userid || payLoad.name === 'lose')) {
-                myEvent = {}
-                if (this.context.game.event === 'showCard') {
-                    myEvent['card'] = payLoad.card;
-                } else {
-                    myEvent['name'] = {
-                        'meet': <img src="/images/games/majiang2/meet.png" />,
-                        'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
-                        'win': <img src="/images/games/majiang2/win.png" />,
-                        'lose': '-' + payLoad.score
-                    }[this.context.game.event]
+
+            if (payLoad.uid.find(_uid => _uid === this.props.userState.uid)) {
+                //不是lose输分的时候玩家自己不现实气泡
+                if (this.props.userState.uid !== userInfo.userid) {
+                    this.myEvent = {}
+                    if (this.context.game.event === 'showCard') {
+                        this.myEvent['card'] = payLoad.card;
+                    } else {
+                        this.myEvent['name'] = {
+                            'meet': <img src="/images/games/majiang2/meet.png" />,
+                            'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
+                            'win': <img src="/images/games/majiang2/win.png" />
+                        }[this.context.game.event]
+                    }
                 }
             }
+            if (payLoad.lose && payLoad.lose.uid.find(_uid => _uid === this.props.userState.uid)) {
+                console.log(this.props.userState.uid);
+                //如果在扣分列表里面//扣分提示
+                this.myEvent = {}
+                this.myEvent['name'] = -payLoad.lose.score;
+            }
         }
-
         return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
             <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
@@ -641,8 +666,8 @@ class GamerDock extends Component {
             <div className='score'>{this.getTotal()}</div>
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
-            {/* {myEvent && (myEvent.card ? <div className='showCardWeak'><img src={`/images/games/majiang2/cards/${myEvent.card.color}${myEvent.card.number}.png`} /></div> : <div className='showCardWeak'>{myEvent.name}</div>)} */}
-            <div className={`showCardWeak ${myEvent && 'show'}`}>{myEvent && (myEvent.card ? <img src={`/images/games/majiang2/cards/${myEvent.card.color}${myEvent.card.number}.png`} /> : <span>{myEvent.name}</span>)}</div>
+            {/* <div ref='showCardWeak' className={`showCardWeak ${this.myEvent && 'show'}`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
+            <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div>
         </div>
     }
 }
@@ -1307,7 +1332,7 @@ class ImgLoader extends Component {
             { key: "sound", url: host + "/sound.png" },
             { key: "msgs", url: host + "/msgs.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
-            { key: "effect_rain", url: host + "/bigEvent/effect_rain.png" }
+            { key: "cloud", url: host + "/bigEvent/cloud.png" }
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {

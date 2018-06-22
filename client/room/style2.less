@@ -638,11 +638,13 @@ button {
         font-size: 1.5rem;
         opacity: .8; //-webkit-transition: all 0.1s ease-out;hideEffect
         transform: scale(0, 0);
+        color: #865710;
+        font-weight: bold;
         &.show {
             -webkit-transition: all 0.2s ease-out;
             transform: scale(1, 1);
             -webkit-animation: hideEffect .2s forwards;
-            animation-delay: 4s;
+            animation-delay: 5s;
         }
         span {
             margin-left: .5rem;
@@ -772,12 +774,13 @@ button {
             position: absolute;
             left: 0;
             right: 0;
-            bottom: -7rem;
+            bottom: -9rem;
             background: #66666669; //background: url(/images/games/majiang2/laoding.gif) no-repeat center;
             -webkit-animation: effect_mark2 4s infinite linear;
             &.action {
                 -webkit-transition: all 0.1s ease-out 3s;
                 opacity: 1;
+                bottom: -7rem;
             }
         }
     }
@@ -887,7 +890,10 @@ button {
         top: 3.5rem;
         bottom: 3rem;
         margin: auto;
-        left: -12rem;
+        left: -12.5rem;
+        &>div{
+            float:right;
+        }
     }
     .showCardWeak {
         right: auto;
@@ -1212,24 +1218,45 @@ button {
 
 .rainEffect {
     .effectWrapper;
+    z-index: 0;
+    background: rgba(0, 0, 0, .5);
     &.hide {
         transform: translate3d(0, -200%, 0);
     }
-    span {
+    &>span {
         position: absolute;
         left: 0;
         right: 0;
-        top: 0;
-        bottom: 0;
+        top: 5rem;
         margin: auto;
         font-size: 6rem;
         text-align: center;
         width: 20rem;
-        height: 15rem;
-        background-image: url(/images/games/majiang2/bigEvent/bug_hu.png);
+        height: 12rem;
+        background-image: url(/images/games/majiang2/bigEvent/cloud.png);
         background-size: cover;
         background-position: center;
-        transform: translate3d(0, -200%, 0);
+    }
+    s {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        margin: auto;
+        width: .1rem;
+        height: 1rem;
+        transform: rotate(10deg);
+        background: #fff;
+        -webkit-animation: rainingEffect 2s infinite linear;
+        display: none;
+    }
+    &.effectActive {
+        -webkit-animation: rainBgEffect 2.5s infinite linear;
+        &>span {
+            -webkit-animation: rainCloudEffect 2.5s infinite linear;
+        }
+        &>s {
+            display: block;
+        }
     }
 }
 
@@ -1386,111 +1413,5 @@ button {
     }
 }
 
-@-webkit-keyframes effect1 {
-    0% {
-        border: solid .1rem #59f1b2;
-    }
-    50% {
-        border: solid .3rem #59f1b2;
-    }
-    100% {
-        border: solid .1rem #59f1b2;
-    }
-}
-
-@-webkit-keyframes effect_mark {
-    0% {
-        background: rgba(226, 29, 29, 0.5);
-    }
-    50% {
-        background: rgba(226, 29, 29, 0);
-    }
-    100% {
-        background: rgba(226, 29, 29, 0.5);
-    }
-}
-
-@-webkit-keyframes effect_mark2 {
-    0% {
-        background: rgba(145, 145, 145, 0.8);
-    }
-    25% {
-        background: rgba(139, 70, 70, 0.8);
-    }
-    50% {
-        background: rgba(201, 76, 76, 0.8);
-    }
-    75% {
-        background: rgba(139, 70, 70, 0.8);
-    }
-    100% {
-        background: rgba(145, 145, 145, 0.8);
-    }
-}
-
-@-webkit-keyframes effect_userPoint {
-    0% {
-        opacity: .2;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: .2;
-    }
-}
-
-@-webkit-keyframes effect_warn {
-    0% {
-        transform: scale(1, 1);
-    }
-    50% {
-        transform: scale(1.4, 1.4);
-    }
-    100% {
-        transform: scale(1, 1);
-    }
-}
-
-@-webkit-keyframes dropDown {
-    0% {
-        transform: scale(15, 15) rotate(0deg);
-        ;
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1, 1) rotate(0deg);
-        opacity: .7;
-    }
-    70% {
-        transform: scale(1.2, 1.2) rotate(20deg);
-        opacity: 1;
-    }
-    100% {
-        transform: scale(1, 1) rotate(10deg);
-        opacity: 1;
-    }
-}
-
-@-webkit-keyframes dropDownForBg {
-    0% {
-        transform: scale(1, 1);
-    }
-    70% {
-        transform: scale(.95, .95);
-    }
-    100% {
-        transform: scale(1, 1);
-    }
-}
-
-@-webkit-keyframes hideEffect {
-    0% {
-        transform: scale(1, 1);
-    }
-    100% {
-        transform: scale(0, 0);
-    }
-}
-
+@import './keyframes.less';
 //-webkit-animation: stress 1s infinite linear;
