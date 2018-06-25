@@ -80,7 +80,6 @@ const testWin = (cards) => {
     let twoNumber = 0;
     let threeNumber = 0;
     let fourNumber = 0;
-    let lastComparentCard;
     for (let item in group) {
         if (group[item].count === 1) singleNumber++;
         if (group[item].count === 2) twoNumber++;
@@ -110,22 +109,16 @@ const testWin = (cards) => {
     const keBijiao = (cards, index) => {
         let copy_cards = clone(cards);
         let frist, second, _card = copy_cards[index];
-        if (lastComparentCard && lastComparentCard.color === _card.color && lastComparentCard.number === _card.number) {
-            //跟上次比较的一样，index+1并跳过
-            index++;
-        } else {
-            frist = copy_cards.find(card => card.color === _card.color && card.number - _card.number == 1);
-            if (frist) {
-                second = copy_cards.find(card => card.color === frist.color && card.number - frist.number == 1);
-            }
-            if (frist && second) {
-                //如果有靠的，那么清除掉这三个，继续走
-                copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
-            } else {
-                index++;
-            }
+        frist = copy_cards.find(card => card.color === _card.color && card.number - _card.number == 1);
+        if (frist) {
+            second = copy_cards.find(card => card.color === frist.color && card.number - frist.number == 1);
         }
-        lastComparentCard = _card;
+        if (frist && second) {
+            //如果有靠的，那么清除掉这三个，继续走
+            copy_cards = copy_cards.filter(card => (card.key !== _card.key && card.key !== frist.key && card.key !== second.key));
+        } else {
+            index++;
+        }
         if (copy_cards.length > index) {
             return keBijiao(copy_cards, index);
         } else {
@@ -157,9 +150,10 @@ const testWin = (cards) => {
         }
         //console.log('首先抽取的对子:' + duiziCard.number + duiziCard.color);
         //console.log(copy_cards.map(card => card.number + card.color));//抽了一个对和其他所有的克剩下的牌，做连子判断
-        const tCard = copy_cards[0];
-        lastComparentCard = null;
-        const remainCard = keBijiao(copy_cards, 0);
+
+        let remainCard = getSames(copy_cards);
+        const tCard = remainCard[0];
+        remainCard = keBijiao(remainCard, 0);
         if (remainCard.length === 0) {
             isWin = true;
             break;
@@ -383,11 +377,11 @@ const testWin2 = (cards) => {
     return isWin;
 }
 
-let mycards = [
-    { key: 'w-1-1', color: 'w', number: 1 }, { key: 'w-2-1', color: 'w', number: 2 }, { key: 'w-3-1', color: 'w', number: 3 }, { key: 'w-3-2', color: 'w', number: 3 }, { key: 'w-3-3', color: 'w', number: 3 },
-    { key: 'w-4-1', color: 'w', number: 4 }, { key: 'w-4-2', color: 'w', number: 4 }, { key: 'w-5-1', color: 'w', number: 5 }, { key: 'w-5-2', color: 'w', number: 5 }, { key: 't-7-1', color: 't', number: 7 }, { key: 't-7-2', color: 't', number: 7 },
-    { key: 't-8-1', color: 't', number: 8 }, { key: 't-8-2', color: 't', number: 8 }, { key: 't-8-3', color: 't', number: 8 },
-]
+// let mycards = [
+//     { key: 'w-1-1', color: 'w', number: 1 }, { key: 'w-2-1', color: 'w', number: 2 }, { key: 'w-3-1', color: 'w', number: 3 }, { key: 'w-3-2', color: 'w', number: 3 }, { key: 'w-3-3', color: 'w', number: 3 },
+//     { key: 'w-4-1', color: 'w', number: 4 }, { key: 'w-4-2', color: 'w', number: 4 }, { key: 'w-5-1', color: 'w', number: 5 }, { key: 'w-5-2', color: 'w', number: 5 }, { key: 't-7-1', color: 't', number: 7 }, { key: 't-7-2', color: 't', number: 7 },
+//     { key: 't-8-1', color: 't', number: 8 }, { key: 't-8-2', color: 't', number: 8 }, { key: 't-8-3', color: 't', number: 8 },
+// ]
 
 // let mycards = [
 //     { key: 't-2-1', color: 't', number: 2 }, { key: 't-2-2', color: 't', number: 2 },
@@ -404,10 +398,20 @@ let mycards = [
 //     { key: 'w-6-1', color: 'w', number: 6 }, { key: 'w-6-2', color: 'w', number: 6 },{ key: 'w-6-3', color: 'w', number: 6 },
 //     { key: 'w-7-1', color: 'w', number: 7 }, { key: 'w-8-1', color: 'w', number: 8 }, { key: 'w-9-1', color: 'w', number: 9 }, 
 // ]
+let mycards = [
+    { key: 'b-3-1', color: 'b', number: 3 }, { key: 'b-3-2', color: 'b', number: 3 },
+    { key: 'b-7-1', color: 'b', number: 7 }, { key: 'b-7-2', color: 'b', number: 7 },{ key: 'b-7-3', color: 'b', number: 7 },
+    { key: 't-3-1', color: 't', number: 3 }, { key: 't-3-2', color: 't', number: 3 },
+    { key: 't-4-1', color: 't', number: 4 }, { key: 't-4-2', color: 't', number: 4 },
+    { key: 't-5-1', color: 't', number: 5 }, { key: 't-5-2', color: 't', number: 5 },
+    // { key: 'w-6-3', color: 'w', number: 6 }, { key: 'w-7-1', color: 'w', number: 7 },
+    // { key: 'w-8-1', color: 'w', number: 8 }, { key: 'w-9-1', color: 'w', number: 9 },
+]
+
 
 debugger
 const result = testWin(mycards);
-const result2 = testWin3(mycards);
+//const result2 = testWin3(mycards);
 console.log(result);
 // mycards = mycards.map((card, index) => { return { key: (card.c + card.n + index), name: (card.c + card.n), c: card.c, number: card.n } });
 // getIsWin(mycards);

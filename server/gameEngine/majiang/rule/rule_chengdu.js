@@ -6,14 +6,14 @@ const tool = require('./tool');
 
 const rules = [
     //平胡
-    ({ cards, cardsTime2 }) => {
-        //必须存在连子和三对，加一对(只要是存在单牌应该就是了) 
-        if (cardsTime2.one.length >= 1) {
-            return { name: '平胡', multiple: 1 };
-        } else {
-            return { multiple: 0 };
-        }
-    },
+    // ({ cards, cardsTime2 }) => {
+    //     //必须存在连子和三对，加一对(只要是存在单牌应该就是了) 
+    //     if (cardsTime2.one.length >= 1) {
+    //         return { name: '平胡', multiple: 1 };
+    //     } else {
+    //         return { multiple: 0 };
+    //     }
+    // },
     //清一色
     ({ cards }) => {
         //全部颜色一致
@@ -34,11 +34,12 @@ const rules = [
         return { multiple: 0 };
     },
     //暗（龙）七对
-    ({ }) => {
-        //每一坎牌都有1或者9存在
-        //1和9加起来应该有6张牌就对了，暂时不考虑
-        return { multiple: 0 };
-    }, ({ cards, cardsTime2 }) => {
+    // ({ }) => {
+    //     //每一坎牌都有1或者9存在
+    //     //1和9加起来应该有6张牌就对了，暂时不考虑
+    //     return { multiple: 0 };
+    // }, 
+    ({ cards, cardsTime2 }) => {
         //七个对牌，不能有杠
         if (cardsTime2.one.length === 0 && cardsTime2.three.length === 0 && cards.handCards.length === 14) {
             if (cardsTime2.four.length >= 1) {
@@ -71,7 +72,7 @@ const actions = [
     }, {
         code: 'selfWin',
         name: '自摸',
-        multiple: 1
+        multiple: 2
     }, {
         code: 'beginWin',
         name: '天胡',
@@ -150,6 +151,9 @@ const trggleAction = (handCards, group, actionName) => {
             result.push(ruleResult);
         }
     });
+    if (result.length === 0) {
+        result.push({ name: '平胡', multiple: 1 });
+    }
     return { action, result, allMultipl };
 }
 

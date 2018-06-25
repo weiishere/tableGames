@@ -12,6 +12,7 @@ const appid = 'wxf6a4e87064c3fbd2';
 const secret = '7fb75eea66988061a1ed9578e7d8fef4';
 let tokens = {};
 const oauth = new OAuth(appid, secret);
+const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
 
 // const oauth = new OAuth(appid, secret, 
@@ -70,21 +71,19 @@ module.exports = (app) => {
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
 
-        //console.log("userInfo:" + userInfo);
+        console.log("userInfo:" + userInfo);
         axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nicename}&headUrl=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
-            //console.log(response.data)
+            console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
         }).catch(function (error) {
-            console.log('----------------login api error start----------------------');
-            console.log(error);
-            console.log('-----------------login api error end---------------------');
+            writeLog('login api', error);
         });
 
 
@@ -115,7 +114,7 @@ module.exports = (app) => {
             }
         }
         if (resultRooms) {
-            res.redirect('/rooms?roomId=' + resultRooms.roomId);
+            res.redirect('/room?roomId=' + resultRooms.roomId);
         } else {
             res.header('Content-Type', 'text/html');
             res.send('<h2 style="font-size:30px;margin-top:30%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
@@ -138,9 +137,7 @@ module.exports = (app) => {
             });
             res.redirect(`/${state}`);
         }).catch(function (error) {
-            console.log('----------------login api error start----------------------');
-            console.log(error);
-            console.log('-----------------login api error end---------------------');
+            writeLog('login', error);
         });
         // res.setHeader('Set-Cookie', cookie.serialize('cookieName', JSON.stringify({
         //     openid: 'sdfsfgerdtsefdfg4561s6d16sf16df'
@@ -150,30 +147,33 @@ module.exports = (app) => {
         // res.redirect(`/home`);
     });
     app.get('/wechat/ticket', function (req, res) {
-        //var page = req.protocol + '://' + req.host + req.originalUrl;
-        var { page } = req.query;
-        var t = {};
-        var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
-        //2、获取access_token;
-        request.get(url, function (err, response, body) {
-            var token = JSON.parse(body);
-            //console.log('token:' + body);
-            var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
-            //3、获取ticket并且生成随机字符串,时间戳,签名
-            request.get(ticketUrl, function (err, response, ticket) {
-                var data = JSON.parse(ticket);
-                //console.log('ticket:' + ticket);
-                const timestamp = parseInt(new Date().getTime() / 1000);
-                t.appId = appid;
-                t.ticket = data.ticket;
-                t.noncestr = sha1(new Date());
-                t.timestamp = timestamp;
-                var string = 'jsapi_ticket=' + t.ticket + '&noncestr=' + t.noncestr + '&timestamp=' + timestamp + '&url=' + page;
-                //console.log('string' + string);
-                //console.log('timestamp' + t.timestamp);
-                t.signature = sha1(string);
-                res.json(t);
+        try {
+            var page = req.headers.referer;
+            var t = {};
+            var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
+            //2、获取access_token;
+            request.get(url, function (err, response, body) {
+                var token = JSON.parse(body);
+                //console.log('token:' + body);
+                var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
+                //3、获取ticket并且生成随机字符串,时间戳,签名
+                request.get(ticketUrl, function (err, response, ticket) {
+                    var data = JSON.parse(ticket);
+                    //console.log('ticket:' + ticket);
+                    const timestamp = parseInt(new Date().getTime() / 1000);
+                    t.appId = appid;
+                    t.ticket = data.ticket;
+                    t.noncestr = sha1(new Date());
+                    t.timestamp = timestamp;
+                    var string = 'jsapi_ticket=' + t.ticket + '&noncestr=' + t.noncestr + '&timestamp=' + timestamp + '&url=' + page;
+                    //console.log('string' + string);
+                    //console.log('timestamp' + t.timestamp);
+                    t.signature = sha1(string);
+                    res.json(t);
+                });
             });
-        });
+        } catch (e) {
+            writeLog('wechat/ticket', e);
+        }
     })
 };

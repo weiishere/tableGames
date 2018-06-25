@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const theGamerNumber = 2;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -43,8 +43,8 @@ var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 
 let userInfo = {
     userid: getQueryString('uid'),
-    nickname: getQueryString('name') || 'huangwei',
-    headimgurl: '/images/games/majiang/head.jpg'
+    nickname: getQueryString('name') || 'player',
+    headimgurl: '/images/games/majiang/head.jpg'//https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg
 };
 let isBegin = false;
 let newRecore = false;
@@ -52,12 +52,12 @@ document.querySelector('html').style.fontSize = `${document.body.clientWidth / 6
 window.addEventListener("onorientationchange" in window ? "orientationchange" : "resize", function () {
     window.setTimeout(function () {
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-    }, 1000);
+    }, 500);
 }, false);
-let ws = process.env.NODE_ENV === 'development' ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
+const isDebug = process.env.NODE_ENV === 'development';
+let ws = isDebug ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
 //const ws = io('ws://220.167.101.116:3300');
 
-//console.log(window.orientation);//打印屏幕的默认方向  
 window.addEventListener("orientationchange", function () {
     //console.log(window.orientation);
     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
@@ -69,7 +69,7 @@ window.addEventListener("onsize", function () {
 
 
 
-if (process.env.NODE_ENV !== 'development') {
+if (!isDebug) {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {
         location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
@@ -79,37 +79,36 @@ if (process.env.NODE_ENV !== 'development') {
             location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
         }
     }
+    axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
+        //alert('ticket ready OK');
+        const data = req.data;
+        if (window.hasOwnProperty('wx')) {
+            wx.config({
+                debug: false,
+                appId: data.appId,
+                timestamp: data.timestamp,
+                nonceStr: data.noncestr,
+                signature: data.signature,
+                jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage', 'getLocation']
+            });
+            wx.ready(function () {
+                wx.onMenuShareAppMessage({
+                    title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】',
+                    desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
+                    link: location.href,
+                    imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
+                    success: function () {
+                        //alert('success');
+                    }
+                });
+            });
+        }
+    });
 } else {
     if (!getQueryString('roomId')) {
         location.href = '/playing?uid=' + getQueryString('uid');
     }
 }
-
-
-axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
-    const data = req.data;
-    if (window.hasOwnProperty('wx')) {
-        wx.config({
-            debug: false,
-            appId: data.appId,
-            timestamp: data.timestamp,
-            nonceStr: data.noncestr,
-            signature: data.signature,
-            jsApiList: ['onMenuShareTimeline', 'onMenuShareAppMessage', 'getLocation']
-        });
-        wx.ready(function () {
-            wx.onMenuShareAppMessage({
-                title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】',
-                desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
-                link: location.href,
-                imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
-                success: function () {
-                    //alert('success');
-                }
-            });
-        });
-    }
-});
 
 
 
@@ -129,6 +128,8 @@ class Table extends Component {
                 effectShow: ''
             },
             //roomId: getQueryString('roomId'),
+            error: null,
+            errorInfo: null,
             roomLog: [],
             room: null,
             game: null,
@@ -318,10 +319,13 @@ class Table extends Component {
                     break;
                 case 'errorInfo':
                     alert(data.content);
+                    if (data.order === "jump") {
+                        location.href = '/playing';
+                    }
                     //history.back();
                     break;
             }
-            process.env.NODE_ENV === 'development' && console.log(data.content);
+            isDebug && console.log(data.content);
         });
         ws.on('disconnect', function () {
             //显示重连
@@ -423,7 +427,28 @@ class Table extends Component {
         //     className: 'toast'
         // }, 'toast Content');
     }
+    componentDidCatch(error, errorInfo) {
+        // Catch errors in any components below and re-render with error message  
+        this.setState({
+            error: error,
+            errorInfo: errorInfo
+        })
+        // You can also log error messages to an error reporting service here  
+    }
     render() {
+        if (this.state.errorInfo) {
+            return (
+                <div>
+                    <h2>出现异常，请检查网络-<a href={`${location.href}`}>刷新</a></h2>
+                    <details style={{ whiteSpace: 'pre-wrap' }}>
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        {this.state.errorInfo.componentStack}
+                    </details>
+                </div>
+            );
+        }
+
         let me, leftGamer, topGamer, rightGamer;
         if (this.state.room) {
             //这里差点把我的脑子整爆，看似简单的一个玩家对号入位却相当复杂，因为要考虑玩家数小于等于4的时候，给的数据可能也是小于等于4的，如何选出当前玩家，顺时针安顿其他玩家，整惨了，用了2个多小时才搞定
@@ -462,7 +487,6 @@ class Table extends Component {
         const rightGameState = this.state.game && rightGamer ? this.state.game.gameState['user_' + rightGamer.uid] : null;
         const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
-
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`}>
@@ -489,7 +513,24 @@ class Table extends Component {
                             this.setState({
                                 toast: disableSound ? '音效关' : '音效开'
                             });
-                        }}></button></div>
+                        }}></button>
+                        {/* <button className='exit' onClick={() => {
+                            const exit = () => {
+                                ws.emit('exit', JSON.stringify({ roomId: this.state.room.roomId, uid: me.uid }));
+                                window.setTimeout(() => {
+                                    //window.close();
+                                    window.open("", "_self").close()
+                                }, 1000);
+                            }
+                            if (this.state.room.state === 'playing') {
+                                if (confirm('游戏还在运行中，您确定要退出游戏吗？')) {
+                                    exit();
+                                }
+                            } else {
+                                exit();
+                            }
+                        }}></button> */}
+                    </div>
                 </div>
                 {this.state.game && <div className='tableCenter'>
                     <Countdown
@@ -623,13 +664,15 @@ class GamerDock extends Component {
     }
     componentDidUpdate() {
         if (this.myEvent) {
-            $(this.refs.showCardWeak).removeClass('show').addClass('show');
+            const payLoad = JSON.parse(this.context.game.payload);
+            const _className = 'show';// (payLoad.lose && payLoad.lose.uid !== this.props.userState.uid) ? 'loseShow' : 'show';
+            $(this.refs.showCardWeak).removeClass(_className).addClass(_className);
             window.clearTimeout(this.showWeakTimer);
             this.showWeakTimer = window.setTimeout(() => {
-                $(this.refs.showCardWeak).removeClass('show');
-            }, 5500);
+                $(this.refs.showCardWeak).removeClass(_className);
+            }, _className === "loseShow" ? 4000 : 5500);
         } else {
-            $(this.refs.showCardWeak).removeClass('show');
+            $(this.refs.showCardWeak).removeClass('show').removeClass('loseShow');
         }
     }
     render() {
@@ -647,7 +690,8 @@ class GamerDock extends Component {
                         this.myEvent['name'] = {
                             'meet': <img src="/images/games/majiang2/meet.png" />,
                             'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
-                            'win': <img src="/images/games/majiang2/win.png" />
+                            'win': <img src="/images/games/majiang2/win.png" />,
+                            'selfwin': <img src="/images/games/majiang2/win.png" />
                         }[this.context.game.event]
                     }
                 }
@@ -1327,8 +1371,10 @@ class ImgLoader extends Component {
             { key: "music", url: host + "/music.png" },
             { key: "sound", url: host + "/sound.png" },
             { key: "msgs", url: host + "/msgs.png" },
+            { key: "exit", url: host + "/exit.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
-            { key: "cloud", url: host + "/bigEvent/cloud.png" }
+            { key: "cloud", url: host + "/bigEvent/cloud.png" },
+
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {

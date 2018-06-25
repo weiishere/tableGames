@@ -1,6 +1,7 @@
 const clone = require('clone');
 const winCore = require('../winCore');
 const tool = require('./tool');
+const writeLog = require('../../../util/errorLog');
 //{color:'fc',number:0,key:'fc-1'}//发财
 //{color:'hz',number:0,key:'hz-1'}//红中
 //{color:'bb',number:0,key:'bb-1'}//白板
@@ -202,17 +203,17 @@ const rules = [
         }
         if (threeGroupCount <= 1) {
             //只可能存在板子
-            const { dbzCount, xbzCount } = isBanzi(cards.allCards);
+            const { dbzCount, xbzCount } = isBanzi(cards.fullHandCards);
             getResult(dbzCount, xbzCount, '板子');
         } else if (threeGroupCount === 2) {
-            const { dfjCount, xfjCount } = isFeiji(cards.allCards);
+            const { dfjCount, xfjCount } = isFeiji(cards.fullHandCards);
             getResult(dfjCount, xfjCount, '飞机');
             //可能还存在板子
-            const { dbzCount, xbzCount } = isBanzi(cards.allCards);
+            const { dbzCount, xbzCount } = isBanzi(cards.fullHandCards);
             getResult(dbzCount, xbzCount, '板子');
         } else if (threeGroupCount >= 3) {
             //不可能存在板子，只可能存在飞机
-            const { dfjCount, xfjCount } = isFeiji(cards.allCards);
+            const { dfjCount, xfjCount } = isFeiji(cards.fullHandCards);
             getResult(dfjCount, xfjCount, '飞机');
         }
         return { name: name, multiple: multiple }
@@ -271,8 +272,8 @@ const rules = [
     },
     //大对子(手牌全是3个，加一对)
     ({ cards }) => {
-        let { resultType_2 } = tool.getCardShowTime(cards.allCards);
-        if (resultType_2.one.length === 0 && resultType_2.four.length === 0 && resultType_2.two.length === 1 && resultType_2.three.length >= 1) {
+        let { resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
+        if (resultType_2.one.length === 0 && resultType_2.two.length === 1 && resultType_2.three.length >= 1) {
             return { name: '大对子', multiple: 5 }
         }
         return { name: '', multiple: 0 }
@@ -325,10 +326,14 @@ const rules = [
     ({ cards }) => {
         let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         if (resultType_2.one.length === 0 && resultType_2.three.length === 0 && cards.fullHandCards.length === 14) {
-            for (let i in resultType_1) {
-                if (resultType_1[i].count === 4 && resultType_1[i].card.color === cards.groupCards.winCard.color && resultType_1[i].card.number === cards.groupCards.winCard.number) {
-                    return { name: '龙七对', multiple: 10 }
-                }
+            // for (let i in resultType_1) {
+            //     if (resultType_1[i].count === 4 && resultType_1[i].card.color === cards.groupCards.winCard.color && resultType_1[i].card.number === cards.groupCards.winCard.number) {
+            //         return { name: '龙七对', multiple: 10 }
+            //     }
+            // }
+            if (resultType_2.four.length >= 1) {
+                //只要有4连，就是龙七对
+                return { name: '龙七对', multiple: 10 }
             }
             return { name: '暗七对', multiple: 5 }
         }
@@ -391,25 +396,32 @@ const actions = [
     },
 ]
 const trggleAction = (handCards, group, actionName) => {
-    let result = [], allMultipl = 0;
-    let _handCards = handCards.concat(group.winCard);
-    let allCards = tool.concatCard(_handCards, group);//handCards.concat(compCard);
-    //let { resultType_1, resultType_2 } = tool.getCardShowTime(allCards);
-    //const res = tool.getSames(allCards);
-    let action = actions.find(item => item.code === actionName);
-    allMultipl += action.multiple;
-    rules.forEach(item => {
-        const ruleResult = item({ cards: { allCards: allCards, handCards: handCards, fullHandCards: _handCards, groupCards: group } });
-        if (ruleResult.multiple) {
-            allMultipl += ruleResult.multiple;
-            result.push(ruleResult);
+    let ruleItem = 0;
+    try {
+        let result = [], allMultipl = 0;
+        let _handCards = handCards.concat(group.winCard);
+        let allCards = tool.concatCard(_handCards, group);//handCards.concat(compCard);
+        //let { resultType_1, resultType_2 } = tool.getCardShowTime(allCards);
+        //const res = tool.getSames(allCards);
+        let action = actions.find(item => item.code === actionName);
+        allMultipl += action.multiple;
+        rules.forEach((item, index) => {
+            ruleItem = index;
+            const ruleResult = item({ cards: { allCards: allCards, handCards: handCards, fullHandCards: _handCards, groupCards: group } });
+            if (ruleResult.multiple) {
+                allMultipl += ruleResult.multiple;
+                result.push(ruleResult);
+            }
+        });
+        if (result.find(item => item.name === '大三元')) {
+            allMultipl = allMultipl * 2;
         }
-    });
-    if (result.find(item => item.name === '大三元')) {
-        allMultipl = allMultipl * 2;
+        //console.log(result);
+        return { action, result, allMultipl };
+    } catch (e) {
+        writeLog('guanganRule_' + ruleItem, e);
+        console.log(handCards);
     }
-    //console.log(result);
-    return { action, result, allMultipl };
 }
 // console.log(get(thisCards, {
 //     meet: [],

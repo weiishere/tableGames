@@ -3,7 +3,7 @@ const UUID = require('../../util/uuid');
 const winCore = require('./winCore');
 const clone = require('clone');
 const getRule = require('./rule');
-let rule = undefined;
+//let rule = undefined;
 const writeLog = require('../../util/errorLog');
 //const { objectArraySort, concatCard, getCardShowTime } = require('./rule/tool');
 const tool = require('./rule/tool');
@@ -38,29 +38,32 @@ class TimerManager {
     start() {
         this.remainTime = this.countdown;
         const slef = this;
-        clearInterval(slef.timer);
-        this.timer = setInterval(() => {
-            //console.log(this.remainTime);
-            if (slef.remainTime === 0) {
-                clearInterval(slef.timer);
-                slef.timeOutEnent.call(this);
-            } else {
-                slef.remainTime--;
-            }
-        }, 1000);
+        clearInterval(this.timer);
+        if (this.timeOutEnent) {
+            this.timer = setInterval(() => {
+                //console.log(this.remainTime);
+                if (slef.remainTime === 0) {
+                    clearInterval(slef.timer);
+                    slef.timeOutEnent.call(this);
+                } else {
+                    slef.remainTime--;
+                }
+            }, 1000);
+        }
     }
     setTimeOutEnent(fn) {
         this.timeOutEnent = fn;
     }
     end() {
         clearInterval(this.timer);
+        //this = null;
+        this.timeOutEnent = null;
         this.remainTime = this.countdown;
     }
     pause() { }
 }
 class Majiang {
     constructor(option) {
-        rule = getRule(option.rule);
         const _option = Object.assign({
             gameId: (new UUID()).generateUUID(),
             roomId: 0
@@ -71,7 +74,7 @@ class Majiang {
             //     { uid: '3', increase: 0, cards: [], groupCards: [] },
             //     { uid: '4', increase: 0, cards: [], groupCards: [] }
             // ],
-        }, rule.option, option || {});
+        }, { gameRule: getRule(option.rule) }, option || {});
         Object.keys(_option).forEach((item) => {
             this[item] = _option[item];
         });
@@ -105,7 +108,7 @@ class Majiang {
                     self.gameState.forEach(state => {
                         if (state.colorLack === '') {
                             //选花色
-                            self.chooseColor.call({
+                            self.chooseColor({
                                 roomId: self.roomId,
                                 uid: state.uid,
                                 color: ['b', 't', 'w'][getRedomNum(0, 2)]
@@ -121,6 +124,8 @@ class Majiang {
                     })
                 }
             } catch (e) {
+                const catcher = self.gameState.find(item => item.catcher);
+                console.log(catcher);
                 writeLog('timerEnd', e);
             }
         });
@@ -182,16 +187,25 @@ class Majiang {
         const remainState = !thisUid ? this.gameState.filter(state => state.isWin === false) : this.gameState.filter(state => state.isWin === false || state.uid === thisUid)
         //未胡牌的玩家（如果指定了是谁之后，那么这个人也可能是赢家，那么不能排除，不然找不到起始对象）
         let nextCatcher, nextIndex = 0, _l = remainState.length;
-        //thisGamer = remainState.find(item => item.uid === thisUid);
-        //this.lastShowCardUserState = thisGamer;//本次出牌人或者本次操作了的人
+        // remainState.forEach((userState, index) => {
+        //     if (userState.uid === thisUid) {
+        //         if (index + 1 === _l) {
+        //             //已经是最后一个
+        //             nextCatcher = remainState[0];
+        //         } else {
+        //             nextCatcher = remainState[index + 1];
+        //             nextIndex = index + 1;
+        //         }
+        //     }
+        // });
         remainState.forEach((userState, index) => {
             if (userState.uid === thisUid) {
-                if (index + 1 === _l) {
-                    //已经是最后一个
-                    nextCatcher = remainState[0];
+                if (index === 0) {
+                    //已经是第一个
+                    nextCatcher = remainState[_l - 1];
                 } else {
-                    nextCatcher = remainState[index + 1];
-                    nextIndex = index + 1;
+                    nextCatcher = remainState[index - 1];
+                    nextIndex = index - 1;
                 }
             }
         });
@@ -496,7 +510,10 @@ class Majiang {
                                 //如果不是自摸才下一个，不然还要出牌
                                 const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
                                 this.setGamerCacher(next);
-                                if (!this.fatchCard({})) return false;
+                                if (this.fatchCard({})) {
+                                    setTimeout(() => { this.sendData(eventObj); }, 10);
+                                    return false;
+                                }
                                 // if (this.cards.length === 0) {
                                 //     //如果总牌数为0了，则结束游戏
                                 //     //this.isOver = true;
@@ -647,7 +664,7 @@ class Majiang {
                                 }
                             }
                         }
-                        if (rule.option.isRain) {
+                        if (this.gameRule.option.isRain) {
                             //下雨结算（成都麻将才下雨）
                             if (fmc) {
                                 const scoreResult = this.castAccounts(userState, fmc.payUser === 0 ? 'all' : fmc.payUser, fmc.multipl);
@@ -672,7 +689,10 @@ class Majiang {
                         isFatchCard = true;
                         this.setGamerCacher(userState);//把自己设置为下一个出牌的人
                         //自己再摸一张牌，并附上杠上花、杠上炮监听
-                        if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) return false;
+                        if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) {
+                            setTimeout(() => { this.sendData(eventObj); }, 10);
+                            return false;
+                        }
                         //如果用户还有杠，那么不摸牌，继续让用户选择
                         // if (this.hasFullMeet(userState)) {
                         //     userState.actionCode.push('fullMeet');
@@ -704,7 +724,7 @@ class Majiang {
                             // roles.forEach(role => {
                             //     roles_multiple = roles_multiple * role.multiple;
                             // });
-                            let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
+                            let { action, result, allMultipl } = this.gameRule.trggleAction(userState.cards, userState.groupCards, userState.testWinType ? userState.testWinType : 'selfWin')
                             scoreResult = this.castAccounts(userState, 'all', allMultipl);
                             userState.fatchCard = undefined;
                             //next = this.getNaxtCacher(userState.uid);
@@ -725,7 +745,7 @@ class Majiang {
                             // roles.forEach(role => {
                             //     roles_multiple = roles_multiple * role.multiple;
                             // });
-                            let { action, result, allMultipl } = rule.trggleAction(userState.cards, userState.groupCards, this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin')
+                            let { action, result, allMultipl } = this.gameRule.trggleAction(userState.cards, userState.groupCards, this.lastShowCardUserState.testWinType ? this.lastShowCardUserState.testWinType : 'triggerWin')
                             userState.isWin = true;//这里要放在前面，因为被筛选的数组中不带赢家
                             userState.winDesc = `${winCount}:${this.lastShowCardUserState.name}${action.name}(${action.multiple})+${result.map(item => item.name + `(${item.multiple})`).join('+')}`;
                             //userState.winDesc = `${this.lastShowCardUserState.name}${action.name}(${action.multiple}倍) + ${roles.map(role => role.name)}(${roles_multiple}倍) × ${fullMeetCount}杠`;
@@ -757,11 +777,13 @@ class Majiang {
                                 const next = this.getNaxtCacher(userState.uid);
                                 //找到下一个人并摸牌
                                 this.setGamerCacher(next);
-                                if (!this.fatchCard({})) return false;
+                                if (!this.fatchCard({})) {
+                                    return false;
+                                }
                             }
                         }
                         eventObj = {
-                            event: 'win', payload: JSON.stringify({
+                            event: isMineAction ? 'selfwin' : 'win', payload: JSON.stringify({
                                 card: doCard, uid: [userState.uid],
                                 lose: { score: scoreResult, uid: isMineAction ? this.gameState.filter(u => !(u.isWin || u.uid === userState.uid)).map(u => u.uid) : [this.lastShowCardUserState.uid] }
                             }),
@@ -852,38 +874,44 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard() {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
+
         //获取指定的牌，主要还是快速调试
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
+            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7)
+        ].sort(objectArraySort('key'));
+        this.gameState[1].groupCards.meet = [[
+            this.getSpecifiedCard('w', 6),
+            this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        ], [
+            this.getSpecifiedCard('w', 9),
+            this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        ]
+        ];
+
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
+            this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
+            this.getSpecifiedCard('w', 8)
+        ].sort(objectArraySort('key'));
 
         // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
-        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7)
+        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 7),
+        //     this.getSpecifiedCard('b', 7), this.getSpecifiedCard('t', 3), this.getSpecifiedCard('t', 3),
+        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5),
+        //     this.getSpecifiedCard('t', 5)
         // ].sort(objectArraySort('key'));
         // this.gameState[1].groupCards.meet = [[
-        //     this.getSpecifiedCard('w', 6),
-        //     this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        // ], [
-        //     this.getSpecifiedCard('w', 9),
-        //     this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
+        //     this.getSpecifiedCard('b', 2),
+        //     this.getSpecifiedCard('b', 2), this.getSpecifiedCard('b', 2)
         // ]
         // ];
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 9),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 2),
-        //     this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 8),
-        //     this.getSpecifiedCard('w', 8)
-        // ].sort(objectArraySort('key'));
-
-        // this.gameState[2].cards = [
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('t', 7),
-        //     this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1),
-        //     this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 3), this.getSpecifiedCard('w', 5), this.getSpecifiedCard('w', 8)
-        // ].sort(objectArraySort('key'));
 
         if (this.colorType === 2) {
             //如果是两黄牌的话就直接设定下一个抓牌人并发牌
@@ -917,7 +945,7 @@ class Majiang {
                 listenType.push('endWin');
             }
             sssIndex++;
-            //let cardByCatch = sssIndex <= 11 ? { key: 'card-w-6-' + sssIndex, number: 6, color: 'w' } : this.cards.splice(0, 1)[0];
+            //let cardByCatch = sssIndex <= 12 ? { key: 'card-b-7-' + sssIndex, number: 7, color: 'b' } : this.cards.splice(0, 1)[0];
             //sssIndex++;
             //let cardByCatch = sssIndex <= 11 ? { key: 'card-t-4-' + sssIndex, number: 4, color: 't' } : { key: 'card-w-7-' + sssIndex, number: 7, color: 'w' };
             // sssIndex++;

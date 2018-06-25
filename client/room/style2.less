@@ -192,6 +192,9 @@ button {
             &.sound {
                 background-image: url('/images/games/majiang2/sound.png');
             }
+            &.exit {
+                background-image: url('/images/games/majiang2/exit.png');
+            }
         }
     }
     .gameInfoPanel {
@@ -636,16 +639,33 @@ button {
         line-height: 4.7rem;
         color: #000;
         font-size: 1.5rem;
-        opacity: .8; //-webkit-transition: all 0.1s ease-out;hideEffect
         transform: scale(0, 0);
-        color: #865710;
+        color: #f03d3d;
         font-weight: bold;
+        text-shadow: 0.1rem 0.1rem 0.1rem #000;
         &.show {
             -webkit-transition: all 0.2s ease-out;
             transform: scale(1, 1);
             -webkit-animation: hideEffect .2s forwards;
             animation-delay: 5s;
+            opacity: .8; //-webkit-transition: all 0.1s ease-out;hideEffect
         }
+        &.loseShow {
+            -webkit-transition: all 0.2s ease-out;
+            transform: scale(1, 1);
+            transform: translate3d(0, 2rem, 0);
+            -webkit-animation: hideEffect2 .5s forwards; //animation-delay: 5s;
+            background: none;
+            color: #f03d3d;
+        }
+        // &.loseShow {
+        //     -webkit-transition: all 0.2s ease-out;
+        //     transform: scale(1, 1);
+        //     transform: translate3d(-5rem, 2rem, 0);
+        //     -webkit-animation: hideEffect2 .5s forwards;
+        //     //animation-delay: 5s;
+        //     background: none;
+        // }
         span {
             margin-left: .5rem;
             img {
@@ -891,8 +911,8 @@ button {
         bottom: 3rem;
         margin: auto;
         left: -12.5rem;
-        &>div{
-            float:right;
+        &>div {
+            float: right;
         }
     }
     .showCardWeak {
@@ -1051,6 +1071,7 @@ button {
         }
     }
     &.mark {
+        -webkit-animation: effect_mark3 .8s infinite linear;
         &:after {
             position: absolute;
             content: '';
@@ -1060,7 +1081,7 @@ button {
             left: 0;
             border-radius: .4rem;
             background: rgba(226, 29, 29, 0.3);
-            -webkit-animation: effect_mark 1s infinite linear;
+            -webkit-animation: effect_mark .8s infinite linear;
         }
     }
     &.active {
@@ -1076,8 +1097,8 @@ button {
     }
     &.card_face_gamer_main {
         background-image: url('/images/games/majiang2/faceCard.png');
-        width: 2rem;
-        height: 3rem;
+        width: 1.9rem;
+        height: 2.8rem;
         margin-left: -.2rem; //float: left;
         &.stress {
             border-radius: .2rem;
@@ -1091,6 +1112,7 @@ button {
         transform: rotate(180deg);
         margin-top: -1.1rem;
         float: left;
+        box-shadow: 0.3rem 0 0.3rem #333;
         &.stress {
             border-radius: .2rem;
         }
