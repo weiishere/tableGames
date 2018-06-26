@@ -17,6 +17,9 @@ const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
 };
+let isBegin = false;
+let scoketDone = false;
+let newRecore = false;
 let disableSound = false;
 let bgMusicDisable = false;
 const bgPlay = () => {
@@ -46,13 +49,12 @@ let userInfo = {
     nickname: getQueryString('name') || 'player',
     headimgurl: '/images/games/majiang/head.jpg'//https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg
 };
-let isBegin = false;
-let newRecore = false;
+
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 window.addEventListener("onorientationchange" in window ? "orientationchange" : "resize", function () {
     window.setTimeout(function () {
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-    }, 500);
+    }, 1000);
 }, false);
 const isDebug = process.env.NODE_ENV === 'development';
 let ws = isDebug ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
@@ -81,7 +83,8 @@ if (!isDebug) {
         }
     }
     axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
-        alert('ticket ready OK');
+        //alert('ticket ready OK');
+        scoketDone = true;
         const data = req.data;
         if (window.hasOwnProperty('wx')) {
             wx.config({
@@ -121,7 +124,7 @@ class Table extends Component {
         this.state = {
             user: {
                 uid: userInfo.userid,//getQueryString('uid'),
-                name: userInfo.nickname,//getQueryString('name'),
+                name: decodeURIComponent(userInfo.nickname),//getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 keepVertical: false,
@@ -340,7 +343,7 @@ class Table extends Component {
             }));
         });
         const timerforBegin = window.setInterval(() => {
-            if (isBegin === true) {
+            if (isBegin === true && scoketDone === true) {
                 window.clearInterval(timerforBegin);
                 this.setState({ isBegin: true });
             }

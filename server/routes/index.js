@@ -70,16 +70,15 @@ module.exports = (app) => {
         //console.log(accessToken + '---' + openid);
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
-
-        console.log("userInfo:" + userInfo);
+        //console.log("userInfo:" + userInfo);
         axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nicename}&headUrl=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
-            console.log(response.data)
-            userInfo['userid'] = response.data.userid;
+            // console.log(response.data)
+            // userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
         }).catch(function (error) {
@@ -106,7 +105,7 @@ module.exports = (app) => {
             const gamers = rooms[i].gamers;
             const gamersLength = gamers.length;
             for (let j = 0; j < gamersLength; j++) {
-                if (gamers[j].uid === uid) {
+                if (gamers[j].uid === +uid) {
                     resultRooms = rooms[i];
                     break;
                     //return rooms[i];
@@ -146,20 +145,22 @@ module.exports = (app) => {
         //     }));
         // res.redirect(`/home`);
     });
-    app.get('/wechat/ticket', function (req, res) {console.log('getticket begin:' + (new Date()).toLocaleString());
+    app.get('/wechat/ticket', function (req, res) {
+        //console.log('getticket begin:' + (new Date()).toLocaleString());
+        const data = (new Date()).toLocaleString();
         try {
             var page = req.headers.referer;
             var t = {};
             var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
             //2、获取access_token;
             request.get(url, function (err, response, body) {
-                console.log('getticket getting1:' + (new Date()).toLocaleString());
+                //console.log('getticket getting1:' + (new Date()).toLocaleString());
                 var token = JSON.parse(body);
                 //console.log('token:' + body);
                 var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
                 //3、获取ticket并且生成随机字符串,时间戳,签名
                 request.get(ticketUrl, function (err, response, ticket) {
-                    console.log('getticket getting2:' + (new Date()).toLocaleString());
+                    console.log('getticket getting2：' + data + '~' + (new Date()).toLocaleString());
                     var data = JSON.parse(ticket);
                     //console.log('ticket:' + ticket);
                     const timestamp = parseInt(new Date().getTime() / 1000);
