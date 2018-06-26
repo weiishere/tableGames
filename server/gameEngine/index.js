@@ -20,6 +20,8 @@ setInterval(function () {
         sqliteCommon.deleteRoom({ roomIds }, (changes) => {
             //console.log('(' + (new Date()).toLocaleString() + ')' + '清理房间数据' + changes + '条');
             //console.log(roomIds)
+        }, (error) => {
+            writeLog('API deleteRoom error', error);
         });
         // roomIds.forEach(itemid => {
         //     global.allRooms = global.allRooms.filter(room => room.roomId !== itemid);
@@ -35,6 +37,8 @@ setInterval(function () {
                 return false;
             }
         });//清理内存room的数据
+    }, (error) => {
+        writeLog('API getList error', error);
     });
 }, 60 * 60 * 1000);
 
@@ -102,7 +106,7 @@ module.exports = (io, scoket) => {
                 setTimeout(() => {
                     //console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                     //scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
-                    console.log(otherRoom);
+                    //console.log(otherRoom);
                     scoket.emit('message', `{"type":"errorInfo","order":"jump","content":"您已经在其他房间中（游戏中），单局完成之前暂不能加入其他房间，请完成单局游戏后再加入，谢谢（确定自动跳转至未完成游戏）"}`);
                 }, 200);
                 return;
@@ -174,64 +178,77 @@ module.exports = (io, scoket) => {
                 sqliteCommon.updateState({
                     roomId: data.roomId,
                     state: 1
+                }, () => { }, (error) => {
+                    writeLog('API updateRoomState error', error);
                 });
             } else {
                 //走建房流程
                 //找到房间后先更新房间状态为1（已激活）
+                //console.log('getOne begin:' + data.roomId);
                 sqliteCommon.getOne({
                     roomId: data.roomId
                 }, (result) => {
-                    console.log(result.checkiner + '=====' + data.user.uid);
-                    if (+result.checkiner !== +data.user.uid && result.state === 0) {
-                        //非创建者开房，弹出未激活
+                    //console.log('getOne done');
+                    if (!result.checkiner || !data.user.uid) {
                         setTimeout(() => {
-                            scoket.emit('message', `{"type":"errorInfo","content":"对不起，此房间尚未由创建者激活，请稍候..."}`);
+                            scoket.emit('message', `{"type":"errorInfo","content":"对不起，用户初始化错误，请重试..."}`);
                         }, 2000);
-                        return;
-                    }
-                    sqliteCommon.updateState({
-                        roomId: data.roomId,
-                        state: 1
-                    }, (result2) => {
-                        //由于这里是异步，如果同时两个人checkIn的时候，可能都会到这一步，那么就会建立两个一样的房间，所以这里需要判断
-                        if (global.allRooms.find(r => r.roomId === data.roomId)) {
-                            checkin(data);
+                    } else {
+                        if (+result.checkiner !== +data.user.uid && result.state === 0) {
+                            //非创建者开房，弹出未激活
+                            setTimeout(() => {
+                                scoket.emit('message', `{"type":"errorInfo","content":"对不起，此房间尚未由创建者激活，请稍候..."}`);
+                            }, 2000);
                             return;
                         }
-                        //开始初始化room到内存
-                        const jsonData = JSON.parse(result.jsonData);
-                        data.user.point = 0;
-                        data.user.state = 'wait';
-                        const room = new Room({
-                            roomId: result.roomId,
-                            gamers: [data.user],
-                            gamerNumber: data.option.gamerNumber || jsonData.mulriple,//测试的时候这个可能会变
-                            mulriple: data.option.mulriple || jsonData.mulriple,//倍数
-                            gameTime: data.option.gameTime || jsonData.gameTime,
-                            countdown: data.option.countdown || jsonData.countdown,//倒计时
-                            state: 'wait',
-                            gameType: 'majiang',
-                            rule: data.option.rule || jsonData.rule,
-                            colorType: data.option.colorType || jsonData.colorType || 3
-                        });
-                        global.allRooms.push(room);
-                        //data.user['catcher'] = true;
-                        scoket.user = data.user;
-                        console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '开房成功，房间ID:' + room.roomId);
-                        //为用户注册scoket事件
-                        //room.game.regAction(scoket);
-                        room.game.regAction().forEach(item => {
-                            scoket.on(item.actionName, function (data) {
-                                item.actionFn.call(room.game, data);
+                        sqliteCommon.updateState({
+                            roomId: data.roomId,
+                            state: 1
+                        }, (result2) => {
+                            //由于这里是异步，如果同时两个人checkIn的时候，可能都会到这一步，那么就会建立两个一样的房间，所以这里需要判断
+                            if (global.allRooms.find(r => r.roomId === data.roomId)) {
+                                checkin(data);
+                                return;
+                            }
+                            //开始初始化room到内存
+                            const jsonData = JSON.parse(result.jsonData);
+                            data.user.point = 0;
+                            data.user.state = 'wait';
+                            const room = new Room({
+                                roomId: result.roomId,
+                                gamers: [data.user],
+                                gamerNumber: data.option.gamerNumber || jsonData.mulriple,//测试的时候这个可能会变
+                                mulriple: data.option.mulriple || jsonData.mulriple,//倍数
+                                gameTime: data.option.gameTime || jsonData.gameTime,
+                                countdown: data.option.countdown || jsonData.countdown,//倒计时
+                                state: 'wait',
+                                gameType: 'majiang',
+                                rule: data.option.rule || jsonData.rule,
+                                colorType: data.option.colorType || jsonData.colorType || 3
+                            });
+                            global.allRooms.push(room);
+                            //data.user['catcher'] = true;
+                            scoket.user = data.user;
+                            console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '开房成功，房间ID:' + room.roomId);
+                            //为用户注册scoket事件
+                            //room.game.regAction(scoket);
+                            room.game.regAction().forEach(item => {
+                                scoket.on(item.actionName, function (data) {
+                                    item.actionFn.call(room.game, data);
+                                })
                             })
-                        })
-                        setTimeout(() => {
-                            sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                             setTimeout(() => {
-                                sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间"}`);
-                            }, 100);
-                        }, 500);
-                    });
+                                sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                                setTimeout(() => {
+                                    sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}成功开房间"}`);
+                                }, 100);
+                            }, 500);
+                        }, (error) => {
+                            writeLog('API updateState22 error', error);
+                        });
+                    }
+                }, (error) => {
+                    writeLog('API getOne error', error);
                 });
 
             }
@@ -340,7 +357,9 @@ module.exports = (io, scoket) => {
                     }
                 }
                 //准备时更新下活动状态（主要更新最后活跃时间）
-                sqliteCommon.updateState({ roomId: data.roomId, state: 1 });
+                sqliteCommon.updateState({ roomId: data.roomId, state: 1 }, () => { }, (error) => {
+                    writeLog('API updateRoomState error', error);
+                });
                 setTimeout(() => {
                     //sendForUser(data.user.uid, `{"type":"notified","content":"${data.user.name}成功开房间ID:${room.roomId}"}`);
                     sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);

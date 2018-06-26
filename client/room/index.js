@@ -12,7 +12,7 @@ import $ from 'jquery';
 import PropTypes from 'prop-types';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 2;
+const theGamerNumber = 4;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -76,11 +76,12 @@ if (!isDebug) {
     } else {
         userInfo = JSON.parse(userInfoCookie);
         if (!getQueryString('roomId')) {
-            location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
+            //location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
+            location.href = 'playing?uid=' + userInfo.userid;
         }
     }
     axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
-        //alert('ticket ready OK');
+        alert('ticket ready OK');
         const data = req.data;
         if (window.hasOwnProperty('wx')) {
             wx.config({

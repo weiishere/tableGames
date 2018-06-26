@@ -146,18 +146,20 @@ module.exports = (app) => {
         //     }));
         // res.redirect(`/home`);
     });
-    app.get('/wechat/ticket', function (req, res) {
+    app.get('/wechat/ticket', function (req, res) {console.log('getticket begin:' + (new Date()).toLocaleString());
         try {
             var page = req.headers.referer;
             var t = {};
             var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
             //2、获取access_token;
             request.get(url, function (err, response, body) {
+                console.log('getticket getting1:' + (new Date()).toLocaleString());
                 var token = JSON.parse(body);
                 //console.log('token:' + body);
                 var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
                 //3、获取ticket并且生成随机字符串,时间戳,签名
                 request.get(ticketUrl, function (err, response, ticket) {
+                    console.log('getticket getting2:' + (new Date()).toLocaleString());
                     var data = JSON.parse(ticket);
                     //console.log('ticket:' + ticket);
                     const timestamp = parseInt(new Date().getTime() / 1000);
