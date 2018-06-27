@@ -40,26 +40,20 @@ const playSound = (type) => {
 var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
-
-//const Wechat = require('wechat-jssdk');
-//const wx = new Wechat(wechatConfig);
+const isDebug = process.env.NODE_ENV === 'development';
+let ws = isDebug ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
 
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: getQueryString('name') || 'player',
     headimgurl: '/images/games/majiang/head.jpg'//https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg
 };
-
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 window.addEventListener("onorientationchange" in window ? "orientationchange" : "resize", function () {
     window.setTimeout(function () {
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
     }, 1000);
 }, false);
-const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
-//const ws = io('ws://220.167.101.116:3300');
-
 window.addEventListener("orientationchange", function () {
     //console.log(window.orientation);
     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;

@@ -14,7 +14,7 @@ let tokens = {};
 const oauth = new OAuth(appid, secret);
 const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
-
+let access_token = '';
 // const oauth = new OAuth(appid, secret, 
 //     (openid) => {
 //     //用于获取token的方法 异步操作需返回Promise
@@ -28,6 +28,16 @@ const apiUrl = 'http://220.167.101.116:8080';
 //     })();
 //     //await fs.writeFile(`${openid}:access_token.txt`, JSON.stringify(token));
 // });
+const getAccess_token = (done) => {
+    var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
+    request.get(url, function (err, response, body) {
+        //console.log('getticket getting1:' + (new Date()).toLocaleString());
+        var token = JSON.parse(body);
+        access_token = token.access_token;
+        done && done();
+    });
+}
+
 
 module.exports = (app) => {
     apiRoute(app);
@@ -151,13 +161,8 @@ module.exports = (app) => {
         try {
             var page = req.headers.referer;
             var t = {};
-            var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
-            //2、获取access_token;
-            request.get(url, function (err, response, body) {
-                //console.log('getticket getting1:' + (new Date()).toLocaleString());
-                var token = JSON.parse(body);
-                //console.log('token:' + body);
-                var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + token.access_token + '&type=jsapi';
+            const get = () => {
+                var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + access_token + '&type=jsapi';
                 //3、获取ticket并且生成随机字符串,时间戳,签名
                 request.get(ticketUrl, function (err, response, ticket) {
                     console.log('getticket getting2：' + data + '~' + (new Date()).toLocaleString());
@@ -174,7 +179,18 @@ module.exports = (app) => {
                     t.signature = sha1(string);
                     res.json(t);
                 });
-            });
+            }
+            if (access_token === "") {
+                getAccess_token(() => {
+                    get();
+                    //启动时钟，2小时取一次Access_token
+                    setInterval(() => {
+                        getAccess_token();
+                    }, 7200);
+                });
+            } else {
+                get();
+            }
         } catch (e) {
             writeLog('wechat/ticket', e);
         }
