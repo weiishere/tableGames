@@ -293,14 +293,24 @@ const rules = [
         resultType_2.four.forEach(item => {
             multiple += multiple + resultType_1[item].card.color.length === 1 ? 2 : 3;
         });
-        return { name: '暗杠×' + resultType_2.four.length, multiple: multiple }
+        //碰了牌，没有下杠的也要算暗杠
+        let count = 0;
+        resultType_2.one.forEach(item => {
+            cards.groupCards.meet.forEach(_meet => {
+                if (_meet[0].color === resultType_1[item].card.color && _meet[0].number === resultType_1[item].card.number) {
+                    multiple += multiple + _meet[0].color.length === 1 ? 2 : 3;
+                    count++;
+                }
+            })
+        })
+        return { name: '暗杠×' + resultType_2.four.length + count, multiple: multiple }
     },
     //明杠
     ({ cards }) => {
         //字牌为2颗
         let multiple = 0;
         cards.groupCards.fullMeet.forEach(arr => {
-            multiple += multiple + arr[0].color.length;
+            multiple += arr[0].color.length === 1 ? 1 : 2;
         });
         return { name: '明杠×' + cards.groupCards.fullMeet.length, multiple: multiple }
     },

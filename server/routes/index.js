@@ -29,13 +29,17 @@ let access_token = '';
 //     //await fs.writeFile(`${openid}:access_token.txt`, JSON.stringify(token));
 // });
 const getAccess_token = (done) => {
-    var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
-    request.get(url, function (err, response, body) {
-        //console.log('getticket getting1:' + (new Date()).toLocaleString());
-        var token = JSON.parse(body);
-        access_token = token.access_token;
-        done && done();
-    });
+    try {
+        var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
+        request.get(url, function (err, response, body) {
+            //console.log('getticket getting1:' + (new Date()).toLocaleString());
+            var token = JSON.parse(body);
+            access_token = token.access_token;
+            done && done();
+        });
+    } catch (error) {
+        writeLog('getAccess_token', error);
+    }
 }
 
 
@@ -88,7 +92,7 @@ module.exports = (app) => {
             //token: _token
         }).then(function (response) {
             // console.log(response.data)
-            // userInfo['userid'] = response.data.userid;
+            userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
         }).catch(function (error) {
@@ -142,7 +146,7 @@ module.exports = (app) => {
             //console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)), {
-                maxAge: 60 * 60 * 24 * 7 // 1 week
+                //maxAge: 60 * 60 * 24 * 7 // 1 week
             });
             res.redirect(`/${state}`);
         }).catch(function (error) {
@@ -165,7 +169,7 @@ module.exports = (app) => {
                 var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + access_token + '&type=jsapi';
                 //3、获取ticket并且生成随机字符串,时间戳,签名
                 request.get(ticketUrl, function (err, response, ticket) {
-                    console.log('getticket getting2：' + data + '~' + (new Date()).toLocaleString());
+                    //console.log('getticket getting2：' + data + '~' + (new Date()).toLocaleString());
                     var data = JSON.parse(ticket);
                     //console.log('ticket:' + ticket);
                     const timestamp = parseInt(new Date().getTime() / 1000);

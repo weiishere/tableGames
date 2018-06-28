@@ -21,11 +21,15 @@ let sssIndex = 10;
 //         else return 0
 //     }
 // }
-const getRedomNum = (minNum, maxNum) => {
-    switch (arguments.length) {
-        case 1: return parseInt(Math.random() * minNum + 1);
-        case 2: return parseInt(Math.random() * (maxNum - minNum + 1) + minNum);
-        default: return 0;
+const getRedomNum = function (minNum, maxNum) {
+    const length = arguments.length;
+    switch (length) {
+        case 1:
+            return parseInt(Math.random() * minNum + 1);
+        case 2:
+            return parseInt(Math.random() * (maxNum - minNum + 1) + minNum);
+        default:
+            return 0;
     }
 }
 class TimerManager {
@@ -184,7 +188,7 @@ class Majiang {
     }
     //根据当前玩家获取到下一个取牌的玩家（不能根据上次抓牌的玩家，因为碰杠胡都可能会打乱顺序）
     getNaxtCacher(thisUid) {
-        const remainState = !thisUid ? this.gameState.filter(state => state.isWin === false) : this.gameState.filter(state => state.isWin === false || state.uid === thisUid)
+        const remainState = this.gameState.filter(state => state.isWin === false || state.uid === thisUid)
         //未胡牌的玩家（如果指定了是谁之后，那么这个人也可能是赢家，那么不能排除，不然找不到起始对象）
         let nextCatcher, nextIndex = 0, _l = remainState.length;
         // remainState.forEach((userState, index) => {
@@ -442,6 +446,7 @@ class Majiang {
                 //如果所有人都选择了花色，那么开始发牌并设定抓牌人（庄家）
                 this.setFrist();
                 if (!this.fatchCard({ listenType: ['beginWin'] })) return false;//抓牌并监控天胡
+                this.timer.start();
                 this.sendData();
             }
         }, 20);
@@ -680,7 +685,7 @@ class Majiang {
                                         lose: { score: scoreResult, uid: fmc.payUser === 0 ? this.gameState.filter(u => !(u.isWin || u.uid === userState.uid)).map(u => u.uid) : [fmc.payUser.uid] }
                                     })
                                 }
-                                userState.fullMeetRecode = userState.fullMeetRecode ? userState.fullMeetRecode.push(desc) : [desc];
+                                userState.fullMeetRecode = userState.fullMeetRecode ? userState.fullMeetRecode.concat(desc) : [desc];
                             }
                         } else {
                             eventObj = { event: 'fullMeet', payload: JSON.stringify({ card: doCard, uid: [userState.uid] }) };
@@ -936,9 +941,10 @@ class Majiang {
 
             }
             const _uid = !uid ? this.gameState.find(item => item.catcher === true).uid : uid;
-            const userState = this.gameState.find(item => item.uid === _uid);
+            let userState = this.gameState.find(item => item.uid === _uid);
 
-            let cardByCatch = this.cards.splice(0, 1)[0];
+            //let cardByCatch = this.cards.splice(0, 1)[0];
+            let cardByCatch = this.getTheBetterCard(userState);
             if (this.cards.length === 0) {
                 //最后一张牌了，海底
                 if (!listenType) listenType = [];
@@ -987,6 +993,96 @@ class Majiang {
     //     state.cards = state.cards.filter(item => item.key != card.key);
     //     this.outCards.push(state.cards.filter(item => item.key === card.key)[0]);
     // }
+    getTheBetterCard(userState) {
+        let chance = {
+            'radom': 20,//随机牌
+            'lack': 50,//获取非定缺牌型
+            'same': 70,//获取可以成3或者4的牌
+            'singleSame': 85,//获取一张与手上一样牌
+            'win': 100,//如果有胡牌，给胡牌
+        }
+        let cardByCatch;
+        const redom = getRedomNum(0, 100);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(userState.cards)
+        if (redom <= chance.radom) {
+            //随机牌
+            cardByCatch = this.cards.splice(0, 1)[0];
+        } else if (redom > chance.radom && redom <= chance.lack) {
+            //非定缺牌
+            this.cards = this.cards.filter(item => {
+                if (!cardByCatch) {
+                    if (item.color !== userState.colorLack) {
+                        cardByCatch = clone(item);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            });
+        } else if (redom > chance.lack && redom <= chance.same) {
+            //给一张牌色一样的牌
+            this.cards = this.cards.filter(item => {
+                if (item.color === userState.colorLack) {
+                    return true;
+                }
+                if (!cardByCatch) {
+                    //2或者3,谁先到，就给什么
+                    if (resultType_2.two.length !== 0 && (item.color === resultType_1[resultType_2.two[0]].card.color && item.number === resultType_1[resultType_2.two[0]].card.number)) {
+                        cardByCatch = clone(item);
+                        return false;
+                    } else if (resultType_2.three.length !== 0 && (item.color === resultType_1[resultType_2.three[0]].card.color && item.number === resultType_1[resultType_2.three[0]].card.number)) {
+                        cardByCatch = clone(item);
+                        return false;
+                    }
+                    return true;
+                } else {
+                    return true;
+                }
+            });
+        } else if (redom > chance.same && redom <= chance.singleSame) {
+            //给手牌是单张的一个一样的牌
+            this.cards = this.cards.filter(item => {
+                if (item.color === userState.colorLack) {
+                    return true;
+                }
+                if (!cardByCatch) {
+                    const _c = resultType_2.one.find(o => resultType_1[o].card.color === item.color && o.number === resultType_1[o].card.number);//是否手上有一样的
+                    if (_c) {
+                        cardByCatch = clone(item);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            });
+        } else {
+            //直接给自摸牌
+            this.cards = this.cards.filter(item => {
+                if (item.color === userState.colorLack) {
+                    return true;
+                }
+                if (!cardByCatch) {
+                    const _cards = userState.cards.concat(item).sort(objectArraySort('key'));
+                    if (winCore(_cards)) {
+                        cardByCatch = clone(item);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            });
+        }
+        if (!cardByCatch) {
+            cardByCatch = this.cards.splice(0, 1)[0];
+        }
+        return cardByCatch;
+    }
     setBegin(fn) {
         this.beginHandler = fn;
     }

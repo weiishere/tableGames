@@ -73,14 +73,14 @@ class Room {
                 self.gameTime--;
                 self.state = 'wait';
                 self.gamers.forEach((gamer) => { gamer.state = 'wait'; });
-                //self.state = 'playing';
-                //self.singleGameBegin();
+                //发送房间信息
+                self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
             } else {
                 self.state = 'end';
+                //发送房间信息
+                self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
                 self.end();//所有局数结束，房间结束
             }
-            //发送房间信息
-            self.sendForRoom(self.roomId, `{"type":"roomData","content":${JSON.stringify(self.getSimplyData())}}`);
         });
     }
     getSimplyData() {
@@ -183,6 +183,7 @@ class Room {
         //结束时更新下房间状态
         sqliteCommon.updateState({ roomId: this.roomId, state: 2 });
         this.state = 'end';
+        global.allRooms = global.allRooms.filter(r => r.roomId !== this.roomId);
         this.endHandler && this.endHandler();
     }
     //单局结算

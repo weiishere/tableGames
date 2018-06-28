@@ -53,11 +53,13 @@ const rules = [
     //杠(包括暗杠)
     ({ cards, cardsTime2 }) => {
         let name = '', multiple = 0;
-        let outFullMeet = cards.groupCards.fullMeet.length;
+        /*let outFullMeet = cards.groupCards.fullMeet.length;
         multiple += outFullMeet;
         let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.handCards);
         let inFullMeet = resultType_2.four.length;
-        multiple += inFullMeet;
+        multiple += inFullMeet;*/
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
+        multiple = resultType_2.four.length;
         if (multiple !== 0) {
             name = '杠×' + multiple;
         }
@@ -145,7 +147,7 @@ const trggleAction = (handCards, group, actionName) => {
     let action = actions.find(item => item.code === actionName);
     allMultipl = allMultipl * action.multiple;
     rules.forEach(item => {
-        const ruleResult = item({ cards: { allCards: allCards, handCards: _handCards, groupCards: group }, cardsTime1: resultType_1, cardsTime2: resultType_2 });
+        const ruleResult = item({ cards: { allCards: allCards, handCards: _handCards, fullHandCards: _handCards, groupCards: group }, cardsTime1: resultType_1, cardsTime2: resultType_2 });
         if (ruleResult.multiple) {
             allMultipl = allMultipl * ruleResult.multiple;
             result.push(ruleResult);

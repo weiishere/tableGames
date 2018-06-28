@@ -10,6 +10,7 @@ import QueueAnim from 'rc-queue-anim';
 import Cookies from "js-cookie";
 import $ from 'jquery';
 import PropTypes from 'prop-types';
+import cardsImages from './image';
 //import './test';
 //import wechatConfig from '../wxConfig';
 const theGamerNumber = 4;
@@ -34,7 +35,7 @@ const bgPlay = () => {
 }
 const playSound = (type) => {
     if (!disableSound) {
-        document.getElementById(type).play();
+        document.getElementById(type) && document.getElementById(type).play();
     }
 }
 var u = navigator.userAgent;
@@ -71,6 +72,7 @@ if (!isDebug) {
         location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
     } else {
         userInfo = JSON.parse(userInfoCookie);
+        //alert(userInfoCookie);
         if (!getQueryString('roomId')) {
             //location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
             location.href = 'playing?uid=' + userInfo.userid;
@@ -103,6 +105,7 @@ if (!isDebug) {
         }
     });
 } else {
+    scoketDone = true;
     if (!getQueryString('roomId')) {
         location.href = '/playing?uid=' + getQueryString('uid');
     }
@@ -494,7 +497,10 @@ class Table extends Component {
                 {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 <div className='gameInfoBar'>
-                    {this.state.game && <span className='remain'>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
+                    <div className='remain'>
+                        {this.state.game && <span>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;</span>}
+                        {this.state.room && <span>第{this.state.room.allTime - this.state.room.gameTime}/{this.state.room.allTime}局</span>}
+                    </div>
                     <div className='buttonWrap'><button className='record' onClick={this.gameInfoOpenHandle}></button>
                         <button className='msg' onClick={() => {
                             playSound('click');
@@ -512,7 +518,7 @@ class Table extends Component {
                                 toast: disableSound ? '音效关' : '音效开'
                             });
                         }}></button>
-                        {/* <button className='exit' onClick={() => {
+                        <button className='exit' onClick={() => {
                             const exit = () => {
                                 ws.emit('exit', JSON.stringify({ roomId: this.state.room.roomId, uid: me.uid }));
                                 window.setTimeout(() => {
@@ -523,11 +529,13 @@ class Table extends Component {
                             if (this.state.room.state === 'playing') {
                                 if (confirm('游戏还在运行中，您确定要退出游戏吗？')) {
                                     exit();
+                                    wx.closeWindow();
                                 }
                             } else {
                                 exit();
+                                wx.closeWindow();
                             }
-                        }}></button> */}
+                        }}></button>
                     </div>
                 </div>
                 {this.state.game && <div className='tableCenter'>
@@ -666,10 +674,12 @@ class GamerDock extends Component {
             const _className = 'show';// (payLoad.lose && payLoad.lose.uid !== this.props.userState.uid) ? 'loseShow' : 'show';
             $(this.refs.showCardWeak).removeClass(_className).addClass(_className);
             window.clearTimeout(this.showWeakTimer);
+            console.log('clear');
             this.showWeakTimer = window.setTimeout(() => {
                 $(this.refs.showCardWeak).removeClass(_className);
             }, _className === "loseShow" ? 4000 : 5500);
         } else {
+            console.log('remove');
             $(this.refs.showCardWeak).removeClass('show').removeClass('loseShow');
         }
     }
@@ -708,7 +718,8 @@ class GamerDock extends Component {
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
             {/* <div ref='showCardWeak' className={`showCardWeak ${this.myEvent && 'show'}`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
-            <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div>
+            {/* <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
+            <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={cardsImages[`${this.myEvent.card.color}${this.myEvent.card.number}`]} /> : <span>{this.myEvent.name}</span>)}</div>
         </div>
     }
 }
@@ -1118,7 +1129,8 @@ class Card extends Component {
     }
     render() {
         let card = <span onClick={(e) => { this.cardClick(e, this.props.card) }} className={`card card_${this.props.type} ${this.props.card && this.props.card.key === this.props.activeKey && 'active'}`}>
-            {this.props.card && <img src={`/images/games/majiang2/cards/${this.props.card.color}${this.props.card.number}.png`} />}
+            {/* {this.props.card && <img src={`/images/games/majiang2/cards/${this.props.card.color}${this.props.card.number}.png`} />} */}
+            {this.props.card && <img src={cardsImages[`${this.props.card.color}${this.props.card.number}`]} />}
         </span>;
         // if (this.props.type === 'mine_main') {
         //     card = <span onClick={() => { this.cardClick(this.props.card) }} className={`card card_mine_main ${this.props.card === activeCard.key && 'active'}`}>
@@ -1380,7 +1392,7 @@ class ImgLoader extends Component {
                 return { key: color + i, url: host + "/cards/" + (color + i) + ".png" };
             }));
         }
-        this.imgList = this.imgList.concat(cardArr);
+        //this.imgList = this.imgList.concat(cardArr);
     }
     componentDidMount() {
         this.imgList.forEach(item => {

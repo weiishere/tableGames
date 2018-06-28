@@ -26,7 +26,7 @@ app.use(require('webpack-dev-middleware')(compiler, {
     cache: true, //开启缓存，增量编译
     stats: {
         colors: true, //打印日志显示颜色
-        reasons: true //打印相关被引入的模块
+        reasons: false //打印相关被引入的模块
     },
     publicPath: webpackConfig.output.publicPath
 }));

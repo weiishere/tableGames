@@ -68,28 +68,31 @@ module.exports = (io, scoket) => {
     //寻找用户是否有没有参与其他的房间，有则返回房间信息
     const findUserInRoom = (uid) => {
         const roomsLength = global.allRooms.length;
-        let resultRooms = [];
+        let resultRoom = null;
         for (let i = 0; i < roomsLength; i++) {
             const gamers = global.allRooms[i].gamers;
             const gamersLength = gamers.length;
             for (let j = 0; j < gamersLength; j++) {
-                if (gamers[j].uid === uid) {
-                    resultRooms.push(global.allRooms[i]);
+                if (gamers[j].uid === uid && gamers[j].state !== 'end') {
+                    resultRoom = global.allRooms[i];
                     break;
                     //return global.allRooms[i];
                 }
             }
         }
-        return resultRooms;
+        return resultRoom;
     }
     const getRoom = (roomId) => {
         let resultRooms;//user,roomId,state
-        const _rooms = global.allRooms.filter(item => item.roomId + '' === roomId);
+        const _rooms = global.allRooms.filter(item => item.roomId + '' === roomId + '');
         if (_rooms.length === 1) {
             resultRooms = _rooms[0];
         } else if (_rooms.length === 0) {
             //到sqllite里面去找，如果要考虑内存丢失，恢复数据的情况下可以考虑(待定)
 
+        } else {
+            console.log('出现了两条同样的room信息');
+            resultRooms = _rooms[0];
         }
         return resultRooms;
     }
@@ -97,7 +100,7 @@ module.exports = (io, scoket) => {
         try {
             //判断是否在其他牌局当中
             const otherRoom = findUserInRoom(data.user.uid);
-            if (otherRoom.length !== 0 && otherRoom[0].roomId !== data.roomId) {
+            if (otherRoom && otherRoom.roomId !== data.roomId) {
                 // if (otherRoom[0].game && otherRoom[0].game.gameState.find(u => u.uid === data.user.uid)){
                 //     if (!otherRoom[0].game.gameState.find(u => u.uid === data.user.uid).offLine) {
 
@@ -113,6 +116,7 @@ module.exports = (io, scoket) => {
             }
             //const _rooms = global.allRooms.filter(item => item.roomId + '' === data.roomId);
             const _rooms = getRoom(data.roomId);
+
             if (_rooms) {
                 //走加入流程
                 let room = _rooms;
@@ -132,7 +136,7 @@ module.exports = (io, scoket) => {
                     room.gamerJoin(data.user);
                     //为用户注册scoket事件
                     //room.game.regAction(scoket, room);
-
+                    console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '加入房间房间ID:' + room.roomId);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
@@ -165,6 +169,10 @@ module.exports = (io, scoket) => {
                     const timer = setInterval(() => {
                         if (loopCount === 10) {
                             clearInterval(timer);
+                            setTimeout(() => {
+                                scoket.emit('message', `{"type":"errorInfo","content":"对不起，游戏初始化出现错误，请重试..."}`);
+                            }, 1000);
+                            console.log('加入房间游戏初始化失败...');
                         } else {
                             if (room.game) {
                                 reg();
@@ -173,7 +181,7 @@ module.exports = (io, scoket) => {
                                 loopCount++;
                             }
                         }
-                    }, 100);
+                    }, 200);
                 }
                 sqliteCommon.updateState({
                     roomId: data.roomId,
@@ -190,6 +198,8 @@ module.exports = (io, scoket) => {
                 }, (result) => {
                     //console.log('getOne done');
                     if (!result.checkiner || !data.user.uid) {
+                        console.log('result.checkiner：' + result.checkiner);
+                        console.log('data.user.uid：' + data.user.uid);
                         setTimeout(() => {
                             scoket.emit('message', `{"type":"errorInfo","content":"对不起，用户初始化错误，请重试..."}`);
                         }, 2000);
@@ -229,7 +239,15 @@ module.exports = (io, scoket) => {
                             global.allRooms.push(room);
                             //data.user['catcher'] = true;
                             scoket.user = data.user;
+
                             console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '开房成功，房间ID:' + room.roomId);
+                            if (!room.game) {
+                                console.log('建立房间游戏初始化失败...');
+                                setTimeout(() => {
+                                    scoket.emit('message', `{"type":"errorInfo","content":"对不起，游戏初始化失败，请稍候..."}`);
+                                }, 2000);
+                                return;
+                            }
                             //为用户注册scoket事件
                             //room.game.regAction(scoket);
                             room.game.regAction().forEach(item => {
@@ -256,46 +274,64 @@ module.exports = (io, scoket) => {
             writeLog('checkin', e);
         }
     }
+    const disconnect = () => {
+        try {
+            if (!scoket.user) return;
+            const room = findUserInRoom(scoket.user.uid);
+            if (room) {
+                if (room.state === 'playing') {
+                    //正在进行的游戏
+                    //room.game.regAction(scoket, this);
+                    const state = room.game.gameState.find(state => state.uid === scoket.user.uid);
+                    state['offLine'] = true;
+                } else {
+                    room.gamerLeave(scoket.user.uid);
+                    if (room.gamers.length === 0) {
+                        const _room = global.allRooms.find(room => room.roomId === room.roomId);
+                        _room.game.timer.end();
+
+                        //如果人全部都离开了，清除room数据
+                        // const _room = global.allRooms.find(room => room.roomId === room.roomId);
+                        // if (_room && _room.game) {
+                        //     _room.game.timer.end();
+                        //     _room.game = null;
+                        // }
+                        // global.allRooms = global.allRooms.filter(_room => _room.id !== room.roomId);
+                        // console.log(`玩家退完，清除房间数据:${room.roomId}"}`);
+                    } else {
+                        setTimeout(() => {
+                            //console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
+                            sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
+                            sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                        }, 50);
+                    }
+
+                    // room.gamerLeave(scoket.user.uid);
+                    // sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
+                    // sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                }
+            }
+        } catch (error) {
+            writeLog('disconnect', error);
+        }
+    }
     return {
         connection: (scoket) => {
             //console.log('接入链接-------------------------scoket.id ' + scoket.id);
-
-        },
-        disconnect: () => {
-            //console.log('连接断开：---------------------------scoket.id:' + scoket.id);
             if (!scoket.user) return;
-            const resultRooms = findUserInRoom(scoket.user.uid);
-            resultRooms.forEach(room => {
-                if (room) {
-                    if (room.state === 'playing') {
-                        //正在进行的游戏
-                        //room.game.regAction(scoket, this);
-                    } else {
-                        room.gamerLeave(scoket.user.uid);
-                        if (room.gamers.length === 0) {
-                            //如果人全部都离开了，清除room数据
-                            const _room = global.allRooms.find(room => room.roomId === room.roomId);
-                            if (_room && _room.game) {
-                                _room.game.timer.end();
-                                _room.game = null;
-                            }
-                            global.allRooms = global.allRooms.filter(_room => _room.id !== room.roomId);
-                        } else {
-                            setTimeout(() => {
-                                //console.log(`{"type":"notified","content":"${scoket.user.name}离开了房间ID:${room.roomId}"}`);
-                                sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
-                                sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                            }, 50);
-                        }
-
-                        // room.gamerLeave(scoket.user.uid);
-                        // sendForRoom(room.roomId, `{"type":"notified","content":"${scoket.user.name}离开了房间"}`);
-                        // sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
-                    }
-                }
-            })
-
+            const resultRoom = findUserInRoom(scoket.user.uid);
+            if (resultRoom) {
+                const state = resultRoom.game.gameState.find(state => state.uid === data.uid);
+                state['offLine'] = false;
+            }
+            // resultRooms.forEach(room => {
+            //     //设置为offline
+            //     const state = room.game.gameState.find(state => state.uid === data.uid);
+            //     state['offLine'] = false;
+            //     //room.gamerLeave(data.uid);
+            // })
         },
+        disconnect: disconnect,
         reconnectting: (data) => {
             scoket.user = data.user;
             //const room = findUserInRoom(data.user.uid);
@@ -387,15 +423,18 @@ module.exports = (io, scoket) => {
             }, 50);
         },
         exit: (data) => {
-            const resultRooms = findUserInRoom(data.uid);
-            resultRooms.forEach(room => {
-                //设置为offline
-                if (room.state === 'playing' && room.game) {
-                    const state = room.game.gameState.find(state => state.uid === data.uid);
-                    state['offLine'] = true;
-                }
-                //room.gamerLeave(data.uid);
-            })
+            // const resultRooms = findUserInRoom(data.uid);
+            // resultRooms.forEach(room => {
+            //     //设置为offline
+            //     if (room.state === 'playing' && room.game) {
+            //         const state = room.game.gameState.find(state => state.uid === data.uid);
+            //         state['offLine'] = true;
+            //     } else {
+            //         room.gamerLeave(scoket.user.uid);
+            //     }
+            //     //room.gamerLeave(data.uid);
+            // });
+            disconnect();
         }
     }
 }
