@@ -1,5 +1,7 @@
 const axios = require('axios');
 const sqliteCommon = require('../sqliteCommon');
+const getToken = require('../util/token');
+const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
 
 module.exports = (app) => {
@@ -15,14 +17,21 @@ module.exports = (app) => {
         })
     });
     app.post(path + '/login', function (req, res, next) {
-        const { openId } = req.body;
-        axios.post(`${apiUrl}/node/userViewByOpenId?openid=${openId}`).then(function (response) {
+        const { openId, nickname, headimgurl } = req.body;
+        const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
+        axios.get(url, {}).then(function (response) {
+            console.log(response.data);
             res.json(response.data);
         }).catch(function (error) {
-            console.log('----------------login error start----------------------');
-            console.log(error);
-            console.log('-----------------login error end---------------------');
-        })
+            writeLog('login api', error);
+        });
+        // axios.post(`${apiUrl}/node/userViewByOpenId?openid=${openId}`).then(function (response) {
+        //     res.json(response.data);
+        // }).catch(function (error) {
+        //     console.log('----------------login error start----------------------');
+        //     console.log(error);
+        //     console.log('-----------------login error end---------------------');
+        // })
     });
     app.post(path + '/reg', function (req, res, next) {
         const { openId, username } = req.body;
@@ -35,26 +44,30 @@ module.exports = (app) => {
         })
     });
     app.post(path + '/checkin', function (req, res, next) {
-        const { uid, rule, ruleName, mulriple, colorType, countdown } = req.body;
-        const option = {
-            gamers: [],
-            gamerNumber: 4,
-            mulriple: mulriple,//倍数
-            gameTime: 4,
-            state: 'wait',
-            gameType: 'majiang',
-            rule: rule,
-            ruleName: ruleName,
-            colorType: colorType,
-            countdown: countdown
+        try {
+            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum } = req.body;
+            const option = {
+                gamers: [],
+                gamerNumber: 4,
+                mulriple: mulriple,//倍数
+                gameTime: 4 * (roomCardNum ? parseInt(roomCardNum) : 1),
+                state: 'wait',
+                gameType: 'majiang',
+                rule: rule,
+                ruleName: ruleName,
+                colorType: colorType,
+                countdown: countdown
+            }
+            sqliteCommon.insert({
+                uid: uid,
+                state: 0,
+                jsonData: JSON.stringify(option)
+            }, function (roomId) {
+                res.json(roomId);
+            });
+        } catch (error) {
+            writeLog('checkin api', error);
         }
-        sqliteCommon.insert({
-            uid: uid,
-            state: 0,
-            jsonData: JSON.stringify(option)
-        }, function (roomId) {
-            res.json(roomId);
-        });
     });
     app.post(path + '/getRoom', function (req, res, next) {
         const { roomId, state } = req.body;

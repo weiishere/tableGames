@@ -54,11 +54,23 @@ class LayOut extends Component {
         // }).catch(function (error) {
         //     console.log(error);
         // });
-        window.setTimeout(() => {
-            this.setState({
-                isAllow: true
-            })
-        }, 1000);
+        if(process.env.NODE_ENV === 'development'){
+            axios.post('/api/login', {
+                openId: 'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
+                nickname: '测试nickName',
+                headimgurl: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
+            }).then((req) => {
+                console.log(req.data);
+                this.setState({
+                    isAllow: true
+                })
+            });
+        }
+        // window.setTimeout(() => {
+        //     this.setState({
+        //         isAllow: true
+        //     })
+        // }, 1000);
     }
     render() {
         return this.state.isAllow ? <NewRoom user={this.state.user} /> : <div className="toast-example">
@@ -75,7 +87,7 @@ class NewRoom extends Component {
         super(props);
 
         this.state = {
-            roomCard: 0,
+            roomCard: 1,
             roomId: 0,
             visible: false,
             modal_visible: false,
@@ -101,7 +113,8 @@ class NewRoom extends Component {
             ruleName: this.state.ruleName,
             mulriple: this.state.mulriple,
             colorType: this.state.colorType[0],
-            countdown: this.state.countdown[0]
+            countdown: this.state.countdown[0],
+            roomCardNum: this.state.roomCard
         }).then((data) => {
             if (process.env.NODE_ENV === 'development') {
                 this.setState({

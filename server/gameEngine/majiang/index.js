@@ -176,7 +176,7 @@ class Majiang {
             }
         });
         //加入中发白
-        if (this.zfb) {
+        if (this.gameRule.option.zfb) {
             ['hz', 'fc', 'bb'].forEach(cardColor => {
                 for (let i = 1; i <= 4; i++) {
                     _cards.push({ key: `card-${cardColor}-${i}`, color: cardColor, number: 1 });
@@ -258,7 +258,7 @@ class Majiang {
         ['w', 't', 'b'].filter(item => item !== userState.colorLack).forEach(color => {
             for (let i = 1; i <= 9; i++) { validateCards.push({ key: color + i, number: i, color: color }); }
         });
-        if (this.zfb) {
+        if (this.gameRule.option.zfb) {
             ['hz', 'fc', 'bb'].forEach((color, i) => {
                 validateCards.push({ key: color + i, number: 1, color: color });
             });

@@ -13,7 +13,7 @@ import PropTypes from 'prop-types';
 import cardsImages from './image';
 //import './test';
 //import wechatConfig from '../wxConfig';
-const theGamerNumber = 4;
+const playerNumber = 4;
 const axios = require('axios');
 String.prototype.trim = function () {
     return this.replace(/(^\s*)|(\s*$)/g, '');
@@ -23,6 +23,7 @@ let scoketDone = false;
 let newRecore = false;
 let disableSound = false;
 let bgMusicDisable = false;
+let shareDesc = '';
 const bgPlay = () => {
     const bgAudio = document.getElementById('bgMusic');
     if (bgAudio.paused) {
@@ -108,6 +109,8 @@ if (!isDebug) {
     scoketDone = true;
     if (!getQueryString('roomId')) {
         location.href = '/playing?uid=' + getQueryString('uid');
+    } else {
+        
     }
 }
 
@@ -189,7 +192,7 @@ class Table extends Component {
         //     alert('对不起，房间号不合法!');
         //     return;
         // }
-        document.title = '房间[' + getQueryString('roomId') + ']-掌派桌游';
+        document.title = this.ruleName + '[房间号' + getQueryString('roomId') + ']-掌派桌游';
         axios.post('/api/getRoom', {
             roomId: getQueryString('roomId'),
         }).then(({ data }) => {
@@ -239,9 +242,13 @@ class Table extends Component {
             $('.rainEffect').append(s);
         }, 10);
         window.setTimeout(function () {
-            $('.rainEffect').removeClass('effectActive').addClass('hide');
-            window.clearInterval(raintimer);
-            $('.rainEffect s').remove();
+            try {
+                $('.rainEffect').removeClass('effectActive').addClass('hide');
+                window.clearInterval(raintimer);
+                $('.rainEffect s').remove();
+            } catch (e) {
+                raintimer && window.clearInterval(raintimer);
+            }
         }, 2500);
     }
     gameInit(room) {
@@ -252,7 +259,7 @@ class Table extends Component {
         this.ruleName = roomOption.ruleName;
         //开发测试的时候这里可以对游戏做临时配置
         const __option = {
-            gamerNumber: theGamerNumber,
+            gamerNumber: playerNumber,
             rule: roomOption.rule,
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
@@ -551,11 +558,14 @@ class Table extends Component {
                     {leftGameState && <div className={`${leftGameState.catcher && 'left'}`}></div>}
                     {topGameState && <div className={`${topGameState.catcher && 'top'}`}></div>}
                 </div>}
-                <QueueAnim delay={100} duration={400} animConfig={[
-                    { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
+                <QueueAnim className='gameInfoWrapper' duration={300} animConfig={[
+                    { opacity: [1, 0], scale: [(1, 1), (0.85, 0.85)] }
                 ]}>
                     {this.state.showRecore && <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.lastData.room || this.state.room} isOver={this.state.game && this.state.game.isOver} />}
                 </QueueAnim>
+                {/* <QueueAnim>
+                    {this.state.showRecore && <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.lastData.room || this.state.room} isOver={this.state.game && this.state.game.isOver} />}
+                </QueueAnim> */}
                 <MsgPanel roomLog={this.state.roomLog} visible={this.state.showMsgPanel}
                     onClose={() => { this.setState({ showMsgPanel: false }) }}
                     sendMsg={(content) => {
@@ -669,17 +679,15 @@ class GamerDock extends Component {
         return (total > 0 ? '+' : '') + total;
     }
     componentDidUpdate() {
-        if (this.myEvent) {
+        if (this.myEvent && this.props.room.state !== 'wait') {
             const payLoad = JSON.parse(this.context.game.payload);
             const _className = 'show';// (payLoad.lose && payLoad.lose.uid !== this.props.userState.uid) ? 'loseShow' : 'show';
             $(this.refs.showCardWeak).removeClass(_className).addClass(_className);
             window.clearTimeout(this.showWeakTimer);
-            console.log('clear');
             this.showWeakTimer = window.setTimeout(() => {
                 $(this.refs.showCardWeak).removeClass(_className);
-            }, _className === "loseShow" ? 4000 : 5500);
+            }, (this.myEvent.name === 'win' || this.myEvent.name === 'rain') ? 5000 : 3000);
         } else {
-            console.log('remove');
             $(this.refs.showCardWeak).removeClass('show').removeClass('loseShow');
         }
     }
@@ -696,10 +704,10 @@ class GamerDock extends Component {
                         this.myEvent['card'] = payLoad.card;
                     } else {
                         this.myEvent['name'] = {
-                            'meet': <img src="/images/games/majiang2/meet.png" />,
-                            'fullMeet': <img src="/images/games/majiang2/fullmeet.png" />,
-                            'win': <img src="/images/games/majiang2/win.png" />,
-                            'selfwin': <img src="/images/games/majiang2/win.png" />
+                            'meet': <img src={cardsImages.meet} />,
+                            'fullMeet': <img src={cardsImages.fullMeet} />,
+                            'win': <img src={cardsImages.win} />,
+                            'selfwin': <img src={cardsImages.win} />
                         }[this.context.game.event]
                     }
                 }
@@ -965,7 +973,7 @@ class Gamer_mine extends Component {
                 {!this.state.buttonVisible ? <div key='opeat'>
                     {this.props.user.state === 'wait' && ready}
                     {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
-                    {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && this.state.activeCard.key && btu_showCard}
+                    {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && this.state.activeCard.key && this.props.room.state !== 'wait' && btu_showCard}
                     {
                         //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
                         this.props.userState && !this.props.game.isOver && this.props.userState.actionCode.map(action => {
@@ -1201,6 +1209,7 @@ class GameInfo extends Component {
                     <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
                 </footer>
             </div>
+
         </div>
     }
 }
@@ -1339,7 +1348,6 @@ class MsgPanel extends Component {
         </div >
     }
 }
-
 class ImgLoader extends Component {
     constructor(props) {
         super(props);

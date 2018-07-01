@@ -14,7 +14,8 @@ let tokens = {};
 const oauth = new OAuth(appid, secret);
 const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
-let access_token = '';
+let tokenTimer;
+global.access_token = '';
 // const oauth = new OAuth(appid, secret, 
 //     (openid) => {
 //     //用于获取token的方法 异步操作需返回Promise
@@ -32,14 +33,15 @@ const getAccess_token = (done) => {
     try {
         var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
         request.get(url, function (err, response, body) {
-            //console.log('getticket getting1:' + (new Date()).toLocaleString());
+            console.log((new Date()).toLocaleString() + '：get access_token:' + body);
             var token = JSON.parse(body);
-            access_token = token.access_token;
+            global.access_token = token.access_token;
             done && done();
         });
     } catch (error) {
         writeLog('getAccess_token', error);
     }
+
 }
 
 
@@ -85,13 +87,13 @@ module.exports = (app) => {
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
         //console.log("userInfo:" + userInfo);
-        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nicename}&headUrl=${userInfo.headimgurl}`, {
+        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`, {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
             //token: _token
         }).then(function (response) {
-            // console.log(response.data)
+            console.log(response.data)
             userInfo['userid'] = response.data.userid;
             res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
             res.redirect(`/${state}`);
@@ -119,7 +121,7 @@ module.exports = (app) => {
             const gamers = rooms[i].gamers;
             const gamersLength = gamers.length;
             for (let j = 0; j < gamersLength; j++) {
-                if (gamers[j].uid === +uid) {
+                if (gamers[j].uid === uid) {
                     resultRooms = rooms[i];
                     break;
                     //return rooms[i];
@@ -166,7 +168,7 @@ module.exports = (app) => {
             var page = req.headers.referer;
             var t = {};
             const get = () => {
-                var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + access_token + '&type=jsapi';
+                var ticketUrl = 'https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=' + global.access_token + '&type=jsapi';
                 //3、获取ticket并且生成随机字符串,时间戳,签名
                 request.get(ticketUrl, function (err, response, ticket) {
                     //console.log('getticket getting2：' + data + '~' + (new Date()).toLocaleString());
@@ -184,13 +186,14 @@ module.exports = (app) => {
                     res.json(t);
                 });
             }
-            if (access_token === "") {
+            if (!global.access_token) {
                 getAccess_token(() => {
                     get();
                     //启动时钟，2小时取一次Access_token
-                    setInterval(() => {
+                    clearTimeout(tokenTimer);
+                    tokenTimer = setInterval(() => {
                         getAccess_token();
-                    }, 7200);
+                    }, 7200000);
                 });
             } else {
                 get();
