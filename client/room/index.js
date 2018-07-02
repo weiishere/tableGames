@@ -328,7 +328,7 @@ class Table extends Component {
                 case 'errorInfo':
                     alert(data.content);
                     if (data.order === "jump") {
-                        location.href = '/playing';
+                        location.href = '/playing?uid=' + userInfo.uid;
                     }
                     //history.back();
                     break;

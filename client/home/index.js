@@ -20,7 +20,6 @@ if (process.env.NODE_ENV !== 'development') {
     if (!userInfoCookie) {
         location.href = '/auth?target=checkIn';
     } else {
-        console.log(JSON.parse(userInfoCookie));
         userInfo = JSON.parse(userInfoCookie);
     }
 }
@@ -30,7 +29,9 @@ class LayOut extends Component {
         super(props);
         this.state = {
             isAllow: false,
-            user: userInfo
+            user: userInfo,
+            userCards: 0,
+            score: 0
         }
     }
     componentDidMount() {
@@ -54,15 +55,18 @@ class LayOut extends Component {
         // }).catch(function (error) {
         //     console.log(error);
         // });
-        if(process.env.NODE_ENV === 'development'){
+        if (process.env.NODE_ENV !== 'development') {
+            console.log(userInfo);
             axios.post('/api/login', {
-                openId: 'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
-                nickname: '测试nickName',
-                headimgurl: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
+                openId: userInfo.openId,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
+                nickname: userInfo.nickname,//'测试nickName',
+                headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
             }).then((req) => {
-                console.log(req.data);
+                userInfo['userCards'] = req.data.roomcard;
+                userInfo['score'] = req.data.score;
                 this.setState({
-                    isAllow: true
+                    isAllow: true,
+                    user: userInfo,
                 })
             });
         }
@@ -265,7 +269,7 @@ class NewRoom extends Component {
                             </List.Item>
                         </List>
                     </Card.Body>
-                    <Card.Footer content="持有房卡：20" extra={<div>积分：5263</div>} />
+                    <Card.Footer content={`持有房卡：${this.props.user.userCards}`} extra={<div>积分：{this.props.user.score}</div>} />
                 </Card>
                 <WhiteSpace size="lg" />
             </WingBlank>

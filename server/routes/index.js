@@ -120,8 +120,10 @@ module.exports = (app) => {
         for (let i = 0; i < roomsLength; i++) {
             const gamers = rooms[i].gamers;
             const gamersLength = gamers.length;
+            console.log(gamers);
+            console.log(uid);
             for (let j = 0; j < gamersLength; j++) {
-                if (gamers[j].uid === uid) {
+                if (gamers[j].uid + '' === uid + '') {
                     resultRooms = rooms[i];
                     break;
                     //return rooms[i];
