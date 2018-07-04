@@ -24,6 +24,7 @@ let newRecore = false;
 let disableSound = false;
 let bgMusicDisable = false;
 let shareDesc = '';
+
 const bgPlay = () => {
     const bgAudio = document.getElementById('bgMusic');
     if (bgAudio.paused) {
@@ -102,7 +103,26 @@ if (!isDebug) {
                         //alert('success');
                     }
                 });
+                if (!isDebug) {
+                    wx.getLocation({
+                        type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+                        success: function (res) {
+                            var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                            var speed = res.speed; // 速度，以米/每秒计
+                            var accuracy = res.accuracy; // 位置精度
+                            userInfo.location = {
+                                latitude, longitude
+                            }
+                        }
+                    });
+                } else {
+                    userInfo.location = {
+                        latitude: 0, longitude: 0
+                    }
+                }
             });
+
         }
     });
 } else {
@@ -110,10 +130,9 @@ if (!isDebug) {
     if (!getQueryString('roomId')) {
         location.href = '/playing?uid=' + getQueryString('uid');
     } else {
-        
+
     }
 }
-
 
 
 
@@ -157,11 +176,13 @@ class Table extends Component {
         this.showCardAuto = this.showCardAuto.bind(this);
         this.winEventEffect = this.winEventEffect.bind(this);
         this.rainEventEffect = this.rainEventEffect.bind(this);
+        this.getlocation = this.getlocation.bind(this);
         //this.heartBeat = this.heartBeat.bind(this);
         this.lastData = { isOver: false };
         this.allGamers = {}
         this.isUpdateTime = false;
         this.bgPlaying = false;
+        this.isGetlocation = false;
     }
     // heartBeat({ roomId, uid }) {
     //     //心跳
@@ -176,7 +197,7 @@ class Table extends Component {
     getChildContext() {
         return {
             room: this.state.room,
-            game: this.state.game
+            game: this.state.game,
         }
     }
     componentDidMount() {
@@ -251,6 +272,40 @@ class Table extends Component {
             }
         }, 2500);
     }
+    getlocation() {
+        //console.log(this.isGetlocationn);
+        this.isGetlocationn = true;
+        axios.post('/setLoaction', {
+            roomId: getQueryString('roomId'),
+            uid: userInfo.userid,
+            location: userInfo.location
+        }).then(() => { });
+        // if (!isDebug) {
+        //     wx.getLocation({
+        //         type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+        //         success: function (res) {
+        //             var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+        //             var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+        //             var speed = res.speed; // 速度，以米/每秒计
+        //             var accuracy = res.accuracy; // 位置精度
+        //             userInfo.location = {
+        //                 latitude, longitude
+        //             }
+        //             axios.post('/setLoaction', {
+        //                 roomId: getQueryString('roomId'),
+        //                 uid: userInfo.userid,
+        //                 location: { latitude: latitude, longitude: longitude }
+        //             }).then(() => { });
+        //         }
+        //     });
+        // } else {
+        //     axios.post('/setLoaction', {
+        //         roomId: getQueryString('roomId'),
+        //         uid: userInfo.userid,
+        //         location: { latitude: 0, longitude: 0 }
+        //     }).then(() => { });
+        // }
+    }
     gameInit(room) {
         const self = this;
         let once = true;
@@ -286,6 +341,9 @@ class Table extends Component {
                     if (self.isFristLoad) {
                         self.isFristLoad = false;
                         self.setState({ showMsgPanel: data.content.state === 'wait' ? true : false });
+                    }
+                    if (!self.isGetLocation) {
+                        self.getlocation();
                     }
                     break;
                 case 'gameData':
@@ -499,10 +557,10 @@ class Table extends Component {
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`}>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
-                {me && <Gamer_mine user={me} game={this.state.game} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
-                {rightGamer && <Gamer_right user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-                {leftGamer && <Gamer_left user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
-                {topGamer && <Gamer_top user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {me && <Gamer_mine game={this.state.game} user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
+                {rightGamer && <Gamer_right game={this.state.game} user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {leftGamer && <Gamer_left game={this.state.game} user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
+                {topGamer && <Gamer_top game={this.state.game} user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 <div className='gameInfoBar'>
                     <div className='remain'>
                         {this.state.game && <span>剩余<b>{this.state.game.remainCardNumber}</b>张&nbsp;&nbsp;</span>}
@@ -666,19 +724,47 @@ class Countdown extends Component {
 class GamerDock extends Component {
     constructor(props) {
         super(props);
+        this.state = {
+            active: false
+        }
         this.myEvent = undefined;
         this.showWeakTimer;
         this.getTotal = this.getTotal.bind(this);
+        this.checkHander = this.checkHander.bind(this);
+        this.lastGameData = {};
+        this.timer;
     }
     static contextTypes = {
-        game: PropTypes.object
+        game: PropTypes.object,
+        room: PropTypes.object,
+        needUpdate: PropTypes.bool
     };
     getTotal() {
         let total = 0;
         this.props.room.recode.map(item => total += item.find(user => this.props.uid === user.uid).point);
         return (total > 0 ? '+' : '') + total;
     }
+    // shouldComponentUpdate() {
+    //     console.log(this.context.room.dataIndex + '|' + this.lastRoomData.dataIndex);
+    //     if (this.context.room.dataIndex !== this.lastRoomData.dataIndex) {
+    //         return true;
+    //     }
+    //     return false;
+    // }
+    componentWillReceiveProps() {
+        //console.log(this.context.game.dataIndex)
+
+    }
+    checkHander() {
+        console.log(this.state.active);
+        this.setState({ active: !this.state.active });
+        window.clearTimeout(this.timer);
+        this.timer = window.setTimeout(() => {
+            this.setState({ active: false });
+        }, 3000);
+    }
     componentDidUpdate() {
+        if (this.context.game && (this.lastGameData.dataIndex === this.context.game.dataIndex)) return false;
         if (this.myEvent && this.props.room.state !== 'wait') {
             const payLoad = JSON.parse(this.context.game.payload);
             const _className = 'show';// (payLoad.lose && payLoad.lose.uid !== this.props.userState.uid) ? 'loseShow' : 'show';
@@ -688,8 +774,9 @@ class GamerDock extends Component {
                 $(this.refs.showCardWeak).removeClass(_className);
             }, (this.myEvent.name === 'win' || this.myEvent.name === 'rain') ? 5000 : 3000);
         } else {
-            $(this.refs.showCardWeak).removeClass('show').removeClass('loseShow');
+            $(this.refs.showCardWeak).removeClass('show');
         }
+        this.lastGameData = this.context.game || {};
     }
     render() {
         this.myEvent = undefined;
@@ -718,16 +805,22 @@ class GamerDock extends Component {
                 this.myEvent['name'] = -payLoad.lose.score;
             }
         }
-        return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}>
+        return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.state.active && 'active'} ${this.props.offLine && 'disconnect'} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}
+            onClick={this.checkHander}>
             <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
-            <div className='score'>{this.getTotal()}</div>
+            {!this.state.active && <div className='score'><span>&nbsp;{this.getTotal()}</span></div>}
+            {this.state.active && <div className='location'><p>LA：{this.props.location ? this.props.location.latitude : '获取中'}</p><p>LO：{this.props.location ? this.props.location.longitude : '获取中'}</p></div>}
+            {this.state.active && <div className='Allscore'>15200</div>}
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
             {/* <div ref='showCardWeak' className={`showCardWeak ${this.myEvent && 'show'}`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
             {/* <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
             <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={cardsImages[`${this.myEvent.card.color}${this.myEvent.card.number}`]} /> : <span>{this.myEvent.name}</span>)}</div>
+            <div className='disconnectWrap'></div>
+
+            {/* {+this.props.offLine} */}
         </div>
     }
 }
@@ -749,6 +842,12 @@ class Gamer_mine extends Component {
         this.chooseColor = this.chooseColor.bind(this);
 
     }
+    // shouldComponentUpdate(nextProps) {
+    //     if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
+    //         return false;
+    //     }
+    //     return true;
+    // }
     ready() {
         if (this.cardHandler) return;
         this.cardHandler = true;
@@ -767,7 +866,7 @@ class Gamer_mine extends Component {
         this.cardHandler = false;
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
-            activeCard: nextProps.userState && nextProps.userState.fatchCard || {},
+            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.game.event === 'meet' ? nextProps.userState.cards[0] : {}),
             hadOutCardKey: ''
         });
 
@@ -973,7 +1072,7 @@ class Gamer_mine extends Component {
                 {!this.state.buttonVisible ? <div key='opeat'>
                     {this.props.user.state === 'wait' && ready}
                     {this.props.userState && !this.props.userState.colorLack && lackColorChoose}
-                    {this.props.user.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && this.state.activeCard.key && this.props.room.state !== 'wait' && btu_showCard}
+                    {this.props.user.state !== 'wait' && this.props.room.state !== 'wait' && this.props.userState && this.props.userState.catcher && this.props.userState.actionCode.length === 0 && (this.state.activeCard.key || this.props.game.event === 'meet') && btu_showCard}
                     {
                         //这里可能会不显示操作面板（如果是碰，但是又有玩家要胡牌）
                         this.props.userState && !this.props.game.isOver && this.props.userState.actionCode.map(action => {
@@ -992,6 +1091,12 @@ class Gamer_mine extends Component {
 class Gamer_right extends Component {
     constructor(props) {
         super(props);
+    }
+    shouldComponentUpdate(nextProps) {
+        if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
+            return false;
+        }
+        return true;
     }
     render() {
         return <div className='gamerWrap_right'>
@@ -1039,6 +1144,12 @@ class Gamer_top extends Component {
     constructor(props) {
         super(props);
     }
+    shouldComponentUpdate(nextProps) {
+        if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
+            return false;
+        }
+        return true;
+    }
     render() {
         return <div className='gamerWrap_top'>
             <GamerDock class_name='' {...this.props.user} room={this.props.room} userState={this.props.userState} />
@@ -1083,6 +1194,12 @@ class Gamer_top extends Component {
 class Gamer_left extends Component {
     constructor(props) {
         super(props);
+    }
+    shouldComponentUpdate(nextProps) {
+        if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
+            return false;
+        }
+        return true;
     }
     render() {
         return <div className='gamerWrap_left'>
@@ -1390,6 +1507,7 @@ class ImgLoader extends Component {
             { key: "sound", url: host + "/sound.png" },
             { key: "msgs", url: host + "/msgs.png" },
             { key: "exit", url: host + "/exit.png" },
+            { key: "disconnect", url: host + "/disconnect.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
             { key: "cloud", url: host + "/bigEvent/cloud.png" },
 

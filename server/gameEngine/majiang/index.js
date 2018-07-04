@@ -89,6 +89,7 @@ class Majiang {
         this.isOver = false;
         this.master = option.master;
         this.mulriple = option.mulriple;
+        this.dataIndex = 0;//推送的数据序号
         const self = this;
         this.timer = new TimerManager(this.countdown, function () {
             //时间用完后的操作
@@ -865,7 +866,8 @@ class Majiang {
             remainCardNumber: this.cards.length,
             lastShowCard: this.lastShowCard,
             isOver: this.isOver,
-            remainTime: this.timer.remainTime
+            remainTime: this.timer.remainTime,
+            dataIndex: ++this.dataIndex
         }, uid);
     }
     //获取指定的牌（主要用于快速获取牌型用于测试）
@@ -995,7 +997,7 @@ class Majiang {
     // }
     getTheBetterCard(userState) {
         let chance = {
-            'radom': 20,//随机牌
+            'radom': 10,//随机牌
             'lack': 50,//获取非定缺牌型
             'same': 70,//获取可以成3或者4的牌
             'singleSame': 85,//获取一张与手上一样牌
@@ -1061,22 +1063,31 @@ class Majiang {
             });
         } else {
             //直接给自摸牌
-            this.cards = this.cards.filter(item => {
-                if (item.color === userState.colorLack) {
-                    return true;
-                }
-                if (!cardByCatch) {
-                    const _cards = userState.cards.concat(item).sort(objectArraySort('key'));
-                    if (winCore(_cards)) {
-                        cardByCatch = clone(item);
-                        return false;
+            if (this.validateCanWin(userState.uid)) {
+                //有叫才执行
+                let hasValidateCard = [];//记录已经计算过的牌型
+                this.cards = this.cards.filter(item => {
+                    if (item.color === userState.colorLack) {
+                        return true;
+                    }
+                    if (!cardByCatch) {
+                        if (hasValidateCard.find(c => c.color === item.color && c.number === item.number)) {
+                            return true;
+                        } else {
+                            hasValidateCard.push({ color: item.color, number: item.number });
+                        }
+                        const _cards = userState.cards.concat(item).sort(objectArraySort('key'));
+                        if (winCore(_cards)) {
+                            cardByCatch = clone(item);
+                            return false;
+                        } else {
+                            return true;
+                        }
                     } else {
                         return true;
                     }
-                } else {
-                    return true;
-                }
-            });
+                });
+            }
         }
         if (!cardByCatch) {
             cardByCatch = this.cards.splice(0, 1)[0];

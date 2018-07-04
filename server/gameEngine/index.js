@@ -120,9 +120,12 @@ module.exports = (io, scoket) => {
             if (_rooms) {
                 //走加入流程
                 let room = _rooms;
-                const isInRoom = room.gamers.filter(gamer => gamer.uid === data.user.uid).length === 0 ? false : true;
+                const theGamer = room.gamers.find(gamer => gamer.uid === data.user.uid);
+                const isInRoom = theGamer ? true : false;
                 //data.user['catcher'] = false;
                 scoket.user = data.user;
+                data.user['offLine'] = false;
+                if (theGamer) theGamer['offLine'] = false;
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
                     //如果人满了或者正在游戏中，拒绝加入
@@ -224,6 +227,7 @@ module.exports = (io, scoket) => {
                             const jsonData = JSON.parse(result.jsonData);
                             data.user.point = 0;
                             data.user.state = 'wait';
+                            data.user['offLine'] = false;
                             const room = new Room({
                                 roomId: result.roomId,
                                 gamers: [data.user],
@@ -279,11 +283,14 @@ module.exports = (io, scoket) => {
             if (!scoket.user) return;
             const room = findUserInRoom(scoket.user.uid);
             if (room) {
+                const gamer = room.gamers.find(g => g.uid === scoket.user.uid);
+                gamer['offLine'] = true;
                 if (room.state === 'playing') {
                     //正在进行的游戏
                     //room.game.regAction(scoket, this);
-                    const state = room.game.gameState.find(state => state.uid === scoket.user.uid);
-                    state['offLine'] = true;
+                    setTimeout(() => {
+                        sendForRoom(room.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                    }, 50);
                 } else {
                     room.gamerLeave(scoket.user.uid);
                     if (room.gamers.length === 0) {
@@ -321,8 +328,8 @@ module.exports = (io, scoket) => {
             if (!scoket.user) return;
             const resultRoom = findUserInRoom(scoket.user.uid);
             if (resultRoom) {
-                const state = resultRoom.game.gameState.find(state => state.uid === data.uid);
-                state['offLine'] = false;
+                const gamer = resultRoom.gamer.find(g => g.uid === data.uid);
+                gamer['offLine'] = false;
             }
             // resultRooms.forEach(room => {
             //     //设置为offline

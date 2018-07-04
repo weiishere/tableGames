@@ -120,8 +120,8 @@ module.exports = (app) => {
         for (let i = 0; i < roomsLength; i++) {
             const gamers = rooms[i].gamers;
             const gamersLength = gamers.length;
-            console.log(gamers);
-            console.log(uid);
+            // console.log(gamers);
+            // console.log(uid);
             for (let j = 0; j < gamersLength; j++) {
                 if (gamers[j].uid + '' === uid + '') {
                     resultRooms = rooms[i];
@@ -203,5 +203,16 @@ module.exports = (app) => {
         } catch (e) {
             writeLog('wechat/ticket', e);
         }
+    });
+    app.post('/setLoaction', function (req, res) {
+        const { roomId, uid, location } = req.body;
+        const room = (global.allRooms || []).find(r => r.roomId === roomId);
+        if (room) {
+            let gamer = room.gamers.find(u => u.uid === uid);
+            if (gamer) {
+                gamer['location'] = location;
+            }
+        }
+        res.json({ code: '0000', msg: 'success', result: location });
     })
 };

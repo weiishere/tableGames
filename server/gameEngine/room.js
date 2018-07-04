@@ -25,6 +25,7 @@ class Room {
         });
         this.checkinTime = Date.now();
         this.gameTime--;
+        this.dataIndex = 0;
         this.initGame();
     }
     initGame() {
@@ -84,6 +85,7 @@ class Room {
         });
     }
     getSimplyData() {
+        this.dataIndex++;
         const dataClone = clone(this);
         delete dataClone.game;
         delete dataClone.optionSet;
@@ -152,7 +154,8 @@ class Room {
                         lastShowCard: content.lastShowCard,
                         remainCardNumber: content.remainCardNumber,
                         isOver: (content.isOver ? true : false),
-                        remainTime: content.remainTime
+                        remainTime: content.remainTime,
+                        dataIndex: content.dataIndex
                     }
                     if (event) {
                         _data['event'] = event;

@@ -35,9 +35,9 @@ class LayOut extends Component {
         }
     }
     componentDidMount() {
-        window.addEventListener('popstate', function () {
-            history.pushState(null, null, document.URL);
-        });
+        // window.addEventListener('popstate', function () {
+        //     history.pushState(null, null, document.URL);
+        // });
         // axios.post('/api/login', {
         //     openId: openId
         // }).then(function (response) {
@@ -69,12 +69,17 @@ class LayOut extends Component {
                     user: userInfo,
                 })
             });
+        } else {
+            window.setTimeout(() => {
+                userInfo['userCards'] = 0;
+                userInfo['score'] = 0;
+                this.setState({
+                    isAllow: true,
+                    user: userInfo,
+                })
+            }, 1000);
         }
-        // window.setTimeout(() => {
-        //     this.setState({
-        //         isAllow: true
-        //     })
-        // }, 1000);
+
     }
     render() {
         return this.state.isAllow ? <NewRoom user={this.state.user} /> : <div className="toast-example">
@@ -102,7 +107,8 @@ class NewRoom extends Component {
             ruleName: '成都麻将',
             mulriple: 1,
             colorType: [3],
-            countdown: [20]
+            countdown: [20],
+            done: false
         }
         this.ruleData = [
             { value: 'chengdu', label: '成都麻将' },
@@ -126,13 +132,18 @@ class NewRoom extends Component {
                     roomId: data.data
                 });
             } else {
+                // this.setState({
+                //     roomInfo_visible: true,
+                //     roomId: data.data,
+                //     done: true
+                // });
                 location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
             }
         });
     }
     render() {
 
-        return <div className='flex-container'>
+        return !this.state.done ? <div className='flex-container'>
             <div className="sub-title">
                 <img src='/images/games/majiang2/roomCheckin.png' />
             </div>
@@ -296,7 +307,7 @@ class NewRoom extends Component {
                 <div>http://fanstongs.com/room?roomId={this.state.roomId}</div>
                 </div>
             </Modal>
-        </div>
+        </div> : <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="no" allowtransparency="yes" width="100%" height="100%" src={`./room?roomId=${this.state.roomId}`}></iframe>;
     }
 }
 
