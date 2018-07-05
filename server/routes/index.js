@@ -14,6 +14,9 @@ let tokens = {};
 const oauth = new OAuth(appid, secret);
 const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
+var http = require('http');
+var url = require('url');
+
 let tokenTimer;
 global.access_token = '';
 // const oauth = new OAuth(appid, secret, 
@@ -87,7 +90,9 @@ module.exports = (app) => {
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
         //console.log("userInfo:" + userInfo);
-        axios.get(`http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`, {
+        let _url = `http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`
+        console.log(encodeURI(_url));
+        axios.get(encodeURI(_url), {
             // openid: userinfo.openid,
             // username: userinfo.niceName,
             // head: userinfo.headimgurl,
