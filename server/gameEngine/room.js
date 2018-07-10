@@ -166,6 +166,7 @@ class Room {
                             sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
                         }
                     } else {
+                        //console.log(gamer.name);
                         sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
                     }
 

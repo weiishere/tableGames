@@ -23,6 +23,7 @@ let scoketDone = false;
 let newRecore = false;
 let disableSound = false;
 let bgMusicDisable = false;
+let ruleName = '';
 let shareDesc = '';
 
 const bgPlay = () => {
@@ -44,8 +45,9 @@ var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
+let ws = isDebug ? io('ws://192.168.31.222:8800') : io('ws://220.167.101.116:3300');
 
+//alert(decodeURI(getQueryString('name')));
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: getQueryString('name') || 'player',
@@ -95,7 +97,7 @@ if (!isDebug) {
             });
             wx.ready(function () {
                 wx.onMenuShareAppMessage({
-                    title: '麻友们邀您来战【房间号：' + getQueryString('roomId') + '】',
+                    title: '麻友们邀您来战' + ruleName + '【房间号：' + getQueryString('roomId') + '】',
                     desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
                     link: location.href,
                     imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
@@ -103,24 +105,18 @@ if (!isDebug) {
                         //alert('success');
                     }
                 });
-                if (!isDebug) {
-                    wx.getLocation({
-                        type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
-                        success: function (res) {
-                            var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
-                            var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
-                            var speed = res.speed; // 速度，以米/每秒计
-                            var accuracy = res.accuracy; // 位置精度
-                            userInfo.location = {
-                                latitude, longitude
-                            }
+                wx.getLocation({
+                    type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
+                    success: function (res) {
+                        var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
+                        var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
+                        var speed = res.speed; // 速度，以米/每秒计
+                        var accuracy = res.accuracy; // 位置精度
+                        userInfo.location = {
+                            latitude, longitude
                         }
-                    });
-                } else {
-                    userInfo.location = {
-                        latitude: 0, longitude: 0
                     }
-                }
+                });
             });
 
         }
@@ -130,7 +126,9 @@ if (!isDebug) {
     if (!getQueryString('roomId')) {
         location.href = '/playing?uid=' + getQueryString('uid');
     } else {
-
+        userInfo.location = {
+            latitude: 0, longitude: 0
+        }
     }
 }
 
@@ -140,10 +138,12 @@ if (!isDebug) {
 class Table extends Component {
     constructor(props) {
         super(props);
+        //alert(userInfo.nickname);
+        //alert(decodeURIComponent(userInfo.nickname));
         this.state = {
             user: {
                 uid: userInfo.userid,//getQueryString('uid'),
-                name: decodeURIComponent(userInfo.nickname),//getQueryString('name'),
+                name: userInfo.nickname,//getQueryString('name'),
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 keepVertical: false,
@@ -160,11 +160,12 @@ class Table extends Component {
             newState: true,
             isBegin: false,
             showRecore: false,
+            showHelpPanel: '0',
             isFristLoad: true,
             isConnectting: false,
             option: {},
             toast: '',
-            notice: true
+            notice: false
         }
         this.isFristLoad = true;
         this.countdown = 60;
@@ -312,6 +313,7 @@ class Table extends Component {
         const roomOption = JSON.parse(room.jsonData);
         //this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
+        ruleName = ',' + this.ruleName;
         //开发测试的时候这里可以对游戏做临时配置
         const __option = {
             gamerNumber: playerNumber,
@@ -340,7 +342,7 @@ class Table extends Component {
                     self.setState({ room: data.content });
                     if (self.isFristLoad) {
                         self.isFristLoad = false;
-                        self.setState({ showMsgPanel: data.content.state === 'wait' ? true : false });
+                        self.setState({ showMsgPanel: data.content.state === 'wait' ? true : false, showHelpPanel: '0' });
                     }
                     if (!self.isGetLocation) {
                         self.getlocation();
@@ -424,6 +426,15 @@ class Table extends Component {
         playSound('click');
         this.setState({ showRecore: true });
     }
+    showHelpPanelCloseHandle() {
+        this.setState({ showHelpPanel: false });
+    }
+    showHelpPanelOpenHandle() {
+        playSound('click');
+        this.setState({ showHelpPanel: true });
+    }
+
+
     readyCallback() {
         // if (this.state.game) {
         //     let gameCopy = clone(this.state.game);
@@ -583,6 +594,7 @@ class Table extends Component {
                                 toast: disableSound ? '音效关' : '音效开'
                             });
                         }}></button>
+                        <button className='help' onClick={this.showHelpPanelOpenHandle.bind(this)}></button>
                         <button className='exit' onClick={() => {
                             const exit = () => {
                                 ws.emit('exit', JSON.stringify({ roomId: this.state.room.roomId, uid: me.uid }));
@@ -601,6 +613,7 @@ class Table extends Component {
                                 wx.closeWindow();
                             }
                         }}></button>
+
                     </div>
                 </div>
                 {this.state.game && <div className='tableCenter'>
@@ -621,6 +634,12 @@ class Table extends Component {
                 ]}>
                     {this.state.showRecore && <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.lastData.room || this.state.room} isOver={this.state.game && this.state.game.isOver} />}
                 </QueueAnim>
+                <QueueAnim className='gameInfoWrapper' duration={300} animConfig={[
+                    { opacity: [1, 0], scale: [(1, 1), (0.85, 0.85)] }
+                ]}>
+                    {this.state.showHelpPanel && <GameHelpPabel key='helpPanel' closeHandle={this.showHelpPanelCloseHandle.bind(this)} rule={this.state.showHelpPanel === '0' ? 'law' : this.state.option.rule} />}
+                </QueueAnim>
+
                 {/* <QueueAnim>
                     {this.state.showRecore && <GameInfo key='infoPanel' closeHandle={this.gameInfoCloseHandle} user={me} room={this.lastData.room || this.state.room} isOver={this.state.game && this.state.game.isOver} />}
                 </QueueAnim> */}
@@ -644,7 +663,7 @@ class Table extends Component {
                 </span>
             </div>}
             {
-                this.state.isConnectting && <QueueAnim className='importantWeak'><span>网络重连中...
+                (this.state.isConnectting || this.isFristLoad) && <QueueAnim className='importantWeak'><span>{this.isFristLoad ? '正在连接中，请稍后...' : '网络重连中，请稍后...'}
                     <a href='javascript:;' onClick={() => {
                         location.reload();
                     }}>刷新</a></span>
@@ -866,7 +885,7 @@ class Gamer_mine extends Component {
         this.cardHandler = false;
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
-            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.game.event === 'meet' ? nextProps.userState.cards[0] : {}),
+            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[0] : {}),
             hadOutCardKey: ''
         });
 
@@ -1055,7 +1074,7 @@ class Gamer_mine extends Component {
                 }
 
                 {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} key='fetchCard'
+                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} 
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
@@ -1317,8 +1336,6 @@ class GameInfo extends Component {
                                 </footer>
                             </div>
                         </div>)
-
-
                     }
                 </div>
                 <footer>
@@ -1327,6 +1344,60 @@ class GameInfo extends Component {
                 </footer>
             </div>
 
+        </div>
+    }
+}
+class GameHelpPabel extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            chooseRule: this.props.rule
+        }
+        this.ruleGroup = [
+            {
+                key: 'law',
+                name: '法律声明',
+                content: <div>
+                    法律声明详细
+                </div>
+            },
+            {
+                key: 'chengdu',
+                name: '成都麻将',
+                content: <div>成都麻将详细规则</div>
+            },
+            {
+                key: 'guangan',
+                name: '广安麻将',
+                content: <div>广安麻将详细规则</div>
+            }
+        ]
+    }
+    // componentWillReceiveProps(nextProps) {
+    //     this.setState({
+    //         chooseRule: nextProps.rule
+    //     });
+    // }
+    render() {
+        return <div className='mask'>
+            <div className='gameInfoPanel'>
+                <div className='helpContentWrap'>
+                    <hgroup>
+                        {this.ruleGroup.map(item => <h2 key={item.key} className={`${this.state.chooseRule === item.key && 'active'}`}
+                            onClick={() => {
+                                this.setState({
+                                    chooseRule: item.key
+                                });
+                            }}> {item.name}</h2>)}
+                    </hgroup>
+                    <div className='helpContent'>
+                        {this.ruleGroup.find(item => item.key === this.state.chooseRule).content}
+                    </div>
+                </div>
+                <footer>
+                    <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
+                </footer>
+            </div>
         </div>
     }
 }
@@ -1361,6 +1432,7 @@ class MsgPanel extends Component {
         super(props);
         this.state = {
             visible: false,
+            emojiVisible: false,
             msgContent: '',
             miniMsgPanel: false,
             miniMsgPanelList: []
@@ -1392,9 +1464,9 @@ class MsgPanel extends Component {
     }
     componentDidMount() {
         const self = this;
-        $('#selection').delegate('li', 'click', function () {
+        $('#selection,#selectionEmoji').delegate('li', 'click', function () {
             self.props.sendMsg(this.innerText);
-            self.setState({ visible: false });
+            self.setState({ visible: false, emojiVisible: false });
         })
     }
     send() {
@@ -1418,6 +1490,9 @@ class MsgPanel extends Component {
                 <button onClick={() => { this.setState({ visible: !this.state.visible }) }}>
                     <svg t="1528108975819" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1886" width="25" height="25" style={{ width: '2rem', height: '2rem' }}><defs><style type="text/css"></style></defs><path d="M512 1024a512 512 0 1 1 512-512 512.531692 512.531692 0 0 1-512 512z m0-967.089231A455.089231 455.089231 0 1 0 967.108923 512 455.660308 455.660308 0 0 0 512 56.910769z m211.042462 506.683077A51.593846 51.593846 0 1 1 774.734769 512a51.613538 51.613538 0 0 1-51.692307 51.593846zM512 563.593846A51.593846 51.593846 0 1 1 563.692308 512 51.593846 51.593846 0 0 1 512 563.593846z m-211.042462 0A51.593846 51.593846 0 1 1 352.649846 512a51.593846 51.593846 0 0 1-51.692308 51.593846z" p-id="1887" fill="#ffffff"></path></svg>
                 </button>
+                <button onClick={() => { this.setState({ emojiVisible: !this.state.emojiVisible }) }}>
+                    <svg t="1530981370875" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2389" width="25" height="25" style={{ width: '2rem', height: '2rem' }}><defs><style type="text/css"></style></defs><path d="M512.512 1024C230.473143 1024 1.060571 794.331429 1.060571 512S230.509714 0 512.512 0c281.965714 0 511.414857 229.668571 511.414857 512s-229.412571 512-511.414857 512z m0-950.857143C270.774857 73.142857 74.130286 270.006857 74.130286 512s196.644571 438.857143 438.381714 438.857143S950.857143 753.993143 950.857143 512 754.212571 73.142857 512.512 73.142857z" fill="#ffffff" p-id="2390"></path><path d="M513.718857 810.678857a326.802286 326.802286 0 0 1-259.035428-126.427428 36.571429 36.571429 0 0 1 57.526857-45.056 254.208 254.208 0 0 0 201.508571 98.340571c80.018286 0 153.965714-36.461714 202.825143-100.059429a36.571429 36.571429 0 0 1 57.929143 44.544 326.509714 326.509714 0 0 1-260.754286 128.658286zM349.330286 515.657143a54.784 54.784 0 0 1-54.784-54.857143v-73.142857a54.784 54.784 0 1 1 109.568 0v73.142857a54.857143 54.857143 0 0 1-54.784 54.857143zM678.107429 515.657143a54.857143 54.857143 0 0 1-54.820572-54.857143v-73.142857a54.857143 54.857143 0 1 1 109.604572 0v73.142857a54.857143 54.857143 0 0 1-54.784 54.857143z" fill="#ffffff" p-id="2391"></path></svg>
+                </button>
                 <div className={`${this.state.visible ? '' : 'hide'}`}>
                     <ul id='selection'>
                         <li>快点儿吧，等到我花都结果啦！</li>
@@ -1426,6 +1501,14 @@ class MsgPanel extends Component {
                         <li>乖乖，麻将国粹无处不在！</li>
                         <li>搏一搏，单车变摩托</li>
                         <li>麻匪们，再来两局！</li>
+                    </ul>
+                </div>
+                <div className={`${this.state.emojiVisible ? '' : 'hide'}`}>
+                    <ul id='selectionEmoji'>
+                        <li>😂</li><li>🤣</li><li>😅</li><li>😊</li><li>😎</li><li>😫</li><li>😜</li><li>😓</li><li>🤑</li><li>😤</li>
+                        <li>😭</li><li>😰</li><li>😱</li><li>😡</li><li>😀</li><li>😍</li><li>😚</li><li>🤔</li><li>🤗</li><li>🙄</li>
+                        <li>😪</li><li>😵</li><li>🤓</li><li>🤐</li><li>👻</li><li>💩</li><li>🐥</li><li>💰</li><li>💣</li><li>🏆</li>
+                        <li>✌</li><li>👍</li><li>👎🏼</li><li>👏</li><li>👌</li><li>🐷</li>
                     </ul>
                 </div>
             </header>
@@ -1507,6 +1590,7 @@ class ImgLoader extends Component {
             { key: "sound", url: host + "/sound.png" },
             { key: "msgs", url: host + "/msgs.png" },
             { key: "exit", url: host + "/exit.png" },
+            { key: "help", url: host + "/help.png" },
             { key: "disconnect", url: host + "/disconnect.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
             { key: "cloud", url: host + "/bigEvent/cloud.png" },

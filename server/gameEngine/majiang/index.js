@@ -102,11 +102,13 @@ class Majiang {
                     // if (lackCards.length === 0 && !catcher.fatchCard) {
                     //     //没有刚刚抓的牌，又是出牌者，多半就是刚刚碰了，这种要随便抽一张牌
                     // }
-                    const redomCard = lackCards.length === 0 ? (catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedomNum(0, catcher.cards.length - 1)]) : {}
+                    const redomCard = lackCards.length === 0 ? (catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedomNum(0, catcher.cards.length - 1)]) : {};
+                    const _cardKey = lackCards.length === 0 ? redomCard.key : lackCards[0].key;
+                    console.log('自动出牌:' + _cardKey);
                     self.showCard({
                         roomId: self.roomId,
                         uid: catcher.uid,
-                        cardKey: lackCards.length === 0 ? redomCard.key : lackCards[0].key
+                        cardKey: _cardKey
                     });
                 } else {
                     //找到有actionCode的人
@@ -118,6 +120,7 @@ class Majiang {
                                 uid: state.uid,
                                 color: ['b', 't', 'w'][getRedomNum(0, 2)]
                             });
+                            console.log('自动选花色');
                         } else if (state.actionCode.length !== 0) {
                             //如果有胡，就胡，不然默认过
                             self.actionEvent({
@@ -125,12 +128,13 @@ class Majiang {
                                 uid: state.uid,
                                 actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
                             });
+                            console.log('自动动作');
                         }
                     })
                 }
             } catch (e) {
                 const catcher = self.gameState.find(item => item.catcher);
-                console.log(catcher);
+                //console.log(catcher);
                 writeLog('timerEnd', e);
             }
         });
@@ -245,8 +249,8 @@ class Majiang {
         remainGamerState.forEach(state => {
             if (!this.validateCanWin(state.uid)) {
                 //如果没叫，赔偿其他
-                state.winDesc = '查叫赔偿×1倍';
-                this.castAccounts(state, 'all', -1);
+                state.winDesc = '查叫赔偿×4倍';
+                this.castAccounts(state, 'all', -4);
             }
         });
         this.sendData();
@@ -266,7 +270,7 @@ class Majiang {
         }
         for (let i = 0; i < validateCards.length; i++) {
             const _cards = userState.cards.concat(validateCards[i]).sort(objectArraySort('key'));
-            if (winCore(_cards)) return true;
+            if (winCore(_cards, userState.colorLack)) return true;
         }
         return false;
     }
@@ -353,7 +357,7 @@ class Majiang {
                 // }
                 //计算胡牌
                 const _cards = userState.cards.concat(showCrad).sort(objectArraySort('key'));
-                if (winCore(_cards)) {
+                if (winCore(_cards, userState.colorLack)) {
                     userState.actionCode.push('winning');//有胡牌
                 }
                 if (userState.actionCode.length !== 0 && !result) {
@@ -382,6 +386,7 @@ class Majiang {
     showCard(data) {
         try {
             const userState = this.gameState.find(item => item.uid === data.uid);
+            //if (this.lastShowCardUserState && this.lastShowCardUserState.uid === userState.uid) return false; //理论上不会存在一个玩家两次连续出牌的情况，这里为了防止快速点击出牌两次
             if (userState.testWinType && userState.testWinType !== 'robFullMeetWin') userState.testWinType = '';//出牌的时候解除胡牌类型监控，？？（抢杠有一个自动出牌，这里要排除掉）
             let showCard;
             if (userState.fatchCard && userState.fatchCard.key === data.cardKey) {
@@ -602,7 +607,7 @@ class Majiang {
                             //这里要判断是否有其他人要胡马上要杠的牌
                             this.gameState.filter(state => !state.isWin && state.uid !== data.uid).forEach(state => {
                                 const _cards = state.cards.concat(_doCard).sort(objectArraySort('key'));
-                                if (winCore(_cards)) {
+                                if (winCore(_cards, state.colorLack)) {
                                     robFullMeetWin = true;
                                 }
                             })
@@ -713,14 +718,18 @@ class Majiang {
                         //let next;
                         //如果是第一个人胡牌的，就是master
                         let winCount = 1;
-                        if (this.gameState.filter(state => {
+                        this.gameState.forEach(state => {
                             if (state.isWin) winCount++;
-                            return state.isWin;
-                        }).length === 0) {
-                            userState.master = true;
-                        } else {
-                            userState.master = false;
+                        });
+                        if (winCount === 1) {
+                            this.gameState.forEach(state => {
+                                if (state.uid === userState.uid)
+                                    state.master = true;
+                                else
+                                    state.master = false;
+                            });
                         }
+
                         userState.groupCards.winCard = doCard;
                         let scoreResult = 0;
                         if (isMineAction) {
@@ -814,7 +823,7 @@ class Majiang {
             //         //winActionListening.push({ uid: userState.uid, type: 'fullMeetWin' });
             //     }
             // }
-            setTimeout(() => { this.sendData(eventObj); }, 10);
+            this.sendData(eventObj);
         } catch (e) {
             writeLog('actionEvent', e);
         }
@@ -1077,7 +1086,7 @@ class Majiang {
                             hasValidateCard.push({ color: item.color, number: item.number });
                         }
                         const _cards = userState.cards.concat(item).sort(objectArraySort('key'));
-                        if (winCore(_cards)) {
+                        if (winCore(_cards, userState.colorLack)) {
                             cardByCatch = clone(item);
                             return false;
                         } else {

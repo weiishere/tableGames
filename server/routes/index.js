@@ -83,28 +83,33 @@ module.exports = (app) => {
         const { code, state } = req.query;
         ///console.log('code:' + code);
         const result = await oauth.getAccessToken(code);
-        ///console.log(result); 
+        console.log(result);
         const accessToken = result.data.access_token;
         const openid = result.data.openid;
         //console.log(accessToken + '---' + openid);
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
-        //console.log("userInfo:" + userInfo);
-        let _url = `http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`
-        console.log(encodeURI(_url));
-        axios.get(encodeURI(_url), {
-            // openid: userinfo.openid,
-            // username: userinfo.niceName,
-            // head: userinfo.headimgurl,
-            //token: _token
+        console.log(userInfo);
+        //let _url = `http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`
+        let _url = `http://manage.fanstongs.com/api/login`;
+        //console.log(encodeURI(_url));
+        const _token = getToken();
+        console.log('token:' + _token);
+        axios.post(encodeURI(_url), {
+            openid: userInfo.openid,
+            username: userInfo.nickname,
+            headUrl: userInfo.headimgurl,
+            token: _token
         }).then(function (response) {
-            console.log(response.data)
-            userInfo['userid'] = response.data.userid;
-            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
-            res.redirect(`/${state}`);
-        }).catch(function (error) {
-            writeLog('login api', error);
-        });
+                if (!response.data.userid) {
+                    writeLog('login api then', response);
+                }
+                userInfo['userid'] = response.data.userid;
+                res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
+                res.redirect(`/${state}`);
+            }).catch(function (error) {
+                writeLog('login api', error);
+            });
 
 
         // oauth.getAccessToken(code).then((accessToken) => {

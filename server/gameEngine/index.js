@@ -116,15 +116,15 @@ module.exports = (io, scoket) => {
             }
             //const _rooms = global.allRooms.filter(item => item.roomId + '' === data.roomId);
             const _rooms = getRoom(data.roomId);
-
+            data.user.name = decodeURI(data.user.name);
             if (_rooms) {
                 //走加入流程
                 let room = _rooms;
                 const theGamer = room.gamers.find(gamer => gamer.uid === data.user.uid);
                 const isInRoom = theGamer ? true : false;
                 //data.user['catcher'] = false;
-                scoket.user = data.user;
                 data.user['offLine'] = false;
+                scoket.user = data.user;
                 if (theGamer) theGamer['offLine'] = false;
                 if (!isInRoom) {
                     //没有在这个房间，那么需要加入
@@ -201,8 +201,8 @@ module.exports = (io, scoket) => {
                 }, (result) => {
                     //console.log('getOne done');
                     if (!result.checkiner || !data.user.uid) {
-                        console.log('result.checkiner：' + result.checkiner);
-                        console.log('data.user.uid：' + data.user.uid);
+                        //consoleconsole.log('result.checkiner：' + result.checkiner);
+                        //console.log('data.user.uid：' + data.user.uid);
                         setTimeout(() => {
                             scoket.emit('message', `{"type":"errorInfo","content":"对不起，用户初始化错误，请重试..."}`);
                         }, 2000);
@@ -330,6 +330,19 @@ module.exports = (io, scoket) => {
             if (resultRoom) {
                 const gamer = resultRoom.gamer.find(g => g.uid === data.uid);
                 gamer['offLine'] = false;
+                setTimeout(() => {
+                    sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(resultRoom.getSimplyData())}}`);
+                }, 100);
+                if (resultRoom.game && !resultRoom.game.isOver) {
+                    resultRoom.game.regAction().forEach(item => {
+                        scoket.on(item.actionName, function (data) {
+                            item.actionFn.call(resultRoom.game, data);
+                        })
+                    });
+                    setTimeout(() => {
+                        resultRoom.game.sendData();
+                    }, 200);
+                }
             }
             // resultRooms.forEach(room => {
             //     //设置为offline
@@ -340,20 +353,26 @@ module.exports = (io, scoket) => {
         },
         disconnect: disconnect,
         reconnectting: (data) => {
+            data.user.name = decodeURI(data.user.name);
             scoket.user = data.user;
             //const room = findUserInRoom(data.user.uid);
             const room = global.allRooms.find(r => r.roomId === data.roomId);
-
             if (room) {
+                let gamer = room.gamers.find(g => g.uid === data.user.uid);
+                if (gamer) gamer['offLine'] = false;
+
                 if (room.gamers.length === room.gamerNumber) {
                     //setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
+                    setTimeout(() => {
+                        sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                    }, 100);
                 } else {
                     //加入
                     room.gamerJoin(data.user);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
                         setTimeout(() => {
-                            sendForRoom(data.roomId, `{"type":"notified","content":"${data.user.name}加入房间"}`);
+                            sendForRoom(data.roomId, `{"type":"notified","content":"${decodeURI(data.user.name)}加入房间"}`);
                         }, 50);
                     }, 1000);
                 }
@@ -365,7 +384,7 @@ module.exports = (io, scoket) => {
                     });
                     setTimeout(() => {
                         room.game.sendData();
-                    }, 70);
+                    }, 1000);
                 }
             }
 
@@ -424,7 +443,7 @@ module.exports = (io, scoket) => {
         chatMsg: (data) => {
             setTimeout(() => {
                 sendForRoom(data.roomId, `{"type":"chat","content":${JSON.stringify({
-                    name: data.name,
+                    name: decodeURI(data.name),
                     content: data.content
                 })}}`);
             }, 50);

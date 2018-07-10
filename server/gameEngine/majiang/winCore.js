@@ -1,12 +1,16 @@
 const clone = require('clone');
 const tool = require('./rule/tool');
 
-module.exports = (cards) => {
+module.exports = (cards, colorLack) => {
     let copy_cards = [];
     let isWin = false;
+    let isLack = true;
     //先做一个对象，分别记录每一张牌出现的次数
     let group = {};
     cards.forEach(card => {
+        if (card.color === colorLack) {
+            isLack = false;
+        }
         if (group[card.color + card.number]) {
             group[card.color + card.number].count += 1;
         } else {
@@ -17,6 +21,7 @@ module.exports = (cards) => {
             group[card.color + card.number] = obj;
         }
     });
+    if (!isLack) return false;//没有打缺
     let singleNumber = 0;
     let twoNumber = 0;
     let threeNumber = 0;
