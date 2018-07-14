@@ -16,6 +16,7 @@ const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
 var http = require('http');
 var url = require('url');
+const qs = require('qs');
 
 let tokenTimer;
 global.access_token = '';
@@ -81,26 +82,25 @@ module.exports = (app) => {
     });
     app.get('/auth_response/', async function (req, res, next) {
         const { code, state } = req.query;
-        ///console.log('code:' + code);
         const result = await oauth.getAccessToken(code);
-        console.log(result);
+        //console.log(result);
         const accessToken = result.data.access_token;
         const openid = result.data.openid;
         //console.log(accessToken + '---' + openid);
         //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
         let userInfo = await oauth.getUser(openid);
-        console.log(userInfo);
+        //console.log(userInfo);
         //let _url = `http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`
         let _url = `http://manage.fanstongs.com/api/login`;
         //console.log(encodeURI(_url));
-        const _token = getToken();
-        console.log('token:' + _token);
-        axios.post(encodeURI(_url), {
+        const data = {
             openid: userInfo.openid,
             username: userInfo.nickname,
             headUrl: userInfo.headimgurl,
-            token: _token
-        }).then(function (response) {
+            token: getToken()
+        }
+        axios.post(_url, qs.stringify(data))
+            .then((response) => {
                 if (!response.data.userid) {
                     writeLog('login api then', response);
                 }
@@ -110,6 +110,7 @@ module.exports = (app) => {
             }).catch(function (error) {
                 writeLog('login api', error);
             });
+
 
 
         // oauth.getAccessToken(code).then((accessToken) => {

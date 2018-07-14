@@ -215,7 +215,6 @@ button {
         border: solid .1rem #fff; //box-shadow: 0 0 .2rem #fff inset;
         border-radius: 2rem;
         display: flex;
-        overflow: hidden;
         &>header {
             background: url('/images/games/majiang2/endTitle.png') no-repeat center;
             position: absolute;
@@ -307,6 +306,8 @@ button {
         }
         .helpContentWrap {
             width: 100%;
+            border-radius: 2rem;
+            overflow: hidden;
             hgroup {
                 width: 100%;
                 display: flex;
@@ -340,7 +341,9 @@ button {
             bottom: 0;
             height: 4rem;
             width: 100%;
+            left: 0;
             text-align: center;
+            z-index: 200;
             .overWeak {
                 position: absolute;
                 top: -2.5rem;
@@ -418,7 +421,7 @@ button {
             width: 20rem; //display: none;
             transition: all .2s ease-out;
             visibility: hidden;
-            border-radius: 5rem;
+            border-radius: 5rem 0 0 5rem;
             &>b {
                 color: #59f1b2;
                 float: left;
@@ -427,7 +430,7 @@ button {
             }
             &.show {
                 //display: block;
-                transform: translate3d(-22rem, 0, 0) !important;
+                transform: translate3d(-25rem, 0, 0) !important;
                 visibility: inherit;
             }
         }
@@ -471,6 +474,8 @@ button {
                 border: solid 1px #ccc;
                 border-radius: 1rem;
                 overflow: hidden;
+                height: 20rem;
+                overflow: auto;
                 z-index: 20000;
                 ul {
                     list-style: none;
@@ -653,7 +658,7 @@ button {
         }
     }
     .nameWrap {
-        .ellipsis;
+        //.ellipsis;
         line-height: 1.4rem; //color: #ddf145;
         color: #fff;
         text-shadow: 1px 0 1px #000;

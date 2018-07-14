@@ -58,7 +58,7 @@ class LayOut extends Component {
         if (process.env.NODE_ENV !== 'development') {
             console.log(userInfo);
             axios.post('/api/login', {
-                openId: userInfo.openId,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
+                openid: userInfo.openid,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
                 nickname: userInfo.nickname,//'测试nickName',
                 headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
             }).then((req) => {

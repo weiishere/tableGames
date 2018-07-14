@@ -386,6 +386,7 @@ class Majiang {
     showCard(data) {
         try {
             const userState = this.gameState.find(item => item.uid === data.uid);
+            if (!userState.catcher) return false;
             //if (this.lastShowCardUserState && this.lastShowCardUserState.uid === userState.uid) return false; //理论上不会存在一个玩家两次连续出牌的情况，这里为了防止快速点击出牌两次
             if (userState.testWinType && userState.testWinType !== 'robFullMeetWin') userState.testWinType = '';//出牌的时候解除胡牌类型监控，？？（抢杠有一个自动出牌，这里要排除掉）
             let showCard;

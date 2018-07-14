@@ -799,9 +799,10 @@ class GamerDock extends Component {
     }
     render() {
         this.myEvent = undefined;
+        let test = '---';
         if (this.context.game && this.context.game.event) {
             const payLoad = JSON.parse(this.context.game.payload);
-
+            test = payLoad.uid;// payLoad.uid.find(_uid => _uid === this.props.userState.uid) ? 'yes' : 'no';
             if (payLoad.uid.find(_uid => _uid === this.props.userState.uid)) {
                 //不是lose输分的时候玩家自己不现实气泡
                 if (this.props.userState.uid !== userInfo.userid) {
@@ -828,6 +829,7 @@ class GamerDock extends Component {
             onClick={this.checkHander}>
             <img src={this.props.avatar} />
             <div className='nameWrap'>{this.props.name}</div>
+            {/* <div className='nameWrap'>{test}-|-{this.props.userState ? this.props.userState.uid : ''}</div> */}
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
             {!this.state.active && <div className='score'><span>&nbsp;{this.getTotal()}</span></div>}
             {this.state.active && <div className='location'><p>LA：{this.props.location ? this.props.location.latitude : '获取中'}</p><p>LO：{this.props.location ? this.props.location.longitude : '获取中'}</p></div>}
@@ -838,7 +840,7 @@ class GamerDock extends Component {
             {/* <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
             <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={cardsImages[`${this.myEvent.card.color}${this.myEvent.card.number}`]} /> : <span>{this.myEvent.name}</span>)}</div>
             <div className='disconnectWrap'></div>
-
+ 
             {/* {+this.props.offLine} */}
         </div>
     }
@@ -1074,7 +1076,7 @@ class Gamer_mine extends Component {
                 }
 
                 {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle} 
+                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle}
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
@@ -1447,6 +1449,9 @@ class MsgPanel extends Component {
         this.props.room.recode.map(item => total += item.find(user => uid === user.uid).point);
         return (total > 0 ? '+' : '') + total;
     }
+    // shouldComponentUpdate(nextProps) {
+    //     return this.props.roomLog.length === nextProps.roomLog.length ? false : true;
+    // }
     componentWillReceiveProps(nextProps) {
         const _l = nextProps.roomLog.length - this.logCount;
         if (_l > 0 && !this.props.visible) {
@@ -1458,6 +1463,7 @@ class MsgPanel extends Component {
             }, 3000);
         }
         this.logCount = nextProps.roomLog.length;
+        $('.mainList').scrollTop($('.mainList').height());
     }
     componentDidUpdate() {
         $('.mainList').scrollTop($('.mainList').height());
@@ -1495,18 +1501,22 @@ class MsgPanel extends Component {
                 </button>
                 <div className={`${this.state.visible ? '' : 'hide'}`}>
                     <ul id='selection'>
-                        <li>快点儿吧，等到我花都结果啦！</li>
-                        <li>麻神驾到，还不尖叫！！</li>
-                        <li>输遍天下无敌手的我居然赢了你</li>
+                        <li>快点儿吧，等到我花都结果啦！😠</li>
+                        <li>高手舅服你，给留点钱坐公交呗！😰</li>
+                        <li>可惜我一手好牌，没让你们见到大场面~😌</li>
+                        <li>真替你们庆幸这么年轻就认识了我！😎</li>
+                        <li>身上就剩这条爱马仕的内裤了，收不？😭</li>
+                        <li>麻神驾到，还不尖叫！！😱</li>
+                        <li>输遍天下无敌手的我居然赢了你！😅</li>
+                        <li>搏一搏，单车变摩托！🤑</li>
                         <li>乖乖，麻将国粹无处不在！</li>
-                        <li>搏一搏，单车变摩托</li>
                         <li>麻匪们，再来两局！</li>
                     </ul>
                 </div>
                 <div className={`${this.state.emojiVisible ? '' : 'hide'}`}>
                     <ul id='selectionEmoji'>
-                        <li>😂</li><li>🤣</li><li>😅</li><li>😊</li><li>😎</li><li>😫</li><li>😜</li><li>😓</li><li>🤑</li><li>😤</li>
-                        <li>😭</li><li>😰</li><li>😱</li><li>😡</li><li>😀</li><li>😍</li><li>😚</li><li>🤔</li><li>🤗</li><li>🙄</li>
+                        <li>😂</li><li>😬</li><li>😅</li><li>😊</li><li>😎</li><li>😫</li><li>😜</li><li>😓</li><li>🤑</li><li>😤</li>
+                        <li>😭</li><li>😰</li><li>😱</li><li>😡</li><li>😴</li><li>😍</li><li>😚</li><li>🤔</li><li>🤗</li><li>🙄</li>
                         <li>😪</li><li>😵</li><li>🤓</li><li>🤐</li><li>👻</li><li>💩</li><li>🐥</li><li>💰</li><li>💣</li><li>🏆</li>
                         <li>✌</li><li>👍</li><li>👎🏼</li><li>👏</li><li>👌</li><li>🐷</li>
                     </ul>

@@ -3,6 +3,7 @@ const sqliteCommon = require('../sqliteCommon');
 const getToken = require('../util/token');
 const writeLog = require('../util/errorLog');
 const apiUrl = 'http://220.167.101.116:8080';
+const qs = require('qs');
 
 module.exports = (app) => {
     const path = '/api'
@@ -17,21 +18,37 @@ module.exports = (app) => {
         })
     });
     app.post(path + '/login', function (req, res, next) {
-        const { openId, nickname, headimgurl } = req.body;
-        const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
-        axios.get(url, {}).then(function (response) {
-            console.log(response.data);
-            res.json(response.data);
-        }).catch(function (error) {
-            writeLog('login api', error);
-        });
-        // axios.post(`${apiUrl}/node/userViewByOpenId?openid=${openId}`).then(function (response) {
+        const { openid, nickname, headimgurl } = req.body;
+        //const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
+        let _url = `http://manage.fanstongs.com/api/login`;
+        const _token = getToken();
+
+        const data = {
+            openid: openid,
+            username: nickname,
+            headUrl: headimgurl,
+            token: _token
+        }
+        axios.post(_url, qs.stringify(data))
+            .then((response) => {
+                if (!response.data.userid) {
+                    writeLog('login api then', response);
+                }
+                res.json(response.data);
+            })
+        // axios.post(encodeURI(_url), {
+        //     openid: openid,
+        //     username: nickname,
+        //     headUrl: headimgurl,
+        //     token: _token
+        // }).then(function (response) {
+        //     if (!response.data.userid) {
+        //         writeLog('login api then', response);
+        //     }
         //     res.json(response.data);
         // }).catch(function (error) {
-        //     console.log('----------------login error start----------------------');
-        //     console.log(error);
-        //     console.log('-----------------login error end---------------------');
-        // })
+        //     writeLog('login api', error);
+        // });
     });
     app.post(path + '/reg', function (req, res, next) {
         const { openId, username } = req.body;
