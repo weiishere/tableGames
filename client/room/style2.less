@@ -152,8 +152,7 @@ button {
             height: 1.7rem;
             background-size: 100% 100%;
             float: left;
-            margin: .15rem 0 0 .5rem;
-            //background: rgba(41, 108, 93, .5);
+            margin: .15rem 0 0 .5rem; //background: rgba(41, 108, 93, .5);
             background: rgba(255, 255, 255, 0.3);
             border-radius: 1.7rem;
             color: #fcfcfc;
@@ -177,8 +176,7 @@ button {
             width: 2.5rem;
             height: 2.3rem;
             padding: 0;
-            border: 0;
-            //margin: .3rem 0;
+            border: 0; //margin: .3rem 0;
             background-size: 100% 100%;
             background-color: transparent;
             &.record {
@@ -254,13 +252,29 @@ button {
                         font-weight: bold;
                         color: #b2510c;
                         border-bottom: solid 1px #d4ab7f;
+                        position: relative;
                         img {
                             width: 1.8rem;
                             height: 1.8rem;
                             border-radius: .9rem;
                             overflow: hidden;
-                            ;
+                            border:solid 1px #999;
                             margin-right: .2rem
+                        }
+                        div {
+                            position: relative;
+                            display: inline-block;
+                        }
+                        .king {
+                            position: absolute; //display: inline-block;
+                            width: 2.2rem;
+                            height: 1.3rem;
+                            left: -0.2rem;
+                            top: -0.3rem;
+                            margin: auto;
+                            background: url('/images/games/majiang2/crown.png');
+                            background-size: cover;
+                            vertical-align: middle;
                         }
                         span {}
                     }
@@ -316,19 +330,19 @@ button {
                     flex: 1;
                     text-align: center;
                     line-height: 3rem;
-                    background:-webkit-linear-gradient(rgba(255, 255, 255, 0.8), rgba(76, 75, 75, 0.2));
+                    background: -webkit-linear-gradient(rgba(255, 255, 255, 0.8), rgba(76, 75, 75, 0.2));
                     color: #666;
                     font-size: 1.1rem;
                     font-weight: normal;
-                    &.active{
+                    &.active {
                         font-size: 1.3rem;
                         font-weight: bold;
-                        color:#333; 
+                        color: #333;
                         background: transparent;
                     }
                 }
             }
-            .helpContent{
+            .helpContent {
                 margin: 2rem;
                 overflow: auto;
                 height: 65%;
@@ -346,7 +360,7 @@ button {
             z-index: 200;
             .overWeak {
                 position: absolute;
-                top: -2.5rem;
+                top: -1.5rem;
                 text-align: center;
                 left: 0;
                 right: 0;
@@ -366,6 +380,12 @@ button {
                 background-size: cover;
                 border: 0;
                 padding: 0;
+                &.ready {
+                    background-image: url('/images/games/majiang2/ready2.png');
+                }
+                &.accept {
+                    background-image: url('/images/games/majiang2/accept.png');
+                }
             }
         }
     }
@@ -650,12 +670,24 @@ button {
             position: absolute; //display: inline-block;
             width: 2.2rem;
             height: 1.5rem;
-            right: -.2rem;
+            right: -.2rem0;
             top: .5rem;
             background: url('/images/games/majiang2/winner.png');
             background-size: cover;
             vertical-align: middle;
         }
+    }
+    .king {
+        position: absolute; //display: inline-block;
+        width: 3.4rem;
+        height: 2rem;
+        right: 0;
+        left: 0;
+        top: -0.9rem;
+        margin: auto;
+        background: url('/images/games/majiang2/crown.png');
+        background-size: cover;
+        vertical-align: middle;
     }
     .nameWrap {
         .ellipsis;
@@ -830,8 +862,9 @@ button {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -.5rem;
-    background: -webkit-linear-gradient(transparent, #06060685);
+    bottom: -.5rem; //background: -webkit-linear-gradient(transparent, #06060685);
+    background: rgba(0, 0, 0, .3);
+    border-radius: 1rem;
     margin: auto;
     color: #ffc;
     text-shadow: 1px 1px .1em #000; // position: absolute;
@@ -976,7 +1009,7 @@ button {
         .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
             width: 1.8rem;
-            height: 1.6rem;
+            height: 1.8rem;
             margin-left: -.1rem;
             float: left;
             margin-top: -.6rem;
@@ -1002,8 +1035,8 @@ button {
     position: absolute;
     width: 10rem; //border: solid 1px #fff;
     right: 4rem;
-    top: 5rem;
-    bottom: 8rem;
+    top: 6rem;
+    bottom: 7rem;
     box-sizing: border-box;
     .userDock {
         right: 1rem;
@@ -1032,7 +1065,7 @@ button {
         .card_group {
             background-image: url('/images/games/majiang2/sideCard2.png');
             width: 1.8rem;
-            height: 1.6rem;
+            height: 1.8rem;
             margin-left: -.1rem;
             float: left;
             margin-top: -.6rem;
@@ -1077,8 +1110,7 @@ button {
     .userDock {
         top: .5rem;
         bottom: auto;
-        left: 10rem;
-        // right: 1rem;
+        left: 10rem; // right: 1rem;
     }
     .cardListWrap {
         .clearfix;
@@ -1101,11 +1133,11 @@ button {
         .group {
             margin-left: .2rem;
             .clearfix;
-            float: left;
+            float: right;
         }
         .card_group {
-            width: 2rem;
-            height: 2.5rem;
+            width: 1.8rem;
+            height: 2.3rem;
             img {
                 -webkit-transform: rotate(180deg);
                 margin-top: .3rem
@@ -1178,6 +1210,9 @@ button {
         height: 5rem;
         margin: 0 1rem;
         ._transition;
+        &.mark {
+            -webkit-animation: effect_mark4 .5s infinite linear;
+        }
         &.active {
             transform: scale(.8, .8);
         }
@@ -1419,6 +1454,60 @@ button {
         -webkit-animation: rainBgEffect 2.5s infinite linear;
         &>span {
             -webkit-animation: rainCloudEffect 2.5s infinite linear;
+        }
+        &>s {
+            display: block;
+        }
+    }
+}
+
+.rainEffect2 {
+    .effectWrapper;
+    z-index: 0;
+    background: rgba(0, 0, 0, .5);
+    &.hide {
+        transform: translate3d(0, -200%, 0);
+    }
+    &>span {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -.5rem;
+        margin: auto;
+        font-size: 6rem;
+        text-align: center;
+        width: 12rem;
+        height: 20rem;
+        background-image: url(/images/games/majiang2/bigEvent/wind.png);
+        background-size: cover;
+        background-position: center;
+    }
+    s {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        margin: auto;
+        width: 3rem;
+        height: 5rem;
+        background-image: url(/images/games/majiang2/bigEvent/tree.png);
+        background-size: cover;
+        -webkit-animation: windingEffect 2s infinite cubic-bezier(.29, 1.43, .73, -0.89);
+        display: none;
+        &.s2 {
+            width: 3rem;
+            height: 2.8rem;
+            left: auto;
+            right: 0;
+            background-image: url(/images/games/majiang2/bigEvent/house.png);
+            -webkit-animation: windingEffect2 2s infinite cubic-bezier(.29, 1.43, .73, -0.89);
+        }
+    }
+    &.effectActive {
+        -webkit-animation: rainBgEffect2 2.5s infinite linear;
+        &>span {
+            transform-origin: 50% 100%;
+            -webkit-animation: windEffect 2.5s infinite linear;
         }
         &>s {
             display: block;

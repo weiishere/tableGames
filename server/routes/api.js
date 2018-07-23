@@ -7,16 +7,16 @@ const qs = require('qs');
 
 module.exports = (app) => {
     const path = '/api'
-    app.get(path + '/node/userIsExists', function (req, res, next) {
-        const { openId } = req.body;
-        axios.get(`${apiUrl}/node/userIsExists?openid=${openId}`).then(function (response) {
-            res.json(response.data);
-        }).catch(function (error) {
-            console.log('----------------userIsExists error start----------------------');
-            console.log(error);
-            console.log('-----------------userIsExists error end---------------------');
-        })
-    });
+    // app.get(path + '/node/userIsExists', function (req, res, next) {
+    //     const { openId } = req.body;
+    //     axios.get(`${apiUrl}/node/userIsExists?openid=${openId}`).then(function (response) {
+    //         res.json(response.data);
+    //     }).catch(function (error) {
+    //         console.log('----------------userIsExists error start----------------------');
+    //         console.log(error);
+    //         console.log('-----------------userIsExists error end---------------------');
+    //     })
+    // });
     app.post(path + '/login', function (req, res, next) {
         const { openid, nickname, headimgurl } = req.body;
         //const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
@@ -50,38 +50,57 @@ module.exports = (app) => {
         //     writeLog('login api', error);
         // });
     });
-    app.post(path + '/reg', function (req, res, next) {
-        const { openId, username } = req.body;
-        axios.post(`${apiUrl}/node/userAdd?openid=${openId}&username=${username}`).then(function (response) {
-            res.json(response.data);
-        }).catch(function (error) {
-            console.log('----------------reg error start----------------------');
-            console.log(error);
-            console.log('-----------------reg error end---------------------');
-        })
-    });
+    // app.post(path + '/reg', function (req, res, next) {
+    //     const { openId, username } = req.body;
+    //     axios.post(`${apiUrl}/node/userAdd?openid=${openId}&username=${username}`).then(function (response) {
+    //         res.json(response.data);
+    //     }).catch(function (error) {
+    //         console.log('----------------reg error start----------------------');
+    //         console.log(error);
+    //         console.log('-----------------reg error end---------------------');
+    //     })
+    // });
     app.post(path + '/checkin', function (req, res, next) {
         try {
-            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum } = req.body;
-            const option = {
-                gamers: [],
-                gamerNumber: 4,
-                mulriple: mulriple,//倍数
-                gameTime: 4 * (roomCardNum ? parseInt(roomCardNum) : 1),
-                state: 'wait',
-                gameType: 'majiang',
-                rule: rule,
-                ruleName: ruleName,
-                colorType: colorType,
-                countdown: countdown
+            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, isDev } = req.body;
+            if (isDev) {
+                sqliteCommon.insert({
+                    uid: uid,
+                    state: 0,
+                    jsonData: JSON.stringify(option)
+                }, function (roomId) {
+                    res.json(roomId);
+                });
+            } else {
+                axios.post(`http://manage.fanstongs.com/api/getRoomCard`, qs.stringify({
+                    userId: uid,
+                    number: roomCardNum,
+                    token: getToken()
+                })).then(function (response) {
+                    const option = {
+                        gamers: [],
+                        gamerNumber: 4,
+                        mulriple: mulriple,//倍数
+                        gameTime: 4 * (roomCardNum ? parseInt(roomCardNum) : 1),
+                        state: 'wait',
+                        gameType: 'majiang',
+                        rule: rule,
+                        ruleName: ruleName,
+                        colorType: colorType,
+                        countdown: countdown,
+                        roomCards: response.data
+                    }
+                    sqliteCommon.insert({
+                        uid: uid,
+                        state: 0,
+                        jsonData: JSON.stringify(option)
+                    }, function (roomId) {
+                        res.json(roomId);
+                    });
+                }).catch(function (error) {
+                    writeLog('getRoomCard api', error);
+                })
             }
-            sqliteCommon.insert({
-                uid: uid,
-                state: 0,
-                jsonData: JSON.stringify(option)
-            }, function (roomId) {
-                res.json(roomId);
-            });
         } catch (error) {
             writeLog('checkin api', error);
         }

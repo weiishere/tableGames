@@ -1,12 +1,51 @@
 const clone = require('clone');
 
-function objectArraySort(keyName) {
-    return function (objectN, objectM) {
-        var valueN = objectN[keyName]
-        var valueM = objectM[keyName]
-        if (valueN < valueM) return -1
-        else if (valueN > valueM) return 1
-        else return 0
+function getNumberByColor(color) {
+    if (color === 'b') return 4;
+    if (color === 't') return 5;
+    if (color === 'w') return 6;
+
+    if (color === 'bb') return 7;
+    if (color === 'fc') return 8;
+    if (color === 'hz') return 9;
+}
+
+function objectArraySort(keyName, colorLack) {
+    if (colorLack) {
+        return function (objectN, objectM) {
+            var valueN = objectN[keyName];
+            var valueM = objectM[keyName];
+            //if (colorLack) return valueN.color === colorLack ? -2 : 0;
+            //return (objectN.color === colorLack ? 1 : 0) - (objectM.color === colorLack ? 1 : 0);
+            if (objectN.color === objectM.color) {
+                if (valueN < valueM) return -1;
+                else if (valueN > valueM) return 1;
+                else return 0
+            } else {
+                const t1 = objectN.color === colorLack ? 10 : getNumberByColor(objectN.color);
+                const t2 = objectM.color === colorLack ? 10 : getNumberByColor(objectM.color);
+                return t1 - t2;
+            }
+        }
+    } else {
+        return function (objectN, objectM) {
+            var valueN = objectN[keyName];
+            var valueM = objectM[keyName];
+            if (objectN.color === objectM.color) {
+                if (valueN < valueM) return -1;
+                else if (valueN > valueM) return 1;
+                else return 0
+            } else {
+                return getNumberByColor(objectN.color) - getNumberByColor(objectM.color);
+            }
+        }
+        // return function (objectN, objectM) {
+        //     var valueN = objectN[keyName];
+        //     var valueM = objectM[keyName];
+        //     if (valueN < valueM) return -1;
+        //     else if (valueN > valueM) return 1;
+        //     else return 0
+        // }
     }
 }
 function concatCard(cards, groupCards) {
@@ -91,4 +130,4 @@ function getSames(cards) {
     }
 }
 
-module.exports = { objectArraySort, concatCard, getCardShowTime,getSames }
+module.exports = { objectArraySort, concatCard, getCardShowTime, getSames }

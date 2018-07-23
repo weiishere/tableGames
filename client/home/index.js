@@ -12,8 +12,11 @@ const axios = require('axios');
 const Item = Popover.Item;
 let userInfo = {
     userid: getQueryString('uid'),
+    openid: 'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
     nickname: 'huangwei',
-    headimgurl: '/images/games/majiang/head.jpg'
+    headimgurl: '/images/games/majiang/head.jpg',
+    // roomcard: 100,
+    // score: 15200
 };
 if (process.env.NODE_ENV !== 'development') {
     const userInfoCookie = Cookies.get('wxUserInfo');
@@ -30,8 +33,8 @@ class LayOut extends Component {
         this.state = {
             isAllow: false,
             user: userInfo,
-            userCards: 0,
-            score: 0
+            roomcard: 100,
+            score: 100
         }
     }
     componentDidMount() {
@@ -55,14 +58,14 @@ class LayOut extends Component {
         // }).catch(function (error) {
         //     console.log(error);
         // });
-        if (process.env.NODE_ENV !== 'development') {
+        if (process.env.NODE_ENV === 'development') {
             console.log(userInfo);
             axios.post('/api/login', {
                 openid: userInfo.openid,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
                 nickname: userInfo.nickname,//'测试nickName',
                 headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
             }).then((req) => {
-                userInfo['userCards'] = req.data.roomcard;
+                userInfo['roomcard'] = req.data.roomcard;
                 userInfo['score'] = req.data.score;
                 this.setState({
                     isAllow: true,
@@ -71,8 +74,8 @@ class LayOut extends Component {
             });
         } else {
             window.setTimeout(() => {
-                userInfo['userCards'] = 0;
-                userInfo['score'] = 0;
+                userInfo['roomcard'] = 100;
+                userInfo['score'] = 100;
                 this.setState({
                     isAllow: true,
                     user: userInfo,
@@ -96,7 +99,7 @@ class NewRoom extends Component {
         super(props);
 
         this.state = {
-            roomCard: 1,
+            roomCard: 0,
             roomId: 0,
             visible: false,
             modal_visible: false,
@@ -117,29 +120,35 @@ class NewRoom extends Component {
         this.checkinHandler = this.checkinHandler.bind(this);
     }
     checkinHandler() {
-        axios.post('/api/checkin', {
-            uid: this.props.user.userid,
-            rule: this.state.rule[0],
-            ruleName: this.state.ruleName,
-            mulriple: this.state.mulriple,
-            colorType: this.state.colorType[0],
-            countdown: this.state.countdown[0],
-            roomCardNum: this.state.roomCard
-        }).then((data) => {
-            if (process.env.NODE_ENV === 'development') {
-                this.setState({
-                    roomInfo_visible: true,
-                    roomId: data.data
-                });
-            } else {
-                // this.setState({
-                //     roomInfo_visible: true,
-                //     roomId: data.data,
-                //     done: true
-                // });
-                location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
-            }
-        });
+        if (this.state.roomCard === 0) {
+            alert('请输入房卡数');
+        } else {
+            axios.post('/api/checkin', {
+                uid: this.props.user.userid,
+                rule: this.state.rule[0],
+                ruleName: this.state.ruleName,
+                mulriple: this.state.mulriple,
+                colorType: this.state.colorType[0],
+                countdown: this.state.countdown[0],
+                roomCardNum: this.state.roomCard,
+                isDev: process.env.NODE_ENV === 'development' ? true : false
+            }).then((data) => {
+                if (process.env.NODE_ENV === 'development') {
+                    this.setState({
+                        roomInfo_visible: true,
+                        roomId: data.data
+                    });
+                } else {
+                    // this.setState({
+                    //     roomInfo_visible: true,
+                    //     roomId: data.data,
+                    //     done: true
+                    // });
+                    location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+                }
+            });
+        }
+
     }
     render() {
 
@@ -170,7 +179,7 @@ class NewRoom extends Component {
                                 <Stepper
                                     style={{ width: '7rem', marginLeft: '1rem' }}
                                     showNumber
-                                    max={5}
+                                    max={this.props.user.roomcard}
                                     min={0}
                                     value={this.state.roomCard}
                                     onChange={v => this.setState({ roomCard: v })}
@@ -280,7 +289,7 @@ class NewRoom extends Component {
                             </List.Item>
                         </List>
                     </Card.Body>
-                    <Card.Footer content={`持有房卡：${this.props.user.userCards}`} extra={<div>积分：{this.props.user.score}</div>} />
+                    <Card.Footer content={`持有房卡：${this.props.user.roomcard}`} extra={<div>积分：{this.props.user.score}</div>} />
                 </Card>
                 <WhiteSpace size="lg" />
             </WingBlank>

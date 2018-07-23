@@ -97,7 +97,7 @@ class Majiang {
                 const catcher = self.gameState.find(item => item.catcher);
                 if (catcher && catcher.actionCode.length === 0) {
                     //优先打要定缺的牌，其次打出刚刚摸的牌
-                    if (!catcher.cards) return;
+                    if (!catcher.cards) { console.log('no catcher cards'); return; }
                     const lackCards = catcher.cards.filter(card => card.color === catcher.colorLack);
                     // if (lackCards.length === 0 && !catcher.fatchCard) {
                     //     //没有刚刚抓的牌，又是出牌者，多半就是刚刚碰了，这种要随便抽一张牌
@@ -112,6 +112,7 @@ class Majiang {
                     });
                 } else {
                     //找到有actionCode的人
+                    let isAuto = false;
                     self.gameState.forEach(state => {
                         if (state.colorLack === '') {
                             //选花色
@@ -120,6 +121,7 @@ class Majiang {
                                 uid: state.uid,
                                 color: ['b', 't', 'w'][getRedomNum(0, 2)]
                             });
+                            isAuto = true;
                             console.log('自动选花色');
                         } else if (state.actionCode.length !== 0) {
                             //如果有胡，就胡，不然默认过
@@ -128,9 +130,14 @@ class Majiang {
                                 uid: state.uid,
                                 actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
                             });
+                            isAuto = true;
                             console.log('自动动作');
                         }
-                    })
+                    });
+                    if (!isAuto) {
+                        console.log('自动动作未完成');
+                        console.log(self.gameState);
+                    }
                 }
             } catch (e) {
                 const catcher = self.gameState.find(item => item.catcher);
@@ -139,7 +146,7 @@ class Majiang {
             }
         });
     }
-    init(gameState) {
+    init(gameState, masterUser) {
         //需要为state做一个排序，用于之后顺序摸牌(不排了)
         this.gameState = gameState.map(state => {
             return {
@@ -149,6 +156,7 @@ class Majiang {
                 winDesc: '',
                 point: 0,
                 cards: [],
+                master: masterUser ? (state.uid === masterUser.uid ? true : false) : false,
                 colorLack: this.colorType === 2 ? 'b' : '',//缺的花色(如果是两黄牌的话，就直接缺b)
                 outCards: [],
                 actionCode: [],//动作提示
@@ -242,7 +250,7 @@ class Majiang {
         state.groupCards.fullMeet.forEach(meetArr => {
             allCards = allCards.concat(meetArr);
         })
-        return allCards.sort(objectArraySort('key'));
+        return allCards.sort(objectArraySort('key', state.colorLack));
     }
     checkCanWin() {
         const remainGamerState = this.gameState.filter(state => !state.isWin);
@@ -386,7 +394,7 @@ class Majiang {
     showCard(data) {
         try {
             let userState = this.gameState.find(item => item.uid === data.uid);
-            if (userState['doing']) return false;
+            if (userState['doing']) { console.log('doing'); return false; }
             userState['doing'] = true;
             if (!userState.catcher) return false;
             //if (this.lastShowCardUserState && this.lastShowCardUserState.uid === userState.uid) return false; //理论上不会存在一个玩家两次连续出牌的情况，这里为了防止快速点击出牌两次
@@ -407,10 +415,10 @@ class Majiang {
                 userState.cards = userState.cards.filter(item => item.key !== data.cardKey);
                 //fatchCard可能为空（碰了之后不会摸牌）
                 userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
-                userState.cards = userState.cards.sort(objectArraySort('key'));
+                userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
                 //userState.fatchCard = undefined;
             }
-            this.lastShowCardUserState = userState;
+            if (userState) this.lastShowCardUserState = userState;
             //判断是否需要暂停
             if (!this.doGameState(data.uid, showCard, 'other')) {
                 //无须暂定，下一个玩家抓牌
@@ -442,7 +450,6 @@ class Majiang {
             this.lastShowCard = showCard;
             userState.fatchCard = undefined;//清空玩家刚刚抓到的牌
             this.sendData({ event: 'showCard', payload: JSON.stringify({ card: showCard, uid: [data.uid] }) });
-            userState['doing'] = undefined;
         } catch (e) {
             writeLog('showCard', e);
         }
@@ -450,6 +457,7 @@ class Majiang {
     chooseColor(data) {
         const userState = this.gameState.filter(item => item.uid === data.uid)[0];
         userState.colorLack = data.color;
+        if (Array.isArray(userState.cards)) userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
         this.sendData();
         setTimeout(() => {
             if (this.gameState.filter(item => item.colorLack === '').length === 0) {
@@ -464,7 +472,7 @@ class Majiang {
     actionEvent(data) {
         try {
             let userState = this.gameState.find(item => item.uid === data.uid);
-            if (userState['doing']) return false;
+            if (userState['doing']) { console.log('doing'); return false; }
             userState['doing'] = true;
             let isMineAction = userState.fatchCard ? true : false;//是否是自己
             let isFatchCard = false;//动作执行之后是否有摸牌，主要是为了处理摸了牌之后玩家可能又有动作，那么就不清空actionCode(此场景目前一般是杠了再摸牌)
@@ -506,7 +514,7 @@ class Majiang {
                             }//自己再摸一张牌，并附上杠上花、杠上炮监听
                             hadRobState.outCards = hadRobState.outCards.filter(card => card.key !== this.lastShowCard.key);
                             hadRobState.winDesc = '';
-                            setTimeout(() => { this.sendData(); userState['doing'] = undefined; }, 10);
+                            setTimeout(() => { this.sendData(); }, 10);
                             return;
                         } else if (hadRobMeetState) {
                             let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
@@ -523,7 +531,7 @@ class Majiang {
                             hadRobMeetState.groupCards.meet.push(_meet);
                             this.setGamerCacher(hadRobMeetState);
                             hadRobMeetState.winDesc = '';
-                            setTimeout(() => { this.sendData(); userState['doing'] = undefined; }, 10);
+                            setTimeout(() => { this.sendData(); }, 10);
                             return;
                         } else {
                             if (!isMineAction) {
@@ -531,7 +539,7 @@ class Majiang {
                                 const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
                                 this.setGamerCacher(next);
                                 if (this.fatchCard({})) {
-                                    setTimeout(() => { this.sendData(eventObj); userState['doing'] = undefined; }, 10);
+                                    setTimeout(() => { this.sendData(eventObj); }, 10);
                                     return false;
                                 }
                                 // if (this.cards.length === 0) {
@@ -577,7 +585,7 @@ class Majiang {
                         userState.testWinType = 'robMeet';//被抢胡等待
                         userState.winDesc = '等待其他玩家选择是否胡牌~';
                         userState.actionCode = [];
-                        setTimeout(() => { this.sendData(); userState['doing'] = undefined;}, 10);
+                        setTimeout(() => { this.sendData(); }, 10);
                         return false;
                     } else {
                         //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
@@ -600,7 +608,7 @@ class Majiang {
                     eventObj = { event: 'meet', payload: JSON.stringify({ card: doCard, uid: [userState.uid] }) }
                 } else if (data.actionType === 'fullMeet') {
                     try {
-                        let fmc = {}
+                        let fmc = undefined;
                         const fullMeetDo = (_doCard) => {
                             let _fulMmeet = [];
                             //const _concatCard = userState.fatchCard ? userState.cards.concat(userState.fatchCard) : userState.cards;
@@ -631,14 +639,14 @@ class Majiang {
                             //引杠
                             if (!isRobFullMeetWin(doCard)) {
                                 userState.cards.push(clone(doCard));
-                                userState.cards = userState.cards.sort(objectArraySort('key'));
-                                fmc = { payUser: this.lastShowCardUserState, multipl: 2, name: '直雨' }//引杠陪2倍
+                                userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
+                                fmc = { payUser: this.lastShowCardUserState, multipl: 2, name: '引杠刮风', rainType: 'wind' }//引杠陪2倍
                                 fullMeetDo(doCard);
                             } else {
                                 userState.testWinType = 'robFullMeet';//被抢胡等待
                                 userState.winDesc = '等待其他玩家选择是否胡牌~';
                                 userState.actionCode = [];
-                                setTimeout(() => { this.sendData(); userState['doing'] = undefined; }, 10);
+                                setTimeout(() => { this.sendData(); }, 10);
                                 return false;
                             }
                         } else {
@@ -646,7 +654,7 @@ class Majiang {
                             //检查是否是碰升级为杠
                             let meetToFull;
                             userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
-                            userState.cards = userState.cards.sort(objectArraySort('key'));
+                            userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
                             //可能存在于手牌或者刚刚摸到的牌中
                             const _concatCard = this.concatCard(userState);
                             doCard = data.doCardKey ? _concatCard.find(card => card.key === data.doCardKey) : doCard;
@@ -657,7 +665,7 @@ class Majiang {
                             });
                             if (!meetToFull) {
                                 //直雨
-                                fmc = { payUser: 0, multipl: 2, name: '直雨' }//自杠陪2倍
+                                fmc = { payUser: 0, multipl: 2, name: '自杠下雨', rainType: 'rain' }//自杠陪2倍
                                 fullMeetDo(doCard);
                             } else {
                                 //碰升杠
@@ -666,12 +674,12 @@ class Majiang {
                                     userState.testWinType = 'robFullMeetWin';//被抢杠等待
                                     userState.winDesc = '等待其他玩家选择抢杠~';
                                     userState.actionCode = [];
+                                    userState['doing'] = undefined;
                                     this.showCard.call(this, {
                                         roomId: data.roomId,
                                         uid: data.uid,
                                         cardKey: doCard.key
                                     });
-                                    userState['doing'] = undefined;
                                     return false;
                                 } else {
                                     meetToFull.push(doCard);
@@ -685,7 +693,10 @@ class Majiang {
                                         }
                                     });
                                     userState.cards = userState.cards.filter(card => card.key !== doCard.key);
-                                    fmc = { payUser: 0, multipl: 1, name: '弯雨' }//弯雨陪1倍
+                                    if (userState.fatchCard && userState.fatchCard.key === doCard.key && userState.fatchCard.number === doCard.number) {
+                                        //自己刚摸的牌用于杠才算
+                                        fmc = { payUser: 0, multipl: 1, name: '自杠刮风', rainType: 'wind' }//弯雨陪1倍
+                                    }
                                 }
                             }
                         }
@@ -693,10 +704,11 @@ class Majiang {
                             //下雨结算（成都麻将才下雨）
                             if (fmc) {
                                 const scoreResult = this.castAccounts(userState, fmc.payUser === 0 ? 'all' : fmc.payUser, fmc.multipl);
-                                const desc = (fmc.payUser === 0 ? '自杠' : fmc.payUser.name + '引杠') + '下雨[' + fmc.name + fmc.multipl + '倍]'
+                                const desc = (fmc.payUser === 0 ? '' : fmc.payUser.name) + '[' + fmc.name + fmc.multipl + '倍]'
                                 this.sendForRoom(data.roomId, `{"type":"event","content":${JSON.stringify({
                                     type: 'rain',
                                     uid: userState.uid,
+                                    rainType: fmc.rainType,//'wind',rain
                                     desc: desc
                                 })}}`);
                                 eventObj = {
@@ -715,7 +727,7 @@ class Majiang {
                         this.setGamerCacher(userState);//把自己设置为下一个出牌的人
                         //自己再摸一张牌，并附上杠上花、杠上炮监听
                         if (!this.fatchCard({ uid: data.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) {
-                            setTimeout(() => { this.sendData(eventObj); userState['doing'] = undefined; }, 10);
+                            setTimeout(() => { this.sendData(eventObj); }, 10);
                             return false;
                         }
                         //如果用户还有杠，那么不摸牌，继续让用户选择
@@ -807,7 +819,6 @@ class Majiang {
                                 //找到下一个人并摸牌
                                 this.setGamerCacher(next);
                                 if (!this.fatchCard({})) {
-                                    userState['doing'] = undefined;
                                     return false;
                                 }
                             }
@@ -840,7 +851,6 @@ class Majiang {
             //     }
             // }
             this.sendData(eventObj);
-            userState['doing'] = undefined;
         } catch (e) {
             writeLog('actionEvent', e);
         }
@@ -887,6 +897,12 @@ class Majiang {
 
     }
     sendData(uid) {
+        this.gameState && this.gameState.forEach(status => {
+            status['doing'] = undefined;
+            // if (Array.isArray(status.cards) && status.colorLack) {
+            //     status.cards = status.cards.sort((a, b) => { return a.color === status.colorLack })
+            // }
+        });
         this.sendMsgHandler({
             gameState: this.gameState,
             remainCardNumber: this.cards.length,
@@ -978,8 +994,8 @@ class Majiang {
                 if (!listenType) listenType = [];
                 listenType.push('endWin');
             }
-            sssIndex++;
-            //let cardByCatch = sssIndex <= 12 ? this.cards.splice(0, 1)[0] : { key: 'card-w-9-' + sssIndex, number: 9, color: 'w' };
+            // sssIndex++;
+            // let cardByCatch = sssIndex <= 12 ? this.cards.splice(0, 1)[0] : { key: 'card-t-8-' + sssIndex, number: 8, color: 't' };
             //sssIndex++;
             //let cardByCatch = sssIndex <= 11 ? { key: 'card-t-4-' + sssIndex, number: 4, color: 't' } : { key: 'card-w-7-' + sssIndex, number: 7, color: 'w' };
             // sssIndex++;

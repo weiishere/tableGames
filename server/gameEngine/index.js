@@ -328,7 +328,7 @@ module.exports = (io, scoket) => {
             if (!scoket.user) return;
             const resultRoom = findUserInRoom(scoket.user.uid);
             if (resultRoom) {
-                const gamer = resultRoom.gamer.find(g => g.uid === data.uid);
+                let gamer = resultRoom.gamer.find(g => g.uid === data.uid);
                 gamer['offLine'] = false;
                 setTimeout(() => {
                     sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(resultRoom.getSimplyData())}}`);

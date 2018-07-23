@@ -105,7 +105,14 @@ module.exports = (app) => {
                     writeLog('login api then', response);
                 }
                 userInfo['userid'] = response.data.userid;
-                res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo)));
+                userInfo['score'] = response.data.score;
+                userInfo['roomcard'] = response.data.roomcard;
+                userInfo.nickname = decodeURI(userInfo.nickname);
+                res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo))
+                    // , {
+                    //     maxAge: 60 * 60 * 24 * 7 // 1 week
+                    // }
+                );
                 res.redirect(`/${state}`);
             }).catch(function (error) {
                 writeLog('login api', error);
@@ -150,30 +157,30 @@ module.exports = (app) => {
             // res.end('<h2 style="font-size:30px;margin-top:50%"><center>抱歉，您目前没有正在游戏的房间记录，<a href="/checkIn">戳我开房</a></center></h2>');
         }
     });
-    app.get('/cookieTest/', function (req, res, next) {
-        axios({
-            method: 'post',
-            url: 'http://manage.fanstongs.com/api/login',
-            data: {
-                token: getToken()
-            }
-        }).then(function (response) {
-            //console.log(response.data)
-            userInfo['userid'] = response.data.userid;
-            res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)), {
-                //maxAge: 60 * 60 * 24 * 7 // 1 week
-            });
-            res.redirect(`/${state}`);
-        }).catch(function (error) {
-            writeLog('login', error);
-        });
-        // res.setHeader('Set-Cookie', cookie.serialize('cookieName', JSON.stringify({
-        //     openid: 'sdfsfgerdtsefdfg4561s6d16sf16df'
-        // }), {
+    // app.get('/cookieTest/', function (req, res, next) {
+    //     axios({
+    //         method: 'post',
+    //         url: 'http://manage.fanstongs.com/api/login',
+    //         data: {
+    //             token: getToken()
+    //         }
+    //     }).then(function (response) {
+    //         //console.log(response.data)
+    //         userInfo['userid'] = response.data.userid;
+    //         res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userinfo)), {
+    //             //maxAge: 60 * 60 * 24 * 7 // 1 week
+    //         });
+    //         res.redirect(`/${state}`);
+    //     }).catch(function (error) {
+    //         writeLog('login', error);
+    //     });
+    //     // res.setHeader('Set-Cookie', cookie.serialize('cookieName', JSON.stringify({
+    //     //     openid: 'sdfsfgerdtsefdfg4561s6d16sf16df'
+    //     // }), {
 
-        //     }));
-        // res.redirect(`/home`);
-    });
+    //     //     }));
+    //     // res.redirect(`/home`);
+    // });
     app.get('/wechat/ticket', function (req, res) {
         //console.log('getticket begin:' + (new Date()).toLocaleString());
         const data = (new Date()).toLocaleString();
@@ -222,6 +229,7 @@ module.exports = (app) => {
             let gamer = room.gamers.find(u => u.uid === uid);
             if (gamer) {
                 gamer['location'] = location;
+                gamer['offline'] = false;
             }
         }
         res.json({ code: '0000', msg: 'success', result: location });

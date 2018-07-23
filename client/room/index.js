@@ -76,6 +76,7 @@ if (!isDebug) {
         location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
     } else {
         userInfo = JSON.parse(userInfoCookie);
+        userInfo.nickname = decodeURI(userInfo.nickname);
         //alert(userInfoCookie);
         if (!getQueryString('roomId')) {
             //location.href = '/auth?target=' + escape('playing?uid=' + userInfo.userid);
@@ -242,7 +243,9 @@ class Table extends Component {
         window.setTimeout(() => {
             this.setState({ notice: false })
         }, 40000);
-
+        // window.setInterval(() => {
+        //     this.rainEventEffect({ rainType: 'wind' });
+        // }, 5000);
     }
     //胡牌特效
     winEventEffect(data) {
@@ -256,18 +259,20 @@ class Table extends Component {
         }, 2500);
     }
     //下雨特效
-    rainEventEffect() {
-        $('.rainEffect').removeClass('hide').addClass('effectActive');
+    rainEventEffect({ rainType }) {
+        const rainEffectType = rainType === 'rain' ? '.rainEffect' : '.rainEffect2';
+        $(rainEffectType).removeClass('hide').addClass('effectActive');
         const raintimer = window.setInterval(function () {
             let s = document.createElement('s');
-            s.style.left = (Math.random() * 70) + 'rem';
-            $('.rainEffect').append(s);
-        }, 10);
+            s.style[rainType === 'rain' ? 'left' : 'top'] = (Math.random() * (rainType === 'rain' ? 70 : 20)) + 'rem';
+            if (parseInt(Math.random() * 10) > 5) s.className = 's2';
+            $(rainEffectType).append(s);
+        }, rainType === 'rain' ? 10 : 400);
         window.setTimeout(function () {
             try {
-                $('.rainEffect').removeClass('effectActive').addClass('hide');
+                $(rainEffectType).removeClass('effectActive').addClass('hide');
                 window.clearInterval(raintimer);
-                $('.rainEffect s').remove();
+                $(rainEffectType + ' s').remove();
             } catch (e) {
                 raintimer && window.clearInterval(raintimer);
             }
@@ -382,7 +387,7 @@ class Table extends Component {
                     if (data.content.type === 'win') {
                         self.winEventEffect({ uid: data.content.uid });
                     } else if (data.content.type === 'rain') {
-                        self.rainEventEffect({ uid: data.content.uid });
+                        self.rainEventEffect({ uid: data.content.uid, rainType: data.content.rainType });
                     }
                     break;
                 case 'errorInfo':
@@ -413,13 +418,21 @@ class Table extends Component {
             }
         }, 50);
     }
-    gameInfoCloseHandle() {
+    gameInfoCloseHandle(order) {
         newRecore = false;
         if (this.state.room.state === 'end') {
             //关闭连接
             //ws.emit('disconnect');
         }
         this.setState({ showRecore: false });
+        if (order === 'ready') {
+            ws.emit('ready', JSON.stringify({
+                user: this.state.user,
+                roomId: this.state.room.roomId,
+                state: 'ready'
+            }));
+            playSound('click');
+        }
     }
     gameInfoOpenHandle() {
         newRecore = false;
@@ -535,6 +548,7 @@ class Table extends Component {
             //先取得me前面和后面的gamer
             let frontGamer = [];
             let behindGamer = [];
+
             _gamer.forEach((gamer, index) => {
                 if (index < meIndex) { frontGamer.push(gamer); }
                 if (index > meIndex) { behindGamer.push(gamer); }
@@ -676,6 +690,10 @@ class Table extends Component {
                 <span></span>
                 <s></s>
             </div>
+            <div className='rainEffect2 hide'>
+                <span></span>
+                <s></s>
+            </div>
         </QueueAnim>
             <Sound />
             <Toast key='toast' content={this.state.toast} onHide={() => { this.setState({ toast: '' }) }} />
@@ -750,6 +768,7 @@ class GamerDock extends Component {
         this.showWeakTimer;
         this.getTotal = this.getTotal.bind(this);
         this.checkHander = this.checkHander.bind(this);
+        this.isKing = this.isKing.bind(this);
         this.lastGameData = {};
         this.timer;
     }
@@ -758,10 +777,26 @@ class GamerDock extends Component {
         room: PropTypes.object,
         needUpdate: PropTypes.bool
     };
-    getTotal() {
+    getTotal(uid) {
         let total = 0;
-        this.props.room.recode.map(item => total += item.find(user => this.props.uid === user.uid).point);
+        this.props.room.recode.map(item => {
+            const _uid = uid || this.props.uid;
+            const u = item.find(user => _uid === user.uid);
+            total += u.point
+        });
+        if (uid) return total;
         return (total > 0 ? '+' : '') + total;
+    }
+    isKing(uid) {
+        let max = 0; let maxUid = 0;
+        this.context.room.gamers.forEach(gamer => {
+            let score = this.getTotal(gamer.uid);
+            if (score > max) {
+                maxUid = gamer.uid;
+                max = score;
+            }
+        });
+        return uid === maxUid ? true : false;
     }
     // shouldComponentUpdate() {
     //     console.log(this.context.room.dataIndex + '|' + this.lastRoomData.dataIndex);
@@ -775,7 +810,6 @@ class GamerDock extends Component {
 
     }
     checkHander() {
-        console.log(this.state.active);
         this.setState({ active: !this.state.active });
         window.clearTimeout(this.timer);
         this.timer = window.setTimeout(() => {
@@ -828,6 +862,7 @@ class GamerDock extends Component {
         return <div id={`user_${this.props.uid}`} className={`userDock ${this.props.class_name} ${this.state.active && 'active'} ${this.props.offLine && 'disconnect'} ${this.props.userState && this.props.userState.isWin ? 'winner' : ''}`}
             onClick={this.checkHander}>
             <img src={this.props.avatar} />
+            {this.props.userState && this.isKing(this.props.userState.uid) && <div className='king'></div>}
             <div className='nameWrap'>{this.props.name}</div>
             {/* <div className='nameWrap'>{test}-|-{this.props.userState ? this.props.userState.uid : ''}</div> */}
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
@@ -840,7 +875,7 @@ class GamerDock extends Component {
             {/* <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
             <div ref='showCardWeak' className={`showCardWeak`}>{this.myEvent && (this.myEvent.card ? <img src={cardsImages[`${this.myEvent.card.color}${this.myEvent.card.number}`]} /> : <span>{this.myEvent.name}</span>)}</div>
             <div className='disconnectWrap'></div>
- 
+
             {/* {+this.props.offLine} */}
         </div>
     }
@@ -887,7 +922,7 @@ class Gamer_mine extends Component {
         this.cardHandler = false;
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
-            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[0] : {}),
+            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}),
             hadOutCardKey: ''
         });
 
@@ -923,7 +958,8 @@ class Gamer_mine extends Component {
             ws.emit('showCard', JSON.stringify({
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
-                cardKey: this.state.activeCard.key
+                cardKey: this.state.activeCard.key,
+                fromUser: true
             }));
             //考虑到流畅性，打完前端马上去掉这个牌
             if (isIOS) {
@@ -1029,9 +1065,20 @@ class Gamer_mine extends Component {
         }));
     }
     render() {
+        let minColor = '', min = 100;
         if (this.props.userState) {
             //this.addConcatCard = concatCard(this.props.userState);
             this.isLack = concatCard(this.props.userState).filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
+            let minColorObj = { b: 0, t: 0, w: 0 };
+            this.props.userState.cards.forEach(card => {
+                minColorObj[card.color]++;
+            });
+            for (let i in minColorObj) {
+                if (minColorObj[i] < min) {
+                    minColor = i;
+                    min = minColorObj[i];
+                }
+            }
         }
         const ready = <div key='ready' onClick={this.ready} className='btu ready'></div>
         const btu_showCard = <div key='showCard' onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>
@@ -1039,10 +1086,12 @@ class Gamer_mine extends Component {
         const btu_fullMeet = <div key='fullMeet' onClick={() => this.actionHandler('fullMeet')} className='btu fullmeet'></div>;//杠
         const btu_win = <div key='winning' onClick={() => this.actionHandler('winning')} className='btu win'></div>;//胡牌
         const btu_pass = <div key='pass' onClick={() => this.actionHandler('pass')} className='btu pass' ></div>;//过
+
+
         const lackColorChoose = <div key='ColorChoose'>
-            <div key='b' className='btu chooseColor chooseB' onClick={() => this.chooseColor('b')}></div>
-            <div key='t' className='btu chooseColor chooseT' onClick={() => this.chooseColor('t')}></div>
-            <div key='w' className='btu chooseColor chooseW' onClick={() => this.chooseColor('w')}></div>
+            <div key='b' className={`btu chooseColor chooseB ${minColor === 'b' && 'mark'}`} onClick={() => this.chooseColor('b')}></div>
+            <div key='t' className={`btu chooseColor chooseT ${minColor === 't' && 'mark'}`} onClick={() => this.chooseColor('t')}></div>
+            <div key='w' className={`btu chooseColor chooseW ${minColor === 'w' && 'mark'}`} onClick={() => this.chooseColor('w')}></div>
         </div>
         //this.props.userState && console.log(this.props.userState);
         return <div className='gamerWrap_mine'>
@@ -1273,6 +1322,13 @@ class Card extends Component {
     cardClick(e, card) {
         this.props.clickHandle && this.props.clickHandle(e, card);
     }
+    shouldComponentUpdate(nextProps) {
+        if (nextProps.card && this.props.card && !nextProps.activeKey && nextProps.type === this.props.type && nextProps.card.key === this.props.card.key) {
+            //console.log(nextProps.card);
+            return false;
+        }
+        return true;
+    }
     render() {
         let card = <span onClick={(e) => { this.cardClick(e, this.props.card) }} className={`card card_${this.props.type} ${this.props.card && this.props.card.key === this.props.activeKey && 'active'}`}>
             {/* {this.props.card && <img src={`/images/games/majiang2/cards/${this.props.card.color}${this.props.card.number}.png`} />} */}
@@ -1294,6 +1350,7 @@ class Card extends Component {
 class GameInfo extends Component {
     constructor(props) {
         super(props);
+        this.isKing = this.isKing.bind(this);
     }
     // shouldComponentUpdate(nextProps, nextState) {
     //     if (this.props.game.isOver) {
@@ -1303,10 +1360,25 @@ class GameInfo extends Component {
     //         return true
     //     }
     // }
-    getTotal(uid) {
+    static contextTypes = {
+        room: PropTypes.object
+    };
+    getTotal(uid, isNumber) {
         let total = 0;
         this.props.room.recode.map(item => total += item.find(user => uid === user.uid).point);
+        if (isNumber) return total;
         return (total > 0 ? '+' : '') + total;
+    }
+    isKing(uid) {
+        let max = 0; let maxUid = 0;
+        this.context.room.gamers.forEach(gamer => {
+            let score = this.getTotal(gamer.uid, true);
+            if (score > max) {
+                maxUid = gamer.uid;
+                max = score;
+            }
+        });
+        return uid === maxUid ? true : false;
     }
     render() {
 
@@ -1320,8 +1392,12 @@ class GameInfo extends Component {
                         this.props.room.gamers.map((gamer, index) => <div key={index} className='content'>
                             <div className={gamer.uid === this.props.user.uid ? `self` : ''}>
                                 <header>
-                                    <img src={`${gamer.avatar}`} />
+                                    <div>
+                                        <img src={`${gamer.avatar}`} />
+                                        {this.isKing(gamer.uid) && <div className='king'></div>}
+                                    </div>
                                     <span>{gamer.name}</span>
+
                                 </header>
                                 <ul className='list'>
                                     {
@@ -1343,6 +1419,7 @@ class GameInfo extends Component {
                 <footer>
                     {this.props.room.state === 'end' && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你再战！</div>}
                     <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
+                    {this.props.isOver && <button className='closeBtu ready' style={{ marginBottom: 0, marginLeft: 10 }} onClick={() => { this.props.closeHandle('ready') }}></button>}
                 </footer>
             </div>
 
@@ -1397,7 +1474,10 @@ class GameHelpPabel extends Component {
                     </div>
                 </div>
                 <footer>
-                    <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
+                    {this.state.chooseRule === 'law' ?
+                        <button className='closeBtu accept' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button> :
+                        <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>}
+
                 </footer>
             </div>
         </div>
@@ -1437,7 +1517,8 @@ class MsgPanel extends Component {
             emojiVisible: false,
             msgContent: '',
             miniMsgPanel: false,
-            miniMsgPanelList: []
+            miniMsgPanelList: [],
+            roomLog: this.props.roomLog//.reverse()
         }
         this.timer;
         this.logCount = this.props.roomLog.length;
@@ -1462,6 +1543,9 @@ class MsgPanel extends Component {
                 this.setState({ miniMsgPanel: false });
             }, 3000);
         }
+        this.setState({
+            roomLog: nextProps.roomLog//.reverse()
+        })
         this.logCount = nextProps.roomLog.length;
         $('.mainList').scrollTop($('.mainList').height());
     }
@@ -1524,7 +1608,7 @@ class MsgPanel extends Component {
             </header>
             <div className='mainList'>
                 <ul>
-                    {this.props.roomLog.map((log, index) => log.type === 'notified' ?
+                    {this.state.roomLog.map((log, index) => log.type === 'notified' ?
                         <li className='sysMsg' key={`msg_${index}`}>
                             <svg t="1528109426023" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4483" width="20" height="15"><defs><style type="text/css"></style></defs><path d="M490.453333 87.68c-5.333333 0-10.88 2.026667-15.253333 6.613333L256 320 64 320l0 205.333333L64 704l192 0 218.773333 248.853333c4.373333 5.013333 10.133333 7.146667 15.786667 7.146667 10.986667 0 21.546667-8.426667 21.546667-21.333333L512.106667 525.333333 512.106667 109.013333C512 96.213333 501.44 87.68 490.453333 87.68zM448 525.333333l0 300.16L304.106667 661.76 284.906667 640 256 640 128 640 128 525.333333 128 384l128 0 27.093333 0 18.88-19.413333 146.133333-150.4L448.106667 525.333333z" p-id="4484" fill="#ffffff"></path><path d="M832 512c0-105.92-86.08-192-192-192l0 64c70.613333 0 128 57.386667 128 128s-57.386667 128-128 128l0 64C745.92 704 832 617.92 832 512z" p-id="4485" fill="#ffffff"></path><path d="M866.24 285.76C805.866667 225.28 725.44 192 640 192l0 64c68.373333 0 132.693333 26.666667 181.013333 74.986667C869.333333 379.306667 896 443.626667 896 512s-26.666667 132.693333-74.986667 181.013333C772.693333 741.333333 708.373333 768 640 768l0 64c85.44 0 165.866667-33.28 226.24-93.76 60.48-60.48 93.76-140.8 93.76-226.24S926.72 346.133333 866.24 285.76z" p-id="4486" fill="#ffffff"></path></svg>
                             <span>{log.content}</span></li> :
@@ -1601,9 +1685,15 @@ class ImgLoader extends Component {
             { key: "msgs", url: host + "/msgs.png" },
             { key: "exit", url: host + "/exit.png" },
             { key: "help", url: host + "/help.png" },
+            { key: "accept", url: host + "/accept.png" },
+            { key: "ready2", url: host + "/ready2.png" },
+            { key: "crown", url: host + "/crown.png" },
+            { key: "wind", url: host + "/bigEvent/wind.png" },
+            { key: "tree", url: host + "/bigEvent/tree.png" },
             { key: "disconnect", url: host + "/disconnect.png" },
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
             { key: "cloud", url: host + "/bigEvent/cloud.png" },
+            { key: "house", url: host + "/bigEvent/house.png" },
 
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];

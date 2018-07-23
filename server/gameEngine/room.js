@@ -121,10 +121,12 @@ class Room {
         //注册游戏客户端动作
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
+        const masterUser = this.game.gameState ? clone(this.game.gameState.find(state => state.master)) : undefined;
+        this.game.master = this.gamers.find(gamer => gamer.uid === masterUser.uid);
         this.initGame();
         this.game.sendForRoom = this.sendForRoom;
         this.game.sendForUser = this.sendForUser;
-        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }));
+        this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }), masterUser);
         this.game.assignCard();//分发牌
     }
     begin(scoket, sendForRoom, sendForUser) {

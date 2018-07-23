@@ -262,7 +262,7 @@ const rules = [
     },
     //小三元
     ({ cards }) => {
-        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         if (resultType_1.hz0 && resultType_1.bb0 && resultType_1.fc0) {
             if (resultType_1.hz0.count >= 2 && resultType_1.bb0.count >= 2 && resultType_1.fc0 == fc0.count >= 2) {
                 return { name: '小三元', multiple: 5 }
@@ -365,9 +365,12 @@ const rules = [
     },
     //大三元
     ({ cards }) => {
-        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.allCards);
+        let { resultType_1, resultType_2 } = tool.getCardShowTime(cards.fullHandCards);
         if (resultType_1.hz0 && resultType_1.bb0 && resultType_1.fc0) {
-            if (resultType_1.hz0.count >= 3 && resultType_1.bb0.count >= 3 && resultType_1.hz == fc0.count >= 3) {
+            // if (resultType_1.hz0.count >= 3 && resultType_1.bb0.count >= 3 && resultType_1.hz == fc0.count >= 3) {
+            //     return { name: '大三元', multiple: 0 }//大三元是在计算完之后乘以2，这里先给0
+            // }
+            if (resultType_1.hz0.count >= 3 && resultType_1.bb0.count >= 3 && resultType_1.fc0>= 3) {
                 return { name: '大三元', multiple: 0 }//大三元是在计算完之后乘以2，这里先给0
             }
         }
