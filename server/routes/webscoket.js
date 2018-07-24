@@ -28,6 +28,9 @@ module.exports = (server) => {
         socket.on('chatMsg', function (_data) {
             gameEngine.chatMsg(JSON.parse(_data));
         });
+        socket.on('ack', function (ackId) {
+            gameEngine.ack(ackId);
+        });
     });
 
 };

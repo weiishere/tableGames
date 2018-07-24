@@ -42,34 +42,90 @@ setInterval(function () {
     });
 }, 60 * 60 * 1000);
 
-class MsgExplorer {
-    constructor() {
-        this.queueNum = 0;
-        this.dataQueue = [];
-        this.msgStorage = {};
-    }
-    push(data) {
-        this.queueNum++;
-        this.dataQueue.push(this.queueNum);
-        data['ackId'] = this.queueNum;
-        this.msgStorage['_' + this.queueNum] = { msgData: data };
-    }
-    msgAck(ackId) {
-        
+class MsgSender {
+    constructor(userScoket, data) {
+        this.data = data;
+        this.timer;
+        this.sendCount = 0;
+        this.userScoket = userScoket;
     }
     send() {
+        this.userScoket.emit('message', JSON.stringify(this.data));
+        // this.timer = setInterval(() => {
+        //     //最多发送20次
+        //     if (this.sendCount <= 20) {
+        //         this.userScoket.emit('message', JSON.stringify(this.data));
+        //         this.clear();
+        //     } else {
+        //         this.sendCount++;
+        //     }
+        // }, 1000);
+    }
+    clear() {
+        console.log('clear:' + this.data.ackId);
+        clearInterval(this.timer);
+        //delete this;
+    }
+}
+class MsgExplorer {
+    constructor() {
+        //this.roomId = roomId;
+        this.index = 0;
+        this.queue = [];
+        this.msgData = {}
+    }
+    push(userScoket, data) {
+        this.index++;
+        //const key = this.roomId + "_" + this.index;
+        const key = "msg_" + this.index;
+        let _data = JSON.parse(data);
+        _data['ackId'] = key;
+        this.queue.push(key);
+        this.msgData[key] = new MsgSender(userScoket, _data);
+    }
+    loop() {
+        if (this.queue.length !== 0) {
+            const frist = this.queue.reverse().pop();
+            this.msgData[frist].send();
+            //取得第一项
+            this.queue.reverse();
+            this.loop();
+        }
+    }
+    run() {
+        setInterval(() => {
+            if (this.queue.length !== 0) {
+                this.loop();
+            }
+        }, 50);
+    }
+    msgAck(ackId) {
+        try {
 
+            
+            console.log(this.msgData)
+            console.log(ackId);
+            console.log(this.msgData.msg_1);
+            this.msgData[ackId + ''].clear();
+        } catch (e) {
+            //console.log('----------------------');
+
+            console.log(e);
+        }
     }
 }
 
 
 module.exports = (io, scoket) => {
+    let msgExplorer = new MsgExplorer();
+    msgExplorer.run();
     const sendForUser = (uid, content) => {
         for (let i in io.sockets.sockets) {
             const item = io.sockets.sockets[i];
             if (item.user && item.user.uid === uid) {
                 //console.log(`发送消息给${item.user.name}：${content}`);
-                item.emit('message', content);
+                msgExplorer.push(item, content);
+                //item.emit('message', content);
                 return;
             }
         }
@@ -466,6 +522,9 @@ module.exports = (io, scoket) => {
                     content: data.content
                 })}}`);
             }, 50);
+        },
+        ack: (ackId) => {
+            msgExplorer.msgAck(ackId);
         },
         exit: (data) => {
             // const resultRooms = findUserInRoom(data.uid);

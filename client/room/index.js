@@ -398,7 +398,9 @@ class Table extends Component {
                     //history.back();
                     break;
             }
+            console.log(data.ackId);
             isDebug && console.log(data.content);
+            ws.emit('ack', data.ackId);
         });
         ws.on('disconnect', function () {
             //显示重连
