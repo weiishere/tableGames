@@ -1424,7 +1424,7 @@ class GameInfo extends Component {
                 <footer>
                     {this.props.room.state === 'end' && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你再战！</div>}
                     <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
-                    {this.props.isOver && <button className='closeBtu ready' style={{ marginBottom: 0, marginLeft: 10 }} onClick={() => { this.props.closeHandle('ready') }}></button>}
+                    {this.props.room.state !== 'end' && this.props.isOver && <button className='closeBtu ready' style={{ marginBottom: 0, marginLeft: 10 }} onClick={() => { this.props.closeHandle('ready') }}></button>}
                 </footer>
             </div>
 

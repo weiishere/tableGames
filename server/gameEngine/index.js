@@ -42,6 +42,25 @@ setInterval(function () {
     });
 }, 60 * 60 * 1000);
 
+class MsgExplorer {
+    constructor() {
+        this.queueNum = 0;
+        this.dataQueue = [];
+        this.msgStorage = {};
+    }
+    push(data) {
+        this.queueNum++;
+        this.dataQueue.push(this.queueNum);
+        data['ackId'] = this.queueNum;
+        this.msgStorage['_' + this.queueNum] = { msgData: data };
+    }
+    msgAck(ackId) {
+        
+    }
+    send() {
+
+    }
+}
 
 
 module.exports = (io, scoket) => {
