@@ -688,11 +688,9 @@ class Table extends Component {
             </div>
             <div className='rainEffect hide'>
                 <span></span>
-                <s></s>
             </div>
             <div className='rainEffect2 hide'>
                 <span></span>
-                <s></s>
             </div>
         </QueueAnim>
             <Sound />
@@ -937,7 +935,7 @@ class Gamer_mine extends Component {
         //     window.clearTimeout(timer);
         // }
     }
-    showCard() {
+    showCard(order) {
         if (this.cardHandler) return;
         this.cardHandler = true;
         this.setState({ buttonVisible: true });
@@ -959,7 +957,8 @@ class Gamer_mine extends Component {
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
                 cardKey: this.state.activeCard.key,
-                fromUser: true
+                fromUser: true,
+                isCancleAction: order === 'cancleAction' ? true : false
             }));
             //考虑到流畅性，打完前端马上去掉这个牌
             if (isIOS) {
@@ -1043,10 +1042,15 @@ class Gamer_mine extends Component {
             //this.setState({ activeCard: {} });
         } else {
             if (card.key === this.state.activeCard.key) {
-                //如果有操作选项在，则禁用双击打牌，不然有点麻烦
-                if (this.props.userState.actionCode.length !== 0) { return; }
-                this.showCard();
+                // //如果有操作选项在，则禁用双击打牌，不然有点麻烦
+                // if (this.props.userState.actionCode.length !== 0) { return; }
 
+                if (this.props.userState.actionCode.length !== 0) {
+                    debugger
+                    this.showCard('cancleAction');
+                } else {
+                    this.showCard();
+                }
                 if (this.props.userState.catcher) {
                     this.setState({ activeCard: card });
                 }
@@ -1129,7 +1133,8 @@ class Gamer_mine extends Component {
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
-                <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf(':') ? this.props.userState.winDesc.split(':')[1] : this.props.userState.winDesc}</div>
+                <div className='winDesc'>{this.props.userState.winDesc}</div>
+                {/* <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf(':') ? this.props.userState.winDesc.split(':')[1] : this.props.userState.winDesc}</div> */}
             </QueueAnim>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>

@@ -63,7 +63,7 @@ module.exports = (app) => {
     app.post(path + '/checkin', function (req, res, next) {
         try {
             const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, isDev } = req.body;
-            const option = {
+            let option = {
                 gamers: [],
                 gamerNumber: 4,
                 mulriple: mulriple,//倍数
@@ -73,8 +73,7 @@ module.exports = (app) => {
                 rule: rule,
                 ruleName: ruleName,
                 colorType: colorType,
-                countdown: countdown,
-                roomCards: response.data
+                countdown: countdown
             }
             if (isDev) {
                 sqliteCommon.insert({
@@ -90,6 +89,7 @@ module.exports = (app) => {
                     number: roomCardNum,
                     token: getToken()
                 })).then(function (response) {
+                    option['roomCards'] = response.data;
                     sqliteCommon.insert({
                         uid: uid,
                         state: 0,
