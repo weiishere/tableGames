@@ -51,20 +51,19 @@ class MsgSender {
     }
     send() {
         this.userScoket.emit('message', JSON.stringify(this.data));
-        // this.timer = setInterval(() => {
-        //     //最多发送20次
-        //     if (this.sendCount <= 20) {
-        //         this.userScoket.emit('message', JSON.stringify(this.data));
-        //         this.clear();
-        //     } else {
-        //         this.sendCount++;
-        //     }
-        // }, 1000);
+        this.timer = setInterval(() => {
+            //最多发送20次
+            if (this.sendCount <= 20) {
+                this.userScoket.emit('message', JSON.stringify(this.data));
+                console.log('timeOut:' + this.data.ackId);
+                msgExplorer.msgAck(this.data.ackId);
+            } else {
+                this.sendCount++;
+            }
+        }, 1000);
     }
     clear() {
-        console.log('clear:' + this.data.ackId);
         clearInterval(this.timer);
-        //delete this;
     }
 }
 class MsgExplorer {
@@ -72,11 +71,13 @@ class MsgExplorer {
         //this.roomId = roomId;
         this.index = 0;
         this.queue = [];
-        this.msgData = {}
+        this.msgData = {};
+        this.isRunning = false;
     }
     push(userScoket, data) {
         this.index++;
         //const key = this.roomId + "_" + this.index;
+        console.log('index:' + this.index);
         const key = "msg_" + this.index;
         let _data = JSON.parse(data);
         _data['ackId'] = key;
@@ -84,41 +85,42 @@ class MsgExplorer {
         this.msgData[key] = new MsgSender(userScoket, _data);
     }
     loop() {
+        this.isRunning = true;
         if (this.queue.length !== 0) {
             const frist = this.queue.reverse().pop();
             this.msgData[frist].send();
             //取得第一项
             this.queue.reverse();
             this.loop();
+        } else {
+            this.isRunning = false;
         }
     }
     run() {
         setInterval(() => {
-            if (this.queue.length !== 0) {
+            if (this.queue.length !== 0 && !this.isRunning) {
                 this.loop();
             }
         }, 50);
     }
     msgAck(ackId) {
         try {
-
-            
-            console.log(this.msgData)
-            console.log(ackId);
-            console.log(this.msgData.msg_1);
-            this.msgData[ackId + ''].clear();
+            console.log('----------------------b');
+            console.log(this.msgData);
+            console.log(this.msgData[ackId]);
+            this.msgData[ackId].clear();
+            delete this.msgData[ackId];
+            console.log(this.msgData);
+            console.log('----------------------e');
         } catch (e) {
-            //console.log('----------------------');
-
             console.log(e);
         }
     }
 }
-
+let msgExplorer = new MsgExplorer();
+msgExplorer.run();
 
 module.exports = (io, scoket) => {
-    let msgExplorer = new MsgExplorer();
-    msgExplorer.run();
     const sendForUser = (uid, content) => {
         for (let i in io.sockets.sockets) {
             const item = io.sockets.sockets[i];
