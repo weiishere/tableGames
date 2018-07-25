@@ -2,6 +2,7 @@ const Room = require('./room');
 const clone = require('clone');
 const writeLog = require('../util/errorLog');
 const sqliteCommon = require('../sqliteCommon');
+const MsgExplorer = require('./msgExplorer');
 global.allRooms = [];
 //let global.allRooms = global.allRooms;
 
@@ -42,81 +43,7 @@ setInterval(function () {
     });
 }, 60 * 60 * 1000);
 
-class MsgSender {
-    constructor(userScoket, data) {
-        this.data = data;
-        this.timer;
-        this.sendCount = 0;
-        this.userScoket = userScoket;
-    }
-    send() {
-        this.userScoket.emit('message', JSON.stringify(this.data));
-        this.timer = setInterval(() => {
-            //最多发送20次
-            if (this.sendCount <= 20) {
-                this.userScoket.emit('message', JSON.stringify(this.data));
-                console.log('timeOut:' + this.data.ackId);
-                msgExplorer.msgAck(this.data.ackId);
-            } else {
-                this.sendCount++;
-            }
-        }, 1000);
-    }
-    clear() {
-        clearInterval(this.timer);
-    }
-}
-class MsgExplorer {
-    constructor() {
-        //this.roomId = roomId;
-        this.index = 0;
-        this.queue = [];
-        this.msgData = {};
-        this.isRunning = false;
-    }
-    push(userScoket, data) {
-        this.index++;
-        //const key = this.roomId + "_" + this.index;
-        console.log('index:' + this.index);
-        const key = "msg_" + this.index;
-        let _data = JSON.parse(data);
-        _data['ackId'] = key;
-        this.queue.push(key);
-        this.msgData[key] = new MsgSender(userScoket, _data);
-    }
-    loop() {
-        this.isRunning = true;
-        if (this.queue.length !== 0) {
-            const frist = this.queue.reverse().pop();
-            this.msgData[frist].send();
-            //取得第一项
-            this.queue.reverse();
-            this.loop();
-        } else {
-            this.isRunning = false;
-        }
-    }
-    run() {
-        setInterval(() => {
-            if (this.queue.length !== 0 && !this.isRunning) {
-                this.loop();
-            }
-        }, 50);
-    }
-    msgAck(ackId) {
-        try {
-            console.log('----------------------b');
-            console.log(this.msgData);
-            console.log(this.msgData[ackId]);
-            this.msgData[ackId].clear();
-            delete this.msgData[ackId];
-            console.log(this.msgData);
-            console.log('----------------------e');
-        } catch (e) {
-            console.log(e);
-        }
-    }
-}
+
 let msgExplorer = new MsgExplorer();
 msgExplorer.run();
 
@@ -126,7 +53,11 @@ module.exports = (io, scoket) => {
             const item = io.sockets.sockets[i];
             if (item.user && item.user.uid === uid) {
                 //console.log(`发送消息给${item.user.name}：${content}`);
-                msgExplorer.push(item, content);
+                let key = undefined; const con = JSON.parse(content);
+                if (con.type === 'roomData' || con.type === 'gameData') {
+                    key = con.type;
+                }
+                msgExplorer.push(item, content, key);
                 //item.emit('message', content);
                 return;
             }

@@ -1046,9 +1046,9 @@ class Gamer_mine extends Component {
             if (card.key === this.state.activeCard.key) {
                 // //如果有操作选项在，则禁用双击打牌，不然有点麻烦
                 // if (this.props.userState.actionCode.length !== 0) { return; }
-
+                if (this.state.buttonVisible) return;//隐藏这个的时候不执行
                 if (this.props.userState.actionCode.length !== 0) {
-                    debugger
+
                     this.showCard('cancleAction');
                 } else {
                     this.showCard();
