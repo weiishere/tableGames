@@ -131,7 +131,7 @@ class NewRoom extends Component {
                 colorType: this.state.colorType[0],
                 countdown: this.state.countdown[0],
                 roomCardNum: this.state.roomCard,
-                isDev: process.env.NODE_ENV === 'development' ? true : false
+                isDev: process.env.NODE_ENV !== 'development' ? true : false
             }).then((data) => {
                 if (process.env.NODE_ENV === 'development') {
                     this.setState({
