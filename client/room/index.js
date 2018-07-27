@@ -47,7 +47,6 @@ var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
 let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
 
-//alert(decodeURI(getQueryString('name')));
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: getQueryString('name') || 'player',
@@ -318,7 +317,7 @@ class Table extends Component {
         const roomOption = JSON.parse(room.jsonData);
         //this.countdown = process.env.NODE_ENV === 'development' ? 9999 : roomOption.countdown;
         this.ruleName = roomOption.ruleName;
-        ruleName = ',' + this.ruleName;
+        ruleName = '，' + this.ruleName;
         //开发测试的时候这里可以对游戏做临时配置
         const __option = {
             gamerNumber: playerNumber,
@@ -398,9 +397,12 @@ class Table extends Component {
                     //history.back();
                     break;
             }
-            console.log(data.ackId);
             isDebug && console.log(data.content);
-            ws.emit('ack', data.ackId);
+            ws.emit('ack', JSON.stringify({
+                ackId: data.ackId,
+                uid: self.state.user.uid,
+                roomId: room.roomId
+            }));
         });
         ws.on('disconnect', function () {
             //显示重连

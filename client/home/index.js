@@ -25,6 +25,11 @@ if (process.env.NODE_ENV !== 'development') {
     } else {
         userInfo = JSON.parse(userInfoCookie);
     }
+    // axios.get('/auth?target=checkIn').then(function (response) {
+    //     alert(response.data);
+    // }).catch(function (error) {
+    //     alert(error);
+    // });
 }
 
 class LayOut extends Component {
@@ -139,24 +144,47 @@ class NewRoom extends Component {
                         roomId: data.data
                     });
                 } else {
-                    // this.setState({
-                    //     roomInfo_visible: true,
-                    //     roomId: data.data,
-                    //     done: true
-                    // });
-                    location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+                    let self = this;
+                    if (window.hasOwnProperty('wx')) {
+                        axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
+                            const ticketData = req.data;
+                            wx.config({
+                                debug: false,
+                                appId: ticketData.appId,
+                                timestamp: ticketData.timestamp,
+                                nonceStr: ticketData.noncestr,
+                                signature: ticketData.signature,
+                                jsApiList: ['onMenuShareAppMessage']
+                            });
+                            const link = 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + data.data);
+                            wx.ready(function () {
+                                wx.onMenuShareAppMessage({
+                                    title: '麻友们邀您来战，' + self.state.ruleName + '【房间号：' + data.data + '】',
+                                    desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
+                                    link: link,//`http://www.fanstongs.com/room?roomId=${data.data}`,
+                                    imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
+                                    success: function () { }
+                                });
+                                self.setState({
+                                    roomInfo_visible: true,
+                                    roomId: data.data,
+                                    done: true
+                                });
+                                //location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+                            });
+                        });
+                    }
                 }
+            }).catch((error) => {
+                alert(error);
             });
         }
-
     }
     render() {
-
         return !this.state.done ? <div className='flex-container'>
             <div className="sub-title">
                 <img src='/images/games/majiang2/roomCheckin.png' />
             </div>
-
             <WingBlank size="lg">
                 <WhiteSpace size="lg" />
                 <Card>

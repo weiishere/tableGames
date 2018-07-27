@@ -85,7 +85,7 @@ module.exports = (app) => {
                 });
             } else {
                 axios.post(`http://manage.fanstongs.com/api/getRoomCard`, qs.stringify({
-                    userId: uid,
+                    userid: uid,
                     number: roomCardNum,
                     token: getToken()
                 })).then(function (response) {

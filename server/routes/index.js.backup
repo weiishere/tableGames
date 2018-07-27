@@ -55,7 +55,6 @@ module.exports = (app) => {
         res.render('index.ejs', {
             title: '创建房间-掌派桌游',
             scripts: `<script src='http://apps.bdimg.com/libs/fastclick/1.0.0/fastclick.min.js'></script>
-            <script src='http://res.wx.qq.com/open/js/jweixin-1.2.0.js'></script>
             <script src='/dist/home.bundle.js'></script>`
         });
     });
@@ -80,7 +79,6 @@ module.exports = (app) => {
         // });
         const url = oauth.getAuthorizeURL('http://www.fanstongs.com/auth_response', target, 'snsapi_userinfo');
         res.redirect(url);
-        //console.log(url);
     });
     app.get('/auth_response/', async function (req, res, next) {
         const { code, state } = req.query;
@@ -115,8 +113,6 @@ module.exports = (app) => {
                     //     maxAge: 60 * 60 * 24 * 7 // 1 week
                     // }
                 );
-                // console.log(userInfo);
-                // res.json(userInfo);
                 res.redirect(`/${state}`);
             }).catch(function (error) {
                 writeLog('login api', error);

@@ -456,8 +456,8 @@ module.exports = (io, scoket) => {
                 })}}`);
             }, 50);
         },
-        ack: (ackId) => {
-            msgExplorer.msgAck(ackId);
+        ack: (data) => {
+            msgExplorer.msgAck(data);
         },
         exit: (data) => {
             // const resultRooms = findUserInRoom(data.uid);
