@@ -79,7 +79,7 @@ class MsgExplorer {
             }
         }, 50);
     }
-    msgAck(ackId) {
+    msgAck({ ackId, roomId, uid }) {
         try {
             // console.log('----------------------b');
             // console.log(this.msgData);
