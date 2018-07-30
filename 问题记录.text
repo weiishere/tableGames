@@ -28,3 +28,4 @@
 25、考虑不要轮询scoket，直接把key存到gamer里面，下次直接取
 26、在ack的时候传入uid，如果offline=true的话，换成false，并发送gamedata
 27、考虑在胡牌的时候就马上刷新用户的积分
+28、杠动作应该单独提出来写个类了

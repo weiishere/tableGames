@@ -1,3 +1,4 @@
+const writeLog = require('../util/errorLog');
 class MsgSender {
     constructor(userScoket, data) {
         this.data = data;
@@ -6,17 +7,28 @@ class MsgSender {
         this.userScoket = userScoket;
     }
     send(msgExplorer) {
-        this.userScoket.emit('message', JSON.stringify(this.data));
-        this.timer = setInterval(() => {
-            //最多发送20次，每秒一次
-            if (this.sendCount <= 20) {
-                this.userScoket.emit('message', JSON.stringify(this.data));
-                console.log('timeOut:' + this.data.ackId);
-                msgExplorer.msgAck(this.data.ackId);
-            } else {
-                this.sendCount++;
-            }
-        }, 1000);
+        try {
+            this.userScoket.emit('message', JSON.stringify(this.data));
+            this.timer = setInterval(() => {
+                if (msgExplorer.msgData[this.data.ackId]) {
+                    //如果队列中有新的值了，停止
+                    this.clear();
+                    msgExplorer.msgAck({ ackId: this.data.ackId });
+                } else {
+                    //最多发送20次，每秒一次
+                    if (this.sendCount <= 10) {
+                        this.userScoket.emit('message', JSON.stringify(this.data));
+                        this.sendCount++;
+                    } else {
+                        console.log('timeOut:' + this.data.ackId);
+                        this.clear();
+                        msgExplorer.msgAck({ ackId: this.data.ackId });
+                    }
+                }
+            }, 2000);
+        } catch (e) {
+            writeLog('MsgExplorer send', e);
+        }
     }
     clear() {
         clearInterval(this.timer);
@@ -31,29 +43,36 @@ class MsgExplorer {
         this.isRunning = false;
     }
     ///**key有值的话，意思是此信息的ack键为固定值，只会存在一条，push之后会清除之前未发送出的消息 */
+    setAckCallBack(fn) {
+        this.setAckCallBack = fn;
+    }
     push(userScoket, data, dataKey) {
-
         //const key = this.roomId + "_" + this.index;
         //console.log('index:' + this.index);
-        let key;
-        if (dataKey) {
-            key = "msg_" + userScoket.id + "_" + dataKey;
-        } else {
-            this.index++;
-            key = "msg_" + this.index;
-        }
-        let _data = JSON.parse(data);
-        _data['ackId'] = key;
-        if (dataKey && this.msgData[key]) {
-            //如有dataKey值，需要预先清除之前的消息对象
-            this.msgData[key].clear();
-            //delete this.msgData[key];
-            if (this.queue.find(q => q === key)) {
-                this.queue = this.queue.filter(q => q !== key);
+        try {
+            let key;
+            if (dataKey) {
+                key = "msg_" + userScoket.id + "_" + dataKey;
+            } else {
+                this.index++;
+                key = "msg_" + this.index;
             }
+            let _data = JSON.parse(data);
+            _data['ackId'] = key;
+            if (dataKey && this.msgData[key]) {
+                //如有dataKey值，需要预先清除之前的消息对象
+                this.msgData[key].clear();
+                //delete this.msgData[key];
+                if (this.queue.find(q => q === key)) {
+                    this.queue = this.queue.filter(q => q !== key);
+                }
+            }
+
+            this.queue.push(key);
+            this.msgData[key] = new MsgSender(userScoket, _data);
+        } catch (e) {
+            writeLog('MsgExplorer push', e);
         }
-        this.queue.push(key);
-        this.msgData[key] = new MsgSender(userScoket, _data);
     }
     loop() {
         this.isRunning = true;
@@ -90,8 +109,9 @@ class MsgExplorer {
                 //console.log("ack delete:" + ackId);
                 this.msgData[ackId].clear();
                 delete this.msgData[ackId];
+                this.setAckCallBack(roomId, uid);
             } else {
-                console.log("can't find msgData of ackId");
+                //console.log("can't find msgData of ackId");
             }
 
             // console.log(this.msgData);

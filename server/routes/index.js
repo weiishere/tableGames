@@ -115,8 +115,6 @@ module.exports = (app) => {
                     //     maxAge: 60 * 60 * 24 * 7 // 1 week
                     // }
                 );
-                // console.log(userInfo);
-                // res.json(userInfo);
                 res.redirect(`/${state}`);
             }).catch(function (error) {
                 writeLog('login api', error);

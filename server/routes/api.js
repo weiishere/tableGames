@@ -89,6 +89,7 @@ module.exports = (app) => {
                     number: roomCardNum,
                     token: getToken()
                 })).then(function (response) {
+                    console.log(response.data);
                     option['roomCards'] = response.data;
                     sqliteCommon.insert({
                         uid: uid,
@@ -104,6 +105,26 @@ module.exports = (app) => {
         } catch (error) {
             writeLog('checkin api', error);
         }
+    });
+    app.post(path + '/updateRecode', function (req, res, next) {
+        const { roomcardid, playuserid, recodeData } = req.body;
+        axios.post(`http://manage.fanstongs.com/api/getRoomCard`, qs.stringify({
+            userid: uid,
+            number: roomCardNum,
+            token: getToken()
+        })).then(function (response) {
+            console.log(response.data);
+            option['roomCards'] = response.data;
+            sqliteCommon.insert({
+                uid: uid,
+                state: 0,
+                jsonData: JSON.stringify(option)
+            }, function (roomId) {
+                res.json(roomId);
+            });
+        }).catch(function (error) {
+            writeLog('getRoomCard api', error);
+        })
     });
     app.post(path + '/getRoom', function (req, res, next) {
         const { roomId, state } = req.body;

@@ -116,6 +116,7 @@ class NewRoom extends Component {
             mulriple: 1,
             colorType: [3],
             countdown: [20],
+            loading: false,
             done: false
         }
         this.ruleData = [
@@ -128,6 +129,7 @@ class NewRoom extends Component {
         if (this.state.roomCard === 0) {
             alert('请输入房卡数');
         } else {
+            //this.setState({ loading: true });
             axios.post('/api/checkin', {
                 uid: this.props.user.userid,
                 rule: this.state.rule[0],
@@ -136,7 +138,7 @@ class NewRoom extends Component {
                 colorType: this.state.colorType[0],
                 countdown: this.state.countdown[0],
                 roomCardNum: this.state.roomCard,
-                isDev: process.env.NODE_ENV !== 'development' ? true : false
+                isDev: process.env.NODE_ENV === 'development' ? true : false
             }).then((data) => {
                 if (process.env.NODE_ENV === 'development') {
                     this.setState({
@@ -145,35 +147,37 @@ class NewRoom extends Component {
                     });
                 } else {
                     let self = this;
-                    if (window.hasOwnProperty('wx')) {
-                        axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
-                            const ticketData = req.data;
-                            wx.config({
-                                debug: false,
-                                appId: ticketData.appId,
-                                timestamp: ticketData.timestamp,
-                                nonceStr: ticketData.noncestr,
-                                signature: ticketData.signature,
-                                jsApiList: ['onMenuShareAppMessage']
-                            });
-                            const link = 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + data.data);
-                            wx.ready(function () {
-                                wx.onMenuShareAppMessage({
-                                    title: '麻友们邀您来战，' + self.state.ruleName + '【房间号：' + data.data + '】',
-                                    desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
-                                    link: link,//`http://www.fanstongs.com/room?roomId=${data.data}`,
-                                    imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
-                                    success: function () { }
-                                });
-                                self.setState({
-                                    roomInfo_visible: true,
-                                    roomId: data.data,
-                                    done: true
-                                });
-                                //location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
-                            });
-                        });
-                    }
+                    // if (window.hasOwnProperty('wx')) {
+                    //     axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
+                    //         const ticketData = req.data;
+                    //         wx.config({
+                    //             debug: false,
+                    //             appId: ticketData.appId,
+                    //             timestamp: ticketData.timestamp,
+                    //             nonceStr: ticketData.noncestr,
+                    //             signature: ticketData.signature,
+                    //             jsApiList: ['onMenuShareAppMessage']
+                    //         });
+                    //         const link = 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + data.data);
+                    //         wx.ready(function () {
+                    //             wx.onMenuShareAppMessage({
+                    //                 title: '麻友们邀您来战，' + self.state.ruleName + '【房间号：' + data.data + '】',
+                    //                 desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
+                    //                 link: link,//`http://www.fanstongs.com/room?roomId=${data.data}`,
+                    //                 imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
+                    //                 success: function () { }
+                    //             });
+                    //             self.setState({
+                    //                 roomInfo_visible: true,
+                    //                 roomId: data.data,
+                    //                 loading: false,
+                    //                 done: true
+                    //             });
+                    //             //location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+                    //         });
+                    //     });
+                    // }
+                    location.replace(`http://www.fanstongs.com/room?roomId=${data.data}`); 
                 }
             }).catch((error) => {
                 alert(error);
@@ -182,6 +186,11 @@ class NewRoom extends Component {
     }
     render() {
         return !this.state.done ? <div className='flex-container'>
+            {this.state.loading && <ActivityIndicator
+                toast
+                text="请稍后..."
+                animating={true}
+            />}
             <div className="sub-title">
                 <img src='/images/games/majiang2/roomCheckin.png' />
             </div>

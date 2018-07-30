@@ -45,34 +45,48 @@ var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://localhost:8800') : io('ws://220.167.101.116:3300');
+let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8800') : io('ws://220.167.101.116:3300');
 
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: getQueryString('name') || 'player',
     headimgurl: '/images/games/majiang/head.jpg'//https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg
 };
+
+let rotateHandler = () => {
+    var orientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
+    if (orientation === "portrait") {
+        $("#layout").addClass('portraitStyle').height(window.innerWidth).width(window.innerHeight).css('transform-origin', window.innerWidth / 2);
+        document.querySelector('html').style.fontSize = `${document.body.clientWidth / 37}px`;
+    } else {
+        document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
+        $("#layout").removeClass('portraitStyle').height(window.innerHeight).width(window.innerWidth).css('transform-origin', 0);
+    }
+}
 document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
 window.addEventListener("onorientationchange" in window ? "orientationchange" : "resize", function () {
     window.setTimeout(function () {
-        document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-    }, 1000);
+        rotateHandler();
+    }, 500);
 }, false);
-window.addEventListener("orientationchange", function () {
-    //console.log(window.orientation);
-    document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
+$(function () {
+    rotateHandler();
 });
-window.addEventListener("onsize", function () {
-    //console.log(window.orientation);
-    document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
-});
+// window.addEventListener("orientationchange", function () {
+//     //console.log(window.orientation);
+//     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
+// });
+// window.addEventListener("onsize", function () {
+//     //console.log(window.orientation);
+//     document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
+// });
 
 
 
 if (!isDebug) {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {
-        location.href = '/auth?target=' + escape('room?roomId=' + getQueryString('roomId'));
+        location.replace('/auth?target=' + escape('room?roomId=' + getQueryString('roomId')));
     } else {
         userInfo = JSON.parse(userInfoCookie);
         userInfo.nickname = decodeURI(userInfo.nickname);
@@ -99,7 +113,7 @@ if (!isDebug) {
                 wx.onMenuShareAppMessage({
                     title: '麻友们邀您来战' + ruleName + '【房间号：' + getQueryString('roomId') + '】',
                     desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
-                    link: location.href,
+                    link: 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + getQueryString('roomId')),//location.href,
                     imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
                     success: function () {
                         //alert('success');
@@ -325,7 +339,8 @@ class Table extends Component {
             colorType: roomOption.colorType,//表示两黄牌还是三黄牌
             mulriple: roomOption.mulriple,//倍数
             gameTime: roomOption.gameTime,
-            countdown: roomOption.countdown
+            countdown: roomOption.countdown,
+            roomCards: roomOption.roomCards
         }
         this.setState({
             option: __option
@@ -430,6 +445,7 @@ class Table extends Component {
         }
         this.setState({ showRecore: false });
         if (order === 'ready') {
+            this.setState({ game: null });
             ws.emit('ready', JSON.stringify({
                 user: this.state.user,
                 roomId: this.state.room.roomId,
@@ -889,7 +905,8 @@ class Gamer_mine extends Component {
             activeCard: {},
             buttonVisible: false,
             fmChooseCardKey: [], //用于多杠的情况
-            hadOutCardKey: ''//用于马上打出去的牌
+            hadOutCardKey: '',//用于马上打出去的牌
+            userState: null
         }
         this.cardHandler = false;
         this.isLack = false;
@@ -911,6 +928,8 @@ class Gamer_mine extends Component {
         this.cardHandler = true;
         const self = this;
         this.props.readyCallback();
+        //$('.cardListWrap .card').remove();
+        this.setState({ userState: null });
         window.setTimeout(() => {
             ws.emit('ready', JSON.stringify({
                 user: self.props.user,
@@ -925,7 +944,8 @@ class Gamer_mine extends Component {
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
             activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}),
-            hadOutCardKey: ''
+            hadOutCardKey: '',
+            userState: nextProps.userState
         });
 
 
@@ -1081,12 +1101,18 @@ class Gamer_mine extends Component {
             this.props.userState.cards.forEach(card => {
                 minColorObj[card.color]++;
             });
-            for (let i in minColorObj) {
-                if (minColorObj[i] < min) {
-                    minColor = i;
-                    min = minColorObj[i];
+            ['b', 't', 'w'].forEach(item => {
+                if (minColorObj[item] < min) {
+                    minColor = item;
+                    min = minColorObj[item];
                 }
-            }
+            })
+            // for (let i in minColorObj) {
+            //     if (minColorObj[i] < min) {
+            //         minColor = i;
+            //         min = minColorObj[i];
+            //     }
+            // }
         }
         const ready = <div key='ready' onClick={this.ready} className='btu ready'></div>
         const btu_showCard = <div key='showCard' onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>

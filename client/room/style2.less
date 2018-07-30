@@ -230,6 +230,7 @@ button {
                 //height: 21rem;
                 box-sizing: border-box;
                 flex: 1;
+                display: flex;
                 &>div {
                     margin: .5rem;
                     border: solid .3rem #d4ab7f; //height: 18rem;
@@ -238,7 +239,8 @@ button {
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
-                    height: 90%;
+                    width: 100%;
+                    //height: 90%;
                     &.self {
                         border-color: #ce632d;
                         background: #d8ebee;
@@ -274,7 +276,7 @@ button {
                             margin: auto;
                             background: url('/images/games/majiang2/crown.png');
                             background-size: cover;
-                            vertical-align: middle;
+                            vertical-align: middle;transform: rotate(90)
                         }
                         span {}
                     }
@@ -289,7 +291,7 @@ button {
                             margin: 0 auto; //padding-left: .5rem; //height: 2.6rem;
                             border-bottom: dashed .05rem #ad9d92;
                             padding: .2rem;
-                            height: 4rem;
+                            min-height: 4rem;
                             &:nth-child(2n-1) {
                                 background: #f1d8c5;
                             }
@@ -1526,226 +1528,231 @@ button {
     }
 }
 
-@media screen and (orientation: portrait) {
-    /*竖屏 css*/
-    .btu {
-        &.ready {
-            width: 9.5rem;
-            height: 5rem;
-        }
-    }
-    .orientationWeak {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.8);
-        span {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            margin: auto;
-            width: 80%;
-            height: 10rem;
-            font-size: 3rem;
-            text-align: center;
-        }
-    }
-    .userDock {
-        width: 5rem;
-        height: 8rem;
-        font-size: 1.8rem;
-        .nameWrap {
-            font-size: 1.8rem
-        }
-        img {
-            width: 4rem;
-            height: 4rem;
-        }
-        &.active {
-            width: 8rem;
-            height: 13rem;
-        }
-        .score {
-            span {
-                font-size: 1.8rem
-            }
-        }
-        .Allscore {
-            font-size: 1.6rem;
-            line-height: 2.2rem;
-        }
-        .location {
-            font-size: 1.6rem;
-            line-height: 2.2rem;
-        }
-    }
-    .gamerWrap_top {
-        top: 5rem;
-        .userDock {
-            top: 7rem;
-        }
-        .cardListWrap {
-            left: 0;
-            right: 0;
-            width: 70%;
-        }
-        .outCardListWrap {
-            left: 0;
-            right: 0;
-            width: 50%;
-            top: 8rem;
-        }
-    }
-    .gamerWrap_left {
-        .outCardListWrap {
-            top: 16rem;
-            bottom: 16rem;
-            width: 8rem;
-        }
-    }
-    .gamerWrap_right {
-        right: 2rem;
-        .outCardListWrap {
-            top: 16rem;
-            bottom: 16rem;
-            width: 8rem;
-            left: -6.5rem;
-        }
-    }
-    .gamerWrap_mine {
-        z-index: 1;
-        height: 15rem;
-        .userDock {
-            top: -25rem;
-        }
-        .cardListWrap {
-            height: auto;
-            .fetchCard {
-                //display: inline-block;
-                position: absolute;
-                right: 0;
-                top: -50%;
-            }
-        }
-        .operateWrap {
-            .btu {
-                margin: 0 1rem;
-            }
-        }
-        .outCardListWrap {
-            top: -8rem;
-        }
-    }
-    .MainTable {
-        .gameInfoWrapper {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-        .gameInfoPanel {
-            overflow: hidden;
-            .contentWrap {
-                flex-direction: column;
-                .content {
-                    &>div {
-                        ul {
-                            height: 10rem;
-                        }
-                    }
-                }
-            }
-            &>footer {
-                height: 3rem;
-            }
-        }
-        .gameInfoBar {
-            button {
-                height: 4rem;
-                width: 4rem;
-            }
-        }
-        .tableCenter {
-            width: 12rem;
-            height: 12rem;
-            .center {
-                font-size: 2.5rem
-            }
-        }
-        .msgPanel {
-            width: 30rem;
-            top: 4.5rem;
-            bottom: 4.5rem;
-            &.hide {
-                transform: translate3d(36rem, 0, 0);
-            }
-            .miniMsgPanel {
-                width: 30rem;
-                font-size: 2.5rem;
-                &>b {
-                    color: #59f1b2;
-                    float: left;
-                    .ellipsis;
-                    max-width: 5rem;
-                }
-                &.show {
-                    //display: block;
-                    transform: translate3d(-28rem, 0, 0) !important;
-                    visibility: inherit;
-                }
-            }
-            &>header {
-                height: 5rem;
-                input {
-                    width: 14rem;
-                    height: 3rem;
-                    margin: .8rem;
-                }
-                button {
-                    svg {
-                        width: 3.5rem !important;
-                        height: 3.5rem !important
-                    }
-                }
-                ul {
-                    li {
-                        font-size: 2rem
-                    }
-                }
-                div {
-                    top: 4.5rem;
-                    width: 25rem;
-                    ul {
-                        li {
-                            font-size: 1.5rem;
-                        }
-                    }
-                }
-            }
-            &>footer {
-                height: 100%;
-                width: 5rem;
-                left: -5rem;
-            }
-            ul {
-                li {
-                    svg {
-                        width: 2rem;
-                        height: 2rem;
-                    }
-                    font-size: 1.5rem;
-                }
-            }
-        }
-    }
-    .card.card_mine_main {
-        width: 5rem;
-        height: 7rem;
-    }
+
+.portraitStyle{
+    transform: rotate(90deg);
 }
+
+// @media screen and (orientation: portrait) {
+//     /*竖屏 css*/
+//     .btu {
+//         &.ready {
+//             width: 9.5rem;
+//             height: 5rem;
+//         }
+//     }
+//     .orientationWeak {
+//         position: fixed;
+//         left: 0;
+//         top: 0;
+//         width: 100%;
+//         height: 100%;
+//         background: rgba(255, 255, 255, 0.8);
+//         span {
+//             position: absolute;
+//             top: 0;
+//             bottom: 0;
+//             left: 0;
+//             right: 0;
+//             margin: auto;
+//             width: 80%;
+//             height: 10rem;
+//             font-size: 3rem;
+//             text-align: center;
+//         }
+//     }
+//     .userDock {
+//         width: 5rem;
+//         height: 8rem;
+//         font-size: 1.8rem;
+//         .nameWrap {
+//             font-size: 1.8rem
+//         }
+//         img {
+//             width: 4rem;
+//             height: 4rem;
+//         }
+//         &.active {
+//             width: 8rem;
+//             height: 13rem;
+//         }
+//         .score {
+//             span {
+//                 font-size: 1.8rem
+//             }
+//         }
+//         .Allscore {
+//             font-size: 1.6rem;
+//             line-height: 2.2rem;
+//         }
+//         .location {
+//             font-size: 1.6rem;
+//             line-height: 2.2rem;
+//         }
+//     }
+//     .gamerWrap_top {
+//         top: 5rem;
+//         .userDock {
+//             top: 7rem;
+//         }
+//         .cardListWrap {
+//             left: 0;
+//             right: 0;
+//             width: 70%;
+//         }
+//         .outCardListWrap {
+//             left: 0;
+//             right: 0;
+//             width: 50%;
+//             top: 8rem;
+//         }
+//     }
+//     .gamerWrap_left {
+//         .outCardListWrap {
+//             top: 16rem;
+//             bottom: 16rem;
+//             width: 8rem;
+//         }
+//     }
+//     .gamerWrap_right {
+//         right: 2rem;
+//         .outCardListWrap {
+//             top: 16rem;
+//             bottom: 16rem;
+//             width: 8rem;
+//             left: -6.5rem;
+//         }
+//     }
+//     .gamerWrap_mine {
+//         z-index: 1;
+//         height: 15rem;
+//         .userDock {
+//             top: -25rem;
+//         }
+//         .cardListWrap {
+//             height: auto;
+//             .fetchCard {
+//                 //display: inline-block;
+//                 position: absolute;
+//                 right: 0;
+//                 top: -50%;
+//             }
+//         }
+//         .operateWrap {
+//             .btu {
+//                 margin: 0 1rem;
+//             }
+//         }
+//         .outCardListWrap {
+//             top: -8rem;
+//         }
+//     }
+//     .MainTable {
+//         .gameInfoWrapper {
+//             width: 100%;
+//             height: 100%;
+//             position: relative;
+//         }
+//         .gameInfoPanel {
+//             overflow: hidden;
+//             .contentWrap {
+//                 flex-direction: column;
+//                 .content {
+//                     &>div {
+//                         ul {
+//                             height: 10rem;
+//                         }
+//                     }
+//                 }
+//             }
+//             &>footer {
+//                 height: 3rem;
+//             }
+//         }
+//         .gameInfoBar {
+//             button {
+//                 height: 4rem;
+//                 width: 4rem;
+//             }
+//         }
+//         .tableCenter {
+//             width: 12rem;
+//             height: 12rem;
+//             .center {
+//                 font-size: 2.5rem
+//             }
+//         }
+//         .msgPanel {
+//             width: 30rem;
+//             top: 4.5rem;
+//             bottom: 4.5rem;
+//             &.hide {
+//                 transform: translate3d(36rem, 0, 0);
+//             }
+//             .miniMsgPanel {
+//                 width: 30rem;
+//                 font-size: 2.5rem;
+//                 &>b {
+//                     color: #59f1b2;
+//                     float: left;
+//                     .ellipsis;
+//                     max-width: 5rem;
+//                 }
+//                 &.show {
+//                     //display: block;
+//                     transform: translate3d(-28rem, 0, 0) !important;
+//                     visibility: inherit;
+//                 }
+//             }
+//             &>header {
+//                 height: 5rem;
+//                 input {
+//                     width: 14rem;
+//                     height: 3rem;
+//                     margin: .8rem;
+//                 }
+//                 button {
+//                     svg {
+//                         width: 3.5rem !important;
+//                         height: 3.5rem !important
+//                     }
+//                 }
+//                 ul {
+//                     li {
+//                         font-size: 2rem
+//                     }
+//                 }
+//                 div {
+//                     top: 4.5rem;
+//                     width: 25rem;
+//                     ul {
+//                         li {
+//                             font-size: 1.5rem;
+//                         }
+//                     }
+//                 }
+//             }
+//             &>footer {
+//                 height: 100%;
+//                 width: 5rem;
+//                 left: -5rem;
+//             }
+//             ul {
+//                 li {
+//                     svg {
+//                         width: 2rem;
+//                         height: 2rem;
+//                     }
+//                     font-size: 1.5rem;
+//                 }
+//             }
+//         }
+//     }
+//     .card.card_mine_main {
+//         width: 5rem;
+//         height: 7rem;
+//     }
+// }
 
 @media screen and (orientation: landscape) {
     /*横屏 css*/

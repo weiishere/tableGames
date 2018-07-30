@@ -122,7 +122,13 @@ class Room {
         //game.regAction(scoket, this);
         //默认第一个用户是庄家
         const masterUser = this.game.gameState ? clone(this.game.gameState.find(state => state.master)) : undefined;
-        this.game.master = this.gamers.find(gamer => gamer.uid === masterUser.uid);
+        if (masterUser) {
+            this.game.master = this.gamers.find(gamer => gamer.uid === masterUser.uid);
+        } else {
+            console.log('未找到庄家');
+            console.log(this.game.gameState);
+            this.game.master = this.gamers[0];
+        }
         this.initGame();
         this.game.sendForRoom = this.sendForRoom;
         this.game.sendForUser = this.sendForUser;
@@ -165,13 +171,12 @@ class Room {
                     }
                     if (uid) {
                         if (gamer.uid === uid) {
-                            sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                            sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
                         }
                     } else {
                         //console.log(gamer.name);
-                        sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `);
+                        sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
                     }
-
                 });
             })
             //this.singleGameBegin(scoket);

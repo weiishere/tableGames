@@ -86,7 +86,7 @@ const actions = [
     }, {
         code: 'fullMeetWin',
         name: '杠上花',
-        multiple: 2
+        multiple: 3
     }, {
         code: 'fullMeetLose',
         name: '杠上炮',
