@@ -6,17 +6,7 @@ const apiUrl = 'http://220.167.101.116:8080';
 const qs = require('qs');
 
 module.exports = (app) => {
-    const path = '/api'
-    // app.get(path + '/node/userIsExists', function (req, res, next) {
-    //     const { openId } = req.body;
-    //     axios.get(`${apiUrl}/node/userIsExists?openid=${openId}`).then(function (response) {
-    //         res.json(response.data);
-    //     }).catch(function (error) {
-    //         console.log('----------------userIsExists error start----------------------');
-    //         console.log(error);
-    //         console.log('-----------------userIsExists error end---------------------');
-    //     })
-    // });
+    const path = '/api';
     app.post(path + '/login', function (req, res, next) {
         const { openid, nickname, headimgurl } = req.body;
         //const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
@@ -50,16 +40,6 @@ module.exports = (app) => {
         //     writeLog('login api', error);
         // });
     });
-    // app.post(path + '/reg', function (req, res, next) {
-    //     const { openId, username } = req.body;
-    //     axios.post(`${apiUrl}/node/userAdd?openid=${openId}&username=${username}`).then(function (response) {
-    //         res.json(response.data);
-    //     }).catch(function (error) {
-    //         console.log('----------------reg error start----------------------');
-    //         console.log(error);
-    //         console.log('-----------------reg error end---------------------');
-    //     })
-    // });
     app.post(path + '/checkin', function (req, res, next) {
         try {
             const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, isDev } = req.body;

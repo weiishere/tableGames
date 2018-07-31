@@ -37,7 +37,7 @@ const getAccess_token = (done) => {
     try {
         var url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' + appid + '&secret=' + secret;
         request.get(url, function (err, response, body) {
-            console.log((new Date()).toLocaleString() + '：get access_token:' + body);
+            //console.log((new Date()).toLocaleString() + '：get access_token:' + body);
             var token = JSON.parse(body);
             global.access_token = token.access_token;
             done && done();
