@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator, Stepper, Tabs, Badge } from 'antd-mobile';
+import { Card, WingBlank, WhiteSpace, List, InputItem, Popover, Picker, Modal, Icon, NavBar, Button, ActivityIndicator, Stepper, Tabs, Badge,Toast } from 'antd-mobile';
 import url from 'url';
 import clone from 'clone';
 import Cookies from "js-cookie";
@@ -70,6 +70,10 @@ class LayOut extends Component {
                 nickname: userInfo.nickname,//'测试nickName',
                 headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
             }).then((req) => {
+                if(!req.data.userid){
+                    Toast.info('抱歉，用户信息获取失败，请稍后再试...');
+                    return;
+                }
                 userInfo['roomcard'] = req.data.roomcard;
                 userInfo['score'] = req.data.score;
                 this.setState({
@@ -126,7 +130,7 @@ class NewRoom extends Component {
     }
     checkinHandler() {
         if (this.state.roomCard === 0) {
-            alert('请输入房卡数');
+            Toast.info('请输入房卡数');
         } else {
             axios.post('/api/checkin', {
                 uid: this.props.user.userid,
@@ -144,6 +148,10 @@ class NewRoom extends Component {
                         roomId: data.data
                     });
                 } else {
+                    if (data.data === 'none') {
+                        Toast.info('抱歉，房间创建失败，请稍后再试...');
+                        return;
+                    }
                     let self = this;
                     if (window.hasOwnProperty('wx')) {
                         axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
@@ -176,7 +184,7 @@ class NewRoom extends Component {
                     }
                 }
             }).catch((error) => {
-                alert(error);
+                Toast.info(error);
             });
         }
     }

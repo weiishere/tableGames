@@ -33,9 +33,12 @@ module.exports = (app) => {
             .then((response) => {
                 if (!response.data.userid) {
                     writeLog('login api then', response);
+                    res.json(response.data);
                 }
                 res.json(response.data);
-            })
+            }).catch((error) => {
+                writeLog('login api catch', error);
+            });
         // axios.post(encodeURI(_url), {
         //     openid: openid,
         //     username: nickname,
@@ -63,6 +66,10 @@ module.exports = (app) => {
     app.post(path + '/checkin', function (req, res, next) {
         try {
             const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, isDev } = req.body;
+            if (!uid) {
+                res.json('none');
+                return;
+            }
             let option = {
                 gamers: [],
                 gamerNumber: 4,
