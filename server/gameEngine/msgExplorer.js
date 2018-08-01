@@ -44,7 +44,7 @@ class MsgExplorer {
     }
     ///**key有值的话，意思是此信息的ack键为固定值，只会存在一条，push之后会清除之前未发送出的消息 */
     setAckCallBack(fn) {
-        this.setAckCallBack = fn;
+        this.ackCallBack = fn;
     }
     push(userScoket, data, dataKey) {
         //const key = this.roomId + "_" + this.index;
@@ -109,7 +109,7 @@ class MsgExplorer {
                 //console.log("ack delete:" + ackId);
                 this.msgData[ackId].clear();
                 delete this.msgData[ackId];
-                this.setAckCallBack(roomId, uid);
+                this.ackCallBack(roomId, uid);
             } else {
                 //console.log("can't find msgData of ackId");
             }

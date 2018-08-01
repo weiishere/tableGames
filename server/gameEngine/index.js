@@ -356,10 +356,10 @@ module.exports = (io, scoket) => {
     }
     let msgExplorer = new MsgExplorer();
     msgExplorer.run();
-    msgExplorer.setAckCallBack((roomId, uid) => {
+    msgExplorer.setAckCallBack(function (roomId, uid) {
         let room = getRoom(roomId);
         if (room) {
-            const gamer = room.gamers.find(gamer => gamer.uid === uid);
+            let gamer = room.gamers.find(gamer => gamer.uid === uid);
             if (gamer.offLine) {
                 gamer['offLine'] = false;
                 sendForRoom(roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`, room);
