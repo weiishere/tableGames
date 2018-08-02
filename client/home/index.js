@@ -117,7 +117,7 @@ class NewRoom extends Component {
             modal_details: '',
             rule: ['chengdu'],
             ruleName: '成都麻将',
-            mulriple: 1,
+            mulriple: 5,
             colorType: [3],
             countdown: [20],
             loading: false,
@@ -127,21 +127,67 @@ class NewRoom extends Component {
             { value: 'chengdu', label: '成都麻将' },
             { value: 'guangan', label: '广安麻将' }
         ]
+        this.quickCheckInOption = [
+            {
+                rule: 'guangan',
+                ruleName: '广安麻将',
+                mulriple: 5,
+                colorType: 3,
+                countdown: 20,
+                roomCardNum: 1
+            },
+            {
+                rule: 'guangan',
+                ruleName: '广安麻将',
+                mulriple: 10,
+                colorType: 3,
+                countdown: 20,
+                roomCardNum: 1
+            },
+            {
+                rule: 'chengdu',
+                ruleName: '成都麻将',
+                mulriple: 5,
+                colorType: 3,
+                countdown: 20,
+                roomCardNum: 1
+            },
+            {
+                rule: 'chengdu',
+                ruleName: '成都麻将',
+                mulriple: 5,
+                colorType: 2,
+                countdown: 20,
+                roomCardNum: 1
+            },
+            {
+                rule: 'chengdu',
+                ruleName: '成都麻将',
+                mulriple: 10,
+                colorType: 3,
+                countdown: 20,
+                roomCardNum: 1
+            }
+        ]
         this.checkinHandler = this.checkinHandler.bind(this);
     }
-    checkinHandler() {
-        if (this.state.roomCard === 0) {
-            Toast.info('请输入房卡数');
+    checkinHandler(option = {}) {
+        if (this.state.roomCard === 0 && !option.roomCardNum) {
+            Toast.info('请输入房卡数~');
         } else {
+            if (this.state.roomCard > this.props.user.roomcard || option.roomCardNum > this.props.user.roomcard) {
+                Toast.info('抱歉，您的房卡余额不足~');
+                return;
+            }
             //this.setState({ loading: true });
             axios.post('/api/checkin', {
                 uid: this.props.user.userid,
-                rule: this.state.rule[0],
-                ruleName: this.state.ruleName,
-                mulriple: this.state.mulriple,
-                colorType: this.state.colorType[0],
-                countdown: this.state.countdown[0],
-                roomCardNum: this.state.roomCard,
+                rule: option.rule || this.state.rule[0],
+                ruleName: option.ruleName || this.state.ruleName,
+                mulriple: option.mulriple || this.state.mulriple,
+                colorType: option.colorType || this.state.colorType[0],
+                countdown: option.countdown || this.state.countdown[0],
+                roomCardNum: option.roomCardNum || this.state.roomCard,
                 isDev: process.env.NODE_ENV === 'development' ? true : false
             }).then((data) => {
                 if (process.env.NODE_ENV === 'development') {
@@ -155,36 +201,36 @@ class NewRoom extends Component {
                         return;
                     }
                     let self = this;
-                    // if (window.hasOwnProperty('wx')) {
-                    //     axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
-                    //         const ticketData = req.data;
-                    //         wx.config({
-                    //             debug: false,
-                    //             appId: ticketData.appId,
-                    //             timestamp: ticketData.timestamp,
-                    //             nonceStr: ticketData.noncestr,
-                    //             signature: ticketData.signature,
-                    //             jsApiList: ['onMenuShareAppMessage']
-                    //         });
-                    //         const link = 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + data.data);
-                    //         wx.ready(function () {
-                    //             wx.onMenuShareAppMessage({
-                    //                 title: '麻友们邀您来战，' + self.state.ruleName + '【房间号：' + data.data + '】',
-                    //                 desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
-                    //                 link: link,//`http://www.fanstongs.com/room?roomId=${data.data}`,
-                    //                 imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
-                    //                 success: function () { }
-                    //             });
-                    //             self.setState({
-                    //                 roomInfo_visible: true,
-                    //                 roomId: data.data,
-                    //                 loading: false,
-                    //                 done: true
-                    //             });
-                    //             //location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
-                    //         });
-                    //     });
-                    // }
+                    /*if (window.hasOwnProperty('wx')) {
+                        axios.get('/wechat/ticket?page=' + location.href, {}).then((req) => {
+                            const ticketData = req.data;
+                            wx.config({
+                                debug: false,
+                                appId: ticketData.appId,
+                                timestamp: ticketData.timestamp,
+                                nonceStr: ticketData.noncestr,
+                                signature: ticketData.signature,
+                                jsApiList: ['onMenuShareAppMessage']
+                            });
+                            const link = 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + data.data);
+                            wx.ready(function () {
+                                wx.onMenuShareAppMessage({
+                                    title: '麻友们邀您来战，' + self.state.ruleName + '【房间号：' + data.data + '】',
+                                    desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
+                                    link: link,//`http://www.fanstongs.com/room?roomId=${data.data}`,
+                                    imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
+                                    success: function () { }
+                                });
+                                self.setState({
+                                    roomInfo_visible: true,
+                                    roomId: data.data,
+                                    loading: false,
+                                    done: true
+                                });
+                                //location.href = `http://www.fanstongs.com/room?roomId=${data.data}`;
+                            });
+                        });
+                    }*/
                     location.replace(`http://www.fanstongs.com/room?roomId=${data.data}`);
                 }
             }).catch((error) => {
@@ -209,11 +255,12 @@ class NewRoom extends Component {
                 >
                     <div className='flex-container'>
                         <ul className='quickCheckIn'>
-                            <li><span></span>广安麻将：三门，房卡1，5倍</li>
-                            <li><span></span>广安麻将：三门，房卡1，10倍</li>
-                            <li><span></span>成都麻将：三门，房卡1，5倍</li>
-                            <li><span></span>成都麻将：两门，房卡1，5倍</li>
-                            <li><span></span>成都麻将：三门，房卡1，10倍</li>
+                            {
+                                this.quickCheckInOption.map(optionItem =>
+                                    <li onClick={() => {
+                                        this.checkinHandler(optionItem);
+                                    }}><span></span>{optionItem.ruleName}：{optionItem.colorType === 3 ? '三门' : '两门'}，房卡{optionItem.roomCardNum}，{optionItem.mulriple}倍</li>)
+                            }
                         </ul>
                     </div>
                     <div className='flex-container'>
@@ -350,7 +397,7 @@ class NewRoom extends Component {
                                             </List.Item>
                                         </List>
                                     </Card.Body>
-                                    <Card.Footer content={`持有房卡：${this.props.user.roomcard}`} extra={<div>积分：{this.props.user.score}</div>} />
+                                    <Card.Footer content={<span>健康娱乐</span>} extra={<span>禁止赌博</span>} />
                                 </Card>
                                 <WhiteSpace size="lg" />
                             </WingBlank>

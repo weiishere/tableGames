@@ -50,7 +50,7 @@ module.exports = (io, scoket) => {
         if (room) {
             //console.log(room.gamers);
             for (let i = 0, l = room.gamers.length; i < l; i++) {
-                if (!room.gamers[i].scoketId) { console.log('scoketId none'); }
+                if (!room.gamers[i].scoketId) { console.log('scoketId none:'); console.log(room.gamers[i]); }
                 let item = io.sockets.sockets[room.gamers[i].scoketId];
                 if (item && room.gamers[i] && room.gamers[i].uid === uid) {
                     // console.log(room.gamers[i].scoketId);
