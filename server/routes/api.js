@@ -45,7 +45,7 @@ module.exports = (app) => {
     });
     app.post(path + '/checkin', function (req, res, next) {
         try {
-            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, isDev } = req.body;
+            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, deskTop, isDev } = req.body;
             if (!uid) {
                 res.json('none');
                 return;
@@ -60,7 +60,8 @@ module.exports = (app) => {
                 rule: rule,
                 ruleName: ruleName,
                 colorType: colorType,
-                countdown: countdown
+                countdown: countdown,
+                deskTop: deskTop
             }
             if (isDev) {
                 sqliteCommon.insert({
@@ -93,24 +94,30 @@ module.exports = (app) => {
             writeLog('checkin api', error);
         }
     });
-    app.post(path + '/updateRecode', function (req, res, next) {
-        const { roomcardid, playuserid, recodeData } = req.body;
-        axios.post(`http://manage.fanstongs.com/api/getRoomCard`, qs.stringify({
-            userid: uid,
-            number: roomCardNum,
+    app.post(path + '/updateBoardData', function (req, res, next) {
+        const { boardid, recodeData } = req.body;
+        axios.post(`http://manage.fanstongs.com/api/updateBoardData`, qs.stringify({
+            boardid: boardid,
+            collectData: recodeData,
             token: getToken()
         })).then(function (response) {
             console.log(response.data);
-            option['roomCards'] = response.data;
-            sqliteCommon.insert({
-                uid: uid,
-                state: 0,
-                jsonData: JSON.stringify(option)
-            }, function (roomId) {
-                res.json(roomId);
-            });
+            res.json(response.data);
         }).catch(function (error) {
-            writeLog('getRoomCard api', error);
+            writeLog('updateBoardData api', error);
+        })
+    });
+    app.post(path + '/addBoard', function (req, res, next) {
+        const { roomcardid, playuserid } = req.body;
+        axios.post(`http://manage.fanstongs.com/api/addBoard`, qs.stringify({
+            roomcardid: roomcardid,
+            playuserid: playuserid,
+            token: getToken()
+        })).then(function (response) {
+            console.log(response.data);
+            res.json(response.data);
+        }).catch(function (error) {
+            writeLog('addBoard api', error);
         })
     });
     app.post(path + '/getRoom', function (req, res, next) {
@@ -118,6 +125,12 @@ module.exports = (app) => {
         sqliteCommon.getOne({
             roomId, state
         }, function (data) {
+            res.json(data);
+        });
+    });
+    app.post(path + '/getRoomByUserId', function (req, res, next) {
+        const { userId } = req.body;
+        sqliteCommon.getRoomListByUser(userId, function (data) {
             res.json(data);
         });
     });

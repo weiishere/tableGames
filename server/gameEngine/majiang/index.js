@@ -382,7 +382,7 @@ class Majiang {
                 showCard = userState.fatchCard;
                 if (!showCard) return;
                 // console.log(showCard);
-                userState.outCards.push(clone(userState.fatchCard));
+                userState.outCards.push(userState.fatchCard);
                 //userState.fatchCard = undefined;
             } else {
                 showCard = userState.cards.find(item => item.key === data.cardKey);
@@ -391,7 +391,7 @@ class Majiang {
                 userState.outCards.push(showCard);
                 userState.cards = userState.cards.filter(item => item.key !== data.cardKey);
                 //fatchCard可能为空（碰了之后不会摸牌）
-                userState.fatchCard && userState.cards.push(clone(userState.fatchCard));
+                userState.fatchCard && userState.cards.push(userState.fatchCard);
                 userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
                 //userState.fatchCard = undefined;
             }
@@ -466,12 +466,12 @@ class Majiang {
                     hadRobState.groupCards.meet.forEach(_meet => {
                         if (_meet[0].color === this.lastShowCard.color && _meet[0].number === this.lastShowCard.number) {
                             meetToFull = _meet;
-                            meetToFull.push(clone(this.lastShowCard));
-                            hadRobState.groupCards.fullMeet.push(clone(meetToFull));
+                            meetToFull.push(this.lastShowCard);
+                            hadRobState.groupCards.fullMeet.push(meetToFull);
                         }
                     })
                     if (!meetToFull) {
-                        let _fulMmeet = [clone(this.lastShowCard)];
+                        let _fulMmeet = [this.lastShowCard];
                         hadRobState.cards = hadRobState.cards.filter(card => {
                             if (card.color === this.lastShowCard.color && card.number === this.lastShowCard.number) { _fulMmeet.push(card); return false; } else { return true; }
                         });
@@ -486,7 +486,7 @@ class Majiang {
                     }//自己再摸一张牌，并附上杠上花、杠上炮监听
                     hadRobState.outCards = hadRobState.outCards.filter(card => card.key !== this.lastShowCard.key);
                     hadRobState.winDesc = '';
-                    setTimeout(() => { this.sendData(); }, 10);
+                    this.sendData();//setTimeout(() => {  }, 10);
                     return;
                 } else if (hadRobMeetState) {
                     let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
@@ -503,7 +503,7 @@ class Majiang {
                     hadRobMeetState.groupCards.meet.push(_meet);
                     this.setGamerCacher(hadRobMeetState);
                     hadRobMeetState.winDesc = '';
-                    setTimeout(() => { this.sendData(); }, 10);
+                    this.sendData();//setTimeout(() => { this.sendData(); }, 10);
                     return;
                 } else {
                     if (!isMineAction) {
@@ -511,7 +511,7 @@ class Majiang {
                         const next = this.getNaxtCacher(this.lastShowCardUserState.uid);
                         this.setGamerCacher(next);
                         if (this.fatchCard({})) {
-                            setTimeout(() => { this.sendData(); }, 10);
+                            this.sendData();//setTimeout(() => { this.sendData(); }, 10);
                             return false;
                         }
                         // if (this.cards.length === 0) {
@@ -548,6 +548,11 @@ class Majiang {
     }
     actionEvent(data) {
         try {
+            //首先验证dataIndex，如果传回的dataIndex不是最后一次分配出去的，就不予执行，并重发信息
+            if (data.dataIndex !== this.dataIndex) {
+                this.sendData({ uid: data.uid });
+                return;
+            }
             let userState = this.gameState.find(item => item.uid === data.uid);
             if (userState['doing']) { console.log('doing'); return false; }
             userState['doing'] = true;
@@ -559,7 +564,7 @@ class Majiang {
                 this.passOperation(userState);
             } else {
                 //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
-                let doCard = isMineAction ? clone(userState.fatchCard) : clone(this.lastShowCard);//需要处理的入参牌
+                let doCard = isMineAction ? userState.fatchCard : this.lastShowCard;//需要处理的入参牌
                 if (data.actionType === 'meet' && !isMineAction) {
                     let robMeetWin = false;
                     //这里要判断是否有其他人要胡，如果有，先等待
@@ -569,7 +574,7 @@ class Majiang {
                         userState.testWinType = 'robMeet';//被抢胡等待
                         userState.winDesc = '等待其他玩家选择是否胡牌~';
                         userState.actionCode = [];
-                        setTimeout(() => { this.sendData(); }, 10);
+                        this.sendData();
                         return false;
                     } else {
                         //按照之前的逻辑，自己的牌，应该不会出现碰，这里再判断一下
@@ -603,7 +608,7 @@ class Majiang {
                                 } else {
                                     return true;
                                 }
-                            });
+                            }).sort(objectArraySort('key', userState.colorLack));
                             userState.groupCards.fullMeet.push(_fulMmeet);
                         }
                         const isRobFullMeetWin = (_doCard) => {
@@ -622,9 +627,8 @@ class Majiang {
                         if (!isMineAction) {
                             //引杠
                             if (!isRobFullMeetWin(doCard)) {
-                                userState.cards.push(clone(doCard));
-                                userState.cards = userState.cards.sort(objectArraySort('key', userState.colorLack));
                                 fmc = { payUser: this.lastShowCardUserState, multipl: 2, name: '引杠刮风', rainType: 'wind' }//引杠陪2倍
+                                userState.cards.push(doCard);
                                 fullMeetDo(doCard);
                             } else {
                                 userState.testWinType = 'robFullMeet';//被抢胡等待
@@ -672,7 +676,7 @@ class Majiang {
                                     return false;
                                 } else {
                                     meetToFull.push(doCard);
-                                    userState.groupCards.fullMeet.push(clone(meetToFull));
+                                    userState.groupCards.fullMeet.push(meetToFull);
                                     //userState.groupCards.meet = userState.groupCards.meet.filter(_meet => _meet[0].color !== doCard.color && _meet[0].number !== doCard.number);
                                     userState.groupCards.meet = userState.groupCards.meet.filter(_meet => {
                                         if (_meet[0].color === doCard.color && _meet[0].number === doCard.number) {
@@ -885,7 +889,9 @@ class Majiang {
         }
 
     }
-    sendData(uid) {
+    sendData(param = {}) {
+        if (!param.uid) this.dataIndex++; //如果单发给某一个玩家的不累加dataIndex
+        this.dataIndex++;
         this.gameState && this.gameState.forEach(status => {
             status['doing'] = undefined;
             // if (Array.isArray(status.cards) && status.colorLack) {
@@ -898,8 +904,8 @@ class Majiang {
             lastShowCard: this.lastShowCard,
             isOver: this.isOver,
             remainTime: this.timer.remainTime,
-            dataIndex: ++this.dataIndex
-        }, uid);
+            dataIndex: this.dataIndex
+        }, param);
     }
     //获取指定的牌（主要用于快速获取牌型用于测试）
     getSpecifiedCard(color, number) {
@@ -928,7 +934,7 @@ class Majiang {
         // ];
 
         // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
         //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
         //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 9),
         //     this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9)
@@ -941,7 +947,7 @@ class Majiang {
 
 
         // this.gameState[2].cards = [
-        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 7), this.getSpecifiedCard('b', 7),
+        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 4), this.getSpecifiedCard('b', 7), this.getSpecifiedCard('b', 7),
         //     this.getSpecifiedCard('b', 7), this.getSpecifiedCard('t', 3), this.getSpecifiedCard('t', 3),
         //     this.getSpecifiedCard('t', 5),
         //     this.getSpecifiedCard('t', 6),
@@ -970,7 +976,7 @@ class Majiang {
                 this.checkCanWin();//请觉并结算
                 this.timer.end();
                 this.overHandler.call(this);
-                setTimeout(() => { this.sendData(); }, 10);
+                this.sendData();
                 return false;
 
             }

@@ -1,14 +1,18 @@
 const UUID = require('../util/uuid');
 const Majiang = require('./majiang');
 const clone = require('clone');
+const getToken = require('../util/token');
 const writeLog = require('../util/errorLog');
 const sqliteCommon = require('../sqliteCommon');
+const axios = require('axios');
+const qs = require('qs');
 
 class Room {
     constructor(option) {
         this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
             gamers: [],
+            bulider: {},
             gamerNumber: 4,
             mulriple: 1,//倍数
             score: 100,//底分
@@ -17,7 +21,9 @@ class Room {
             recode: [],
             gameType: 'majiang',//‘jinhua’
             game: undefined,//正在进行的游戏
-            rule: 'chengdu'
+            rule: 'chengdu',
+            boardId: 0,//服务端对应的牌局ID
+            roomCards: []
         }, option);
         this.allTime = this.gameTime = this.optionSet.gameTime;//可以玩的次数，备份下，用于显示
         Object.keys(this.optionSet).forEach((item) => {
@@ -69,6 +75,7 @@ class Room {
             //监听单局游戏结束，进入下一局
             self.game.isOver = true;
             self.settlement();
+            self.updateBoardData(self.boardId, JSON.stringify(self.recode))//-------------------------
             if (self.gameTime > 0) {
                 //单局开始
                 self.gameTime--;
@@ -103,6 +110,42 @@ class Room {
             return false;
         }
     }
+    addBoard(roomCardId) {
+        const bulider_uid = this.bulider.uid;
+        return new Promise(
+            (resolve, reject) => {
+                axios.post(`http://manage.fanstongs.com/api/addBoard`, qs.stringify({
+                    roomcardid: roomCardId,
+                    playuserid: bulider_uid,
+                    token: getToken()
+                })).then(function (response) {
+                    console.log(response.data);
+                    //room.boardId = response.data;
+                    resolve(response.data);
+                }).catch(function (error) {
+                    reject();
+                    writeLog('addBoard api', error);
+                })
+            }
+        )
+    }
+    updateBoardData(boardid, recodeData) {
+        return new Promise(
+            (resolve, reject) => {
+                axios.post(`http://manage.fanstongs.com/api/updateBoardData`, qs.stringify({
+                    boardid: boardid,
+                    collectData: recodeData,
+                    token: getToken()
+                })).then(function (response) {
+                    console.log(response.data);
+                    resolve(response.data);
+                }).catch(function (error) {
+                    reject();
+                    writeLog('updateBoardData api', error);
+                })
+            }
+        )
+    }
     gamerLeave(uid) {
         this.gamers = this.gamers.filter(gamer => gamer.uid != uid);
     }
@@ -126,7 +169,7 @@ class Room {
             this.game.master = this.gamers.find(gamer => gamer.uid === masterUser.uid);
         } else {
             console.log('未找到庄家');
-            console.log(this.game.gameState);
+            //console.log(this.game.gameState);
             this.game.master = this.gamers[0];
         }
         this.initGame();
@@ -138,10 +181,11 @@ class Room {
     begin(scoket, sendForRoom, sendForUser) {
         try {
             const self = this;
-            this.setSendMsg(function (content, option = {}) {
-                const { uid, event, payload } = option;
+            this.setSendMsg(function (content, param = {}) {
+                const { uid, event, payload } = param;
                 //sendForRoom(data.roomId, `{"type":"gameData","content":${JSON.stringify(content)}}`);
-                self.gamers.forEach(gamer => {
+                for (let i = 0, l = self.gamers.length; i < l; i++) {
+                    const gamer = self.gamers[i];
                     let _data = {
                         gameState: (() => {
                             let result = new Object(), l = content.gameState.length;
@@ -172,12 +216,50 @@ class Room {
                     if (uid) {
                         if (gamer.uid === uid) {
                             sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
+                            break;
                         }
                     } else {
                         //console.log(gamer.name);
                         sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
                     }
-                });
+                }
+                // self.gamers.forEach(gamer => {
+                //     let _data = {
+                //         gameState: (() => {
+                //             let result = new Object(), l = content.gameState.length;
+                //             for (let i = 0; i < l; i++) {
+                //                 const userState = content.gameState[i];
+                //                 result['user_' + userState.uid] = clone(userState);
+                //                 if (userState.uid !== gamer.uid) {
+                //                     if (content.isOver) {
+                //                         result['user_' + userState.uid].cards = userState.cards;
+                //                     } else {
+                //                         result['user_' + userState.uid].cards = userState.cards.length;
+                //                     }
+
+                //                 }
+                //             }
+                //             return result;
+                //         })(),
+                //         lastShowCard: content.lastShowCard,
+                //         remainCardNumber: content.remainCardNumber,
+                //         isOver: (content.isOver ? true : false),
+                //         remainTime: content.remainTime,
+                //         dataIndex: content.dataIndex
+                //     }
+                //     if (event) {
+                //         _data['event'] = event;
+                //         _data['payload'] = payload;
+                //     }
+                //     if (uid) {
+                //         if (gamer.uid === uid) {
+                //             sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
+                //         }
+                //     } else {
+                //         //console.log(gamer.name);
+                //         sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
+                //     }
+                // });
             })
             //this.singleGameBegin(scoket);
             this.game.init(this.gamers.map((gamer, index) => { return { uid: gamer.uid, name: gamer.name, catcher: false } }));

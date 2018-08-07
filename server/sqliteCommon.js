@@ -60,6 +60,19 @@ module.exports = {
             });
         })
     },
+    //根据用户获取房间数列表
+    getRoomListByUser: (userId, done, error) => {
+        db.serialize(function () {
+            const sql = `select * from rooms where checkiner="${userId}" order by state`;
+            db.all(sql, function (err, rows) {
+                if (err) {
+                    if (error) error(err);
+                    throw err;
+                }
+                done && done(rows);
+            });
+        })
+    },
     //更新房间状态
     updateState: ({ roomId, state }, done, error) => {
         db.serialize(function () {

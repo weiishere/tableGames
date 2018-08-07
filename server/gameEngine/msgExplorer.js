@@ -109,7 +109,7 @@ class MsgExplorer {
                 //console.log("ack delete:" + ackId);
                 this.msgData[ackId].clear();
                 delete this.msgData[ackId];
-                this.ackCallBack(roomId, uid);
+                if (roomId && uid) { this.ackCallBack(roomId, uid); }
             } else {
                 //console.log("can't find msgData of ackId");
             }

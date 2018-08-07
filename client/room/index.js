@@ -340,7 +340,8 @@ class Table extends Component {
             mulriple: roomOption.mulriple,//倍数
             gameTime: roomOption.gameTime,
             countdown: roomOption.countdown,
-            roomCards: roomOption.roomCards
+            roomCards: roomOption.roomCards,
+            deskTop: roomOption.deskTop
         }
         this.setState({
             option: __option
@@ -493,6 +494,7 @@ class Table extends Component {
                 ws.emit('action', JSON.stringify({
                     roomId: this.state.room.roomId,
                     uid: mine.uid,
+                    dataIndex: this.state.game.dataIndex,
                     actionType: mine.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
                 }));
             } else {
@@ -600,7 +602,7 @@ class Table extends Component {
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
-        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`}>
+        ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`} style={this.state.option.deskTop ? { backgroundImage: 'url(' + this.state.option.deskTop + ')' } : {}} >
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
                 {me && <Gamer_mine game={this.state.game} user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
                 {rightGamer && <Gamer_right game={this.state.game} user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -687,15 +689,17 @@ class Table extends Component {
                         }));
                     }} />
             </div>
-            {!this.state.keepVertical && <div className='orientationWeak'>
-                <span>
-                    为了更好的游戏体验，请打开手机的允许屏幕旋转开关，Android用户还需在微信中进行设置：我->设置->通用->开启横屏模式
+            {
+                !this.state.keepVertical && <div className='orientationWeak' style={{ display: 'none' }}>
+                    <span>
+                        为了更好的游戏体验，请打开手机的允许屏幕旋转开关，Android用户还需在微信中进行设置：我->设置->通用->开启横屏模式
                     <br /><br />
-                    <a href='javascript:;' onClick={() => {
-                        this.setState({ keepVertical: true })
-                    }}>坚持竖屏</a>
-                </span>
-            </div>}
+                        <a href='javascript:;' onClick={() => {
+                            this.setState({ keepVertical: true })
+                        }}>坚持竖屏</a>
+                    </span>
+                </div>
+            }
             {
                 (this.state.isConnectting || this.isFristLoad) && <QueueAnim className='importantWeak'><span>{this.isFristLoad ? '正在连接中，请稍后...' : '网络重连中，请稍后...'}
                     <a href='javascript:;' onClick={() => {
@@ -712,11 +716,11 @@ class Table extends Component {
             <div className='rainEffect2 hide'>
                 <span></span>
             </div>
-        </QueueAnim>
+        </QueueAnim >
             <Sound />
             <Toast key='toast' content={this.state.toast} onHide={() => { this.setState({ toast: '' }) }} />
             {this.state.notice && <div className='notice'><marquee >掌派桌游正式公测，无需房卡免费开房，欢迎玩家踊跃试玩，测试版本可能存在尚未发现的错误，若游戏期间出现问题望请理解，同时您也可以将问题截图发到我们的公众号，验证为有效bug将奖励50张房卡(公测期间每晚1:00~2:00点为固定系统维护期，可能会出现不稳定的情况，玩家请尽量绕开此时段游戏，感谢您的试玩！)</marquee></div>}
-        </div>
+        </div >
     }
 }
 class Countdown extends Component {
@@ -915,6 +919,7 @@ class Gamer_mine extends Component {
         this.clickHandle = this.clickHandle.bind(this);
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
+        this.fetchCard_tran = true;
 
     }
     // shouldComponentUpdate(nextProps) {
@@ -947,7 +952,7 @@ class Gamer_mine extends Component {
             hadOutCardKey: '',
             userState: nextProps.userState
         });
-
+        this.fetchCard_tran = true;
 
         // let timer;
         // //------------------------------------------------------测试自动打牌，自动准备--------------------------------------------------
@@ -1032,6 +1037,7 @@ class Gamer_mine extends Component {
             roomId: this.props.room.roomId,
             uid: this.props.user.uid,
             actionType: type,
+            dataIndex: this.props.game.dataIndex,
             doCardKey: doCardKey
         }));
         if (isIOS && (type === 'meet' || type === 'fullMeet')) {
@@ -1058,6 +1064,7 @@ class Gamer_mine extends Component {
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
                 actionType: 'fullMeet',
+                dataIndex: this.props.game.dataIndex,
                 doCardKey: card.key
             }));
             return;
@@ -1069,8 +1076,8 @@ class Gamer_mine extends Component {
                 // //如果有操作选项在，则禁用双击打牌，不然有点麻烦
                 // if (this.props.userState.actionCode.length !== 0) { return; }
                 if (this.state.buttonVisible) return;//隐藏这个的时候不执行
+                if (this.props.userState.fatchCard && this.state.activeCard.key !== this.props.userState.fatchCard.key) this.fetchCard_tran = false;
                 if (this.props.userState.actionCode.length !== 0) {
-
                     this.showCard('cancleAction');
                 } else {
                     this.showCard();
@@ -1092,6 +1099,7 @@ class Gamer_mine extends Component {
             color: color
         }));
     }
+
     render() {
         let minColor = '', min = 100;
         if (this.props.userState) {
@@ -1158,7 +1166,7 @@ class Gamer_mine extends Component {
                         </Card></div>)
                 }
 
-                {this.props.userState.fatchCard && <div key='fetchCard' className='fetchCard'>
+                {this.props.userState.fatchCard && <div key='fetchCard' className={`fetchCard ${!this.fetchCard_tran && 'fetchCard_tran'}`}>
                     <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle}
                         type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
                         card={this.props.userState.fatchCard}></Card>

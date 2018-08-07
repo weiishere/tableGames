@@ -19,6 +19,10 @@
     }
 }
 
+body{overflow: hidden;background: #ccc;}
+#layout{
+    overflow: hidden;
+}
 .loadWrap {
     position: absolute;
     left: 0;
@@ -112,6 +116,7 @@ button {
     background-size: 100% 100%;
     position: relative;
     overflow: hidden;
+    //display: none;
     .ruleNameBar {
         position: absolute;
         right: 0;
@@ -199,6 +204,15 @@ button {
             }
         }
     }
+    .gameInfoWrapper{
+        // transform: scale(1,1);
+        // height: 100%;
+        // width: 100%;
+        // position: absolute;
+        // left: 0;
+        // top: 0;
+        // z-index: 100;
+    }
     .gameInfoPanel {
         position: absolute;
         z-index: 100;
@@ -239,8 +253,7 @@ button {
                     overflow: hidden;
                     display: flex;
                     flex-direction: column;
-                    width: 100%;
-                    //height: 90%;
+                    width: 100%; //height: 90%;
                     &.self {
                         border-color: #ce632d;
                         background: #d8ebee;
@@ -276,9 +289,15 @@ button {
                             margin: auto;
                             background: url('/images/games/majiang2/crown.png');
                             background-size: cover;
-                            vertical-align: middle;transform: rotate(90)
+                            vertical-align: middle;
+                            transform: rotate(90)
                         }
-                        span {}
+                        span {
+                            .ellipsis;
+                            width: 8rem;
+                            display: inline-block;
+                            vertical-align: middle;
+                        }
                     }
                     ul {
                         list-style: none;
@@ -293,7 +312,19 @@ button {
                             padding: .2rem;
                             min-height: 4rem;
                             &:nth-child(2n-1) {
-                                background: #f1d8c5;
+                                background: #fff3e9;
+                            }
+                            &:first-child {
+                                color: #6d3e0b;
+                                background: #fff3e9;
+                                border-bottom: solid .07rem #75553f;
+                                div {
+                                    label{
+                                        font-size: .8rem;
+                                        font-weight: bold;
+                                        color: #333;
+                                    }
+                                }
                             }
                             label {
                                 font-size: .7rem; // width: 7rem;
@@ -549,7 +580,7 @@ button {
         }
     }
     .tableCenter {
-        position: absolute;
+        position: fixed;
         width: 8rem;
         height: 8rem; // top: 11.4rem;
         // left: 26rem;
@@ -557,11 +588,12 @@ button {
         bottom: 0;
         left: 0;
         right: 0;
-        transform: scale(.8, .8);
+        -webkit-transform: scale(.8, .8);
         margin: auto;
         background: url('/images/games/majiang2/center.png');
         background-size: 100% 100%;
         opacity: .8;
+        z-index: 1;
         .center {
             position: absolute;
             left: 0;
@@ -897,6 +929,10 @@ button {
     // }
 }
 
+.fetchCard_tran {
+    transform: none !important;
+}
+
 .gamerWrap_mine {
     //display: none;
     position: absolute;
@@ -918,23 +954,25 @@ button {
         width: 96%;
         height: 5rem;
         text-align: center;
+        
         .mainCards {}
         .group {
             text-align: left;
             display: inline-block;
             margin: 0 .5rem;
+            
             &.meet {
                 //width:15%;
                 span:last-child {
                     margin-left: -5rem;
-                    transform: translate3d(0, -1.1rem, 0);
+                    transform: translate(0, -1.1rem);
                 }
             }
             &.fullmeet {
                 //width: 20%;
                 span:last-child {
                     margin-left: -6.7rem;
-                    transform: translate3d(0, -1.1rem, 0);
+                    transform: translate(0, -1.1rem);
                 }
             }
         }
@@ -1008,9 +1046,10 @@ button {
         .group {
             margin-bottom: .2rem;
             .clearfix;
-            &.fullmeet{
+            &.fullmeet {
                 span:last-child {
                     margin-top: -3.5rem;
+                    z-index: 1;
                 }
             }
         }
@@ -1022,7 +1061,7 @@ button {
             float: left;
             margin-top: -.6rem;
             img {
-                -webkit-transform: translate3d(.1rem, -.1rem, 0) rotate(90deg);
+                -webkit-transform: translate(.1rem, -.1rem) rotate(90deg);
                 width: 60%;
                 height: 90%;
             }
@@ -1069,9 +1108,10 @@ button {
         .group {
             margin-bottom: .2rem;
             .clearfix;
-            &.fullmeet{
+            &.fullmeet {
                 span:last-child {
                     margin-top: -3.5rem;
+                    z-index: 10;
                 }
             }
         }
@@ -1083,7 +1123,7 @@ button {
             float: left;
             margin-top: -.6rem;
             img {
-                -webkit-transform: translate3d(-.1rem, -.1rem, 0) rotate(-90deg);
+                -webkit-transform: translate(-.1rem, -.1rem) rotate(-90deg);
                 width: 60%;
                 height: 90%;
             }
@@ -1147,6 +1187,18 @@ button {
             margin-left: .2rem;
             .clearfix;
             float: right;
+            margin-top: .5rem;
+            &.fullmeet {
+                &>span {
+                    &:last-child {
+                        margin-left: -3rem;
+                        margin-top: -.6rem;
+                        float: right;
+                        transform: translate(-1.7rem, 0);
+                        z-index: 1;
+                    }
+                }
+            }
         }
         .card_group {
             width: 1.8rem;
@@ -1246,6 +1298,7 @@ button {
     background-size: 100% 100%;
     text-align: center;
     position: relative;
+    overflow: hidden;
     ._transition;
     &.gray {
         // -webkit-filter: grayscale(80%);
@@ -1259,7 +1312,7 @@ button {
             top: 0;
             left: 0;
             border-radius: .4rem;
-            background: rgba(0, 0, 0, 0.15);
+            background: rgba(0, 0, 0, 0.3);
         }
     }
     &.mark {
@@ -1277,7 +1330,7 @@ button {
         }
     }
     &.active {
-        -webkit-transform: translate3d(0, -.7rem, 0);
+        -webkit-transform: translate(0, -.7rem);
     }
     &.stress {
         border: solid .1rem #59f1b2;
@@ -1528,9 +1581,18 @@ button {
     }
 }
 
-
-.portraitStyle{
+.portraitStyle {
     transform: rotate(90deg);
+    .gamerWrap_mine{
+        // .userDock{
+        //     bottom: 13rem
+        // }
+        // .cardListWrap{
+        //     right: auto;
+        //     width: 100%;
+        //     left: -1rem;
+        // }
+    }
 }
 
 // @media screen and (orientation: portrait) {
@@ -1753,7 +1815,6 @@ button {
 //         height: 7rem;
 //     }
 // }
-
 @media screen and (orientation: landscape) {
     /*横屏 css*/
     .orientationWeak {

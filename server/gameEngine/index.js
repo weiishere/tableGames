@@ -50,7 +50,7 @@ module.exports = (io, scoket) => {
         if (room) {
             //console.log(room.gamers);
             for (let i = 0, l = room.gamers.length; i < l; i++) {
-                if (!room.gamers[i].scoketId) { console.log('scoketId none:'); console.log(room.gamers[i]); }
+                if (!room.gamers[i].scoketId) { console.log('scoketId none'); continue; }
                 let item = io.sockets.sockets[room.gamers[i].scoketId];
                 if (item && room.gamers[i] && room.gamers[i].uid === uid) {
                     // console.log(room.gamers[i].scoketId);
@@ -129,20 +129,15 @@ module.exports = (io, scoket) => {
             //判断是否在其他牌局当中
 
             const otherRoom = findUserInRoom(data.user.uid);
+            /*
             if (otherRoom && otherRoom.roomId !== data.roomId) {
-                // if (otherRoom[0].game && otherRoom[0].game.gameState.find(u => u.uid === data.user.uid)){
-                //     if (!otherRoom[0].game.gameState.find(u => u.uid === data.user.uid).offLine) {
-
-                //     }
-                // }
                 setTimeout(() => {
                     //console.log(`您已经在房间:${otherRoom.roomId}中，不能加入其他房间"}`);
                     //scoket.emit('message', `{"type":"errorInfo","content":"对不起，您已经在其他房间（单局游戏中），单局结束之前不允许加入其他房间"}`);
-                    //console.log(otherRoom);
                     scoket.emit('message', `{"type":"errorInfo","order":"jump","content":"您已经在其他房间中（游戏中），单局完成之前暂不能加入其他房间，请完成单局游戏后再加入，谢谢（确定自动跳转至未完成游戏）"}`);
                 }, 200);
                 return;
-            }
+            }*/
             //const _rooms = global.allRooms.filter(item => item.roomId + '' === data.roomId);
             const _rooms = getRoom(data.roomId);
             data.user.name = decodeURI(data.user.name);
@@ -158,8 +153,8 @@ module.exports = (io, scoket) => {
                     //如果人满了或者正在游戏中，拒绝加入
                     if (room.gamers.length === room.gamerNumber) {
                         //console.log(`房间人数已满~`);
-                        setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`, room); }, 2000);
-                        //scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`);
+                        //setTimeout(() => { sendForUser(data.user.uid, `{"type":"errorInfo","content":"对不起，房间人数已满~"}`, room); }, 2000);
+                        setTimeout(() => { scoket.emit('message', `{"type":"errorInfo","content":"对不起，房间人数已满~"}`); }, 2000);
                         return;
                     }
                     //console.log(data.user.name + '加入房间ID:' + room.roomId);
@@ -263,12 +258,14 @@ module.exports = (io, scoket) => {
                             const room = new Room({
                                 roomId: result.roomId,
                                 gamers: [data.user],
+                                bulider: data.user,
                                 gamerNumber: data.option.gamerNumber || jsonData.mulriple,//测试的时候这个可能会变
                                 mulriple: data.option.mulriple || jsonData.mulriple,//倍数
                                 gameTime: data.option.gameTime || jsonData.gameTime,
                                 countdown: data.option.countdown || jsonData.countdown,//倒计时
                                 state: 'wait',
                                 gameType: 'majiang',
+                                roomCards: data.option.roomCards || [],//房卡组
                                 rule: data.option.rule || jsonData.rule,
                                 colorType: data.option.colorType || jsonData.colorType || 3
                             });
@@ -363,6 +360,7 @@ module.exports = (io, scoket) => {
             if (gamer.offLine) {
                 gamer['offLine'] = false;
                 sendForRoom(roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`, room);
+                return;
             }
         }
     })
@@ -455,6 +453,12 @@ module.exports = (io, scoket) => {
                     //准备人数等于规定人数，游戏开始
                     room.state = 'playing';
                     //room.setEnd(function () { });
+                    if ((room.gameTime + 1) % 4 === 0) {
+                        //创建牌局
+                        room.addBoard(room.roomCards[((room.gameTime + 1) / 4) - 1]).then((boardId) => {
+                            room.boardId = boardId;
+                         });
+                    }
                     if (room.allTime === room.gameTime + 1) {
                         //第一次开始，使用begin（避免两次初始化game））
                         room.begin(scoket, sendForRoom, sendForUser);

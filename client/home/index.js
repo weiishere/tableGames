@@ -113,6 +113,8 @@ class NewRoom extends Component {
             visible: false,
             modal_visible: false,
             roomInfo_visible: false,
+            deskTop_visible: false,
+            deskTopBgImg: '/images/games/majiang2/desktop/desktop6.jpg',
             modal_title: '',
             modal_details: '',
             rule: ['chengdu'],
@@ -120,6 +122,7 @@ class NewRoom extends Component {
             mulriple: 5,
             colorType: [3],
             countdown: [20],
+            userRooms: [],
             loading: false,
             done: false
         }
@@ -127,6 +130,14 @@ class NewRoom extends Component {
             { value: 'chengdu', label: '成都麻将' },
             { value: 'guangan', label: '广安麻将' }
         ]
+        this.deskTopList = [
+            '/images/games/majiang2/desktop/desktop6.jpg',
+            '/images/games/majiang2/desktop/desktop_default.jpg',
+            '/images/games/majiang2/desktop/desktop2.jpg',
+            '/images/games/majiang2/desktop/desktop4.jpg',
+            '/images/games/majiang2/desktop/desktop5.jpg',
+            '/images/games/majiang2/desktop/desktop3.jpg'
+        ];
         this.quickCheckInOption = [
             {
                 rule: 'guangan',
@@ -188,7 +199,8 @@ class NewRoom extends Component {
                 colorType: option.colorType || this.state.colorType[0],
                 countdown: option.countdown || this.state.countdown[0],
                 roomCardNum: option.roomCardNum || this.state.roomCard,
-                isDev: process.env.NODE_ENV === 'development' ? true : false
+                deskTop: option.deskTopBgImg || this.state.deskTopBgImg,
+                isDev: false//process.env.NODE_ENV === 'development' ? true : false
             }).then((data) => {
                 if (process.env.NODE_ENV === 'development') {
                     this.setState({
@@ -238,11 +250,34 @@ class NewRoom extends Component {
             });
         }
     }
+    componentDidMount() {
+        axios.post('/api/getRoomByUserId', {
+            userId: this.props.user.userid
+        }).then((data) => {
+            this.setState({
+                userRooms: data.data
+            });
+        }).catch((error) => {
+            Toast.info(error);
+        });
+    }
     render() {
         const tabs = [
             { title: <Badge>快速开房</Badge> },
-            { title: <Badge>个性开房</Badge> }
+            { title: <Badge>个性开房</Badge> },
+            { title: <Badge>已开房</Badge> }
         ];
+        const getRoomState = (state) => {
+            //0-初始未激活，1-已激活，2-牌局全部结束
+            switch (state) {
+                case 0:
+                    return '未开始';
+                case 1:
+                    return '游戏中';
+                case 2:
+                    return '已结束';
+            }
+        }
         return !this.state.done ?
             <div style={{ height: '100%' }}>
                 <div className="sub-title">
@@ -250,14 +285,14 @@ class NewRoom extends Component {
                 </div>
                 <Tabs tabs={tabs}
                     initialPage={0}
-                    onChange={(tab, index) => { console.log('onChange', index, tab); }}
-                    onTabClick={(tab, index) => { console.log('onTabClick', index, tab); }}
+                    onChange={(tab, index) => { }}
+                    onTabClick={(tab, index) => { }}
                 >
                     <div className='flex-container'>
                         <ul className='quickCheckIn'>
                             {
-                                this.quickCheckInOption.map(optionItem =>
-                                    <li onClick={() => {
+                                this.quickCheckInOption.map((optionItem, index) =>
+                                    <li key={index} onClick={() => {
                                         this.checkinHandler(optionItem);
                                     }}><span></span>{optionItem.ruleName}：{optionItem.colorType === 3 ? '三门' : '两门'}，房卡{optionItem.roomCardNum}，{optionItem.mulriple}倍</li>)
                             }
@@ -326,12 +361,6 @@ class NewRoom extends Component {
                                                 </div>
                                             </List.Item>
                                             <List.Item>
-                                                {/* <InputItem
-                                    value={this.state.mulriple}
-                                    type='number'
-                                    placeholder="虚拟分数的倍数"
-                                    onChange={v => this.setState({ mulriple: v })}
-                                >倍数:</InputItem> */}
                                                 <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem' }}>倍数</span>
                                                 <Stepper
                                                     style={{ width: '7rem', marginLeft: '1rem' }}
@@ -347,6 +376,23 @@ class NewRoom extends Component {
                                                             modal_visible: true,
                                                             modal_title: '倍数',
                                                             modal_details: '此为游戏正常结算规则的基础上乘以的倍数，初始的倍数为1倍，你可以为其设置其他的多倍数'
+                                                        })
+                                                    }} />
+                                                </div>
+                                            </List.Item>
+                                            <List.Item>
+                                                <span style={{ display: 'inline-block', width: '5.3rem', marginLeft: '1rem' }}>桌布</span>
+                                                <img style={{ width: '5rem', height: '3rem' }} src={this.state.deskTopBgImg} onClick={() => {
+                                                    this.setState({
+                                                        deskTop_visible: true
+                                                    });
+                                                }} />
+                                                <div className='iconFloat'>
+                                                    <Icon type='ellipsis' onClick={() => {
+                                                        this.setState({
+                                                            modal_visible: true,
+                                                            modal_title: '桌布背景',
+                                                            modal_details: '选择游戏桌布，提供不一样的视觉效果'
                                                         })
                                                     }} />
                                                 </div>
@@ -420,12 +466,44 @@ class NewRoom extends Component {
                             maskClosable={true}
                             title="开房成功"
                             animationType='slide-down'
-                            footer={[{ text: '跳转', onPress: () => { } }]}
+                            footer={[{
+                                text: '跳转', onPress: () => {
+                                    location.replace(`/room?roomId=${this.state.roomId}`);
+                                }
+                            }]}
                         >
                             <div style={{ textAlign: 'left' }}>
-                                请点击<a href={`http://www.fanstongs.com/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~<div>http://fanstongs.com/room?roomId={this.state.roomId}</div>
+                                请点击<a href={`/room?roomId=${this.state.roomId}`}>跳转</a>至游戏房间，发送此链接邀请伙伴加入~~<div>http://fanstongs.com/room?roomId={this.state.roomId}</div>
                             </div>
                         </Modal>
+                        <Modal
+                            visible={this.state.deskTop_visible}
+                            transparent
+                            maskClosable={true}
+                            title="桌布选择"
+                            animationType='slide-down'
+                            footer={[{ text: '取消', onPress: () => { this.setState({ deskTop_visible: false }) } }]}
+                        >
+                            <div className='deskImgList'>
+                                {this.deskTopList.map((img, index) => <img onClick={() => {
+                                    this.setState({ deskTopBgImg: img, deskTop_visible: false })
+                                }} key={index} src={img} />)}
+                            </div>
+                        </Modal>
+                    </div>
+                    <div className='flex-container'>
+                        <ul className='hadCheckIn'>
+                            {
+                                this.state.userRooms.map(room =>
+                                    <li onClick={() => {
+                                        location.replace(`/room?roomId=${room.roomId}`);
+                                    }} className={`state_${room.state}`} key={room.roomId}><span></span><h3>&nbsp;房间号：{room.roomId}</h3><br />
+                                        <div>{JSON.parse(room.jsonData).ruleName}，{getRoomState(room.state)}</div>
+                                    </li>)
+                            }
+                            {!this.state.userRooms.length && <li className='none'><div>您还尚未开设游戏房间</div></li>}
+                        </ul>
+                        
                     </div>
                 </Tabs>
                 <footer className='foooterStyle'>
