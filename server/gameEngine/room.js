@@ -119,7 +119,8 @@ class Room {
                     playuserid: bulider_uid,
                     token: getToken()
                 })).then(function (response) {
-                    console.log(response.data);
+                    console.log('----------------addBoard-------------------');
+                    console.log(response);
                     //room.boardId = response.data;
                     resolve(response.data);
                 }).catch(function (error) {
@@ -137,7 +138,8 @@ class Room {
                     collectData: recodeData,
                     token: getToken()
                 })).then(function (response) {
-                    console.log(response.data);
+                    console.log('----------------updateBoardData-------------------');
+                    console.log(response);
                     resolve(response.data);
                 }).catch(function (error) {
                     reject();

@@ -45,7 +45,7 @@ var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8800') : io('ws://220.167.101.116:3300');
+let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8900') : io('ws://220.167.101.116:3300');
 
 let userInfo = {
     userid: getQueryString('uid'),

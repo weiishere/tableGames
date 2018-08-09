@@ -311,7 +311,7 @@ class Majiang {
     //【核心算法函数】处理牌桌子上的各种情况，返回是否暂停，并发送消息
     doGameState(uid, showCrad, from) {
         try {
-            const gameStates = (from === 'other' ? this.gameState.filter(item => item.uid !== uid && !item.isWin) : this.gameState.filter(item => item.uid === uid));
+            let gameStates = (from === 'other' ? this.gameState.filter(item => item.uid !== uid && !item.isWin) : this.gameState.filter(item => item.uid === uid));
             let result = false;
             //let isOtherPass = false;
             gameStates.forEach(userState => {
@@ -482,12 +482,12 @@ class Majiang {
                     this.setGamerCacher(hadRobState);//把自己设置为下一个出牌的人
                     if (!this.fatchCard({ uid: hadRobState.uid, listenType: ['fullMeetWin', 'fullMeetLose'] })) {
                         userState['doing'] = undefined;
-                        return false;
+                        return true;
                     }//自己再摸一张牌，并附上杠上花、杠上炮监听
                     hadRobState.outCards = hadRobState.outCards.filter(card => card.key !== this.lastShowCard.key);
                     hadRobState.winDesc = '';
                     this.sendData();//setTimeout(() => {  }, 10);
-                    return;
+                    return false;
                 } else if (hadRobMeetState) {
                     let count = 0;//只能取两张（可能玩家手上有3张符合的牌）
                     let _meet = [this.lastShowCard];
@@ -504,7 +504,7 @@ class Majiang {
                     this.setGamerCacher(hadRobMeetState);
                     hadRobMeetState.winDesc = '';
                     this.sendData();//setTimeout(() => { this.sendData(); }, 10);
-                    return;
+                    return false;
                 } else {
                     if (!isMineAction) {
                         //如果不是自摸才下一个，不然还要出牌
@@ -561,7 +561,9 @@ class Majiang {
             let isFatchCard = false;//动作执行之后是否有摸牌，主要是为了处理摸了牌之后玩家可能又有动作，那么就不清空actionCode(此场景目前一般是杠了再摸牌)
             let eventObj = undefined
             if (data.actionType === 'pass') {
-                this.passOperation(userState);
+                if (!this.passOperation(userState)) {
+                    return;
+                }
             } else {
                 //首先看是自己摸的牌还是别人打的，判断自己的fatchCard是否为空，如果是别人打的，要取得这张牌
                 let doCard = isMineAction ? userState.fatchCard : this.lastShowCard;//需要处理的入参牌
@@ -947,10 +949,10 @@ class Majiang {
 
 
         // this.gameState[2].cards = [
-        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 4), this.getSpecifiedCard('b', 7), this.getSpecifiedCard('b', 7),
+        //     this.getSpecifiedCard('b', 1), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 4), this.getSpecifiedCard('b', 7), this.getSpecifiedCard('b', 7),
         //     this.getSpecifiedCard('b', 7), this.getSpecifiedCard('t', 3), this.getSpecifiedCard('t', 3),
         //     this.getSpecifiedCard('t', 5),
-        //     this.getSpecifiedCard('t', 6),
+        //     this.getSpecifiedCard('t', 9),
         // ].sort(objectArraySort('key'));
         // this.gameState[2].groupCards.meet = [[
         //     this.getSpecifiedCard('b', 2),
