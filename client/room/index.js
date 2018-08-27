@@ -45,7 +45,7 @@ var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8900') : io('ws://220.167.101.116:3300');
+let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8700') : io('ws://220.167.101.116:3300');
 
 let userInfo = {
     userid: getQueryString('uid'),
@@ -57,7 +57,7 @@ let rotateHandler = () => {
     var orientation = (window.innerWidth > window.innerHeight) ? 'landscape' : 'portrait';
     if (orientation === "portrait") {
         $("#layout").addClass('portraitStyle').height(window.innerWidth).width(window.innerHeight).css('transform-origin', window.innerWidth / 2);
-        document.querySelector('html').style.fontSize = `${document.body.clientWidth / 37}px`;
+        document.querySelector('html').style.fontSize = `${document.body.clientHeight / 60}px`;
     } else {
         document.querySelector('html').style.fontSize = `${document.body.clientWidth / 60}px`;
         $("#layout").removeClass('portraitStyle').height(window.innerHeight).width(window.innerWidth).css('transform-origin', 0);
@@ -135,6 +135,18 @@ if (!isDebug) {
 
         }
     });
+    axios.post('/api/login', {
+        openid: userInfo.openid,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
+        nickname: userInfo.nickname,//'测试nickName',
+        headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
+    }).then((req) => {
+        if (!req.data.userid) {
+            Toast.info('抱歉，用户信息获取失败...');
+            return;
+        }
+        userInfo['roomcard'] = req.data.roomcard;
+        userInfo['score'] = req.data.score;
+    });
 } else {
     scoketDone = true;
     if (!getQueryString('roomId')) {
@@ -161,6 +173,7 @@ class Table extends Component {
                 //avatar: 'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg',
                 avatar: userInfo.headimgurl,//'/images/games/majiang/head.jpg',
                 keepVertical: false,
+                score: userInfo.score,
                 state: 'wait',
                 effectShow: ''
             },
@@ -197,7 +210,8 @@ class Table extends Component {
         this.allGamers = {}
         this.isUpdateTime = false;
         this.bgPlaying = false;
-        this.isGetlocation = false;
+        this.isGetLocation = false;
+        this.isWatch = false;
     }
     // heartBeat({ roomId, uid }) {
     //     //心跳
@@ -262,13 +276,14 @@ class Table extends Component {
     }
     //胡牌特效
     winEventEffect(data) {
-        this.setState({ effectShow: 'effectActive' });
+        this.setState({ effectShow: data.winCode ? 'effectActive ' + data.winCode : 'effectActive' });
         window.setTimeout(() => {
             $('.winEffect').addClass(this.allGamers['user_' + data.uid]);
         }, 1500);
         window.setTimeout(() => {
             this.setState({ effectShow: '' });
             $('.winEffect').removeClass(this.allGamers['user_' + data.uid]);
+            if (data.selfWin) $('.winEffect').removeClass(data.winCode);
         }, 2500);
     }
     //下雨特效
@@ -366,6 +381,7 @@ class Table extends Component {
                     }
                     if (!self.isGetLocation) {
                         self.getlocation();
+                        self.isGetLocation = true;
                     }
                     break;
                 case 'gameData':
@@ -400,7 +416,7 @@ class Table extends Component {
                     //事件
                     //console.log(data.content);
                     if (data.content.type === 'win') {
-                        self.winEventEffect({ uid: data.content.uid });
+                        self.winEventEffect({ uid: data.content.uid, winCode: data.content.winCode });
                     } else if (data.content.type === 'rain') {
                         self.rainEventEffect({ uid: data.content.uid, rainType: data.content.rainType });
                     }
@@ -561,7 +577,7 @@ class Table extends Component {
             );
         }
 
-        let me, leftGamer, topGamer, rightGamer;
+        let me, leftGamer, topGamer, rightGamer, bottomGamer;
         if (this.state.room) {
             //这里差点把我的脑子整爆，看似简单的一个玩家对号入位却相当复杂，因为要考虑玩家数小于等于4的时候，给的数据可能也是小于等于4的，如何选出当前玩家，顺时针安顿其他玩家，整惨了，用了2个多小时才搞定
             let _gamer = this.state.room.gamers;
@@ -585,6 +601,18 @@ class Table extends Component {
             if (leftGamer) this.allGamers['user_' + leftGamer.uid] = 'left';
             if (rightGamer) this.allGamers['user_' + rightGamer.uid] = 'right';
             if (topGamer) this.allGamers['user_' + topGamer.uid] = 'top';
+            if (!me) {
+                bottomGamer = _gamer.find(g => g.uid !== topGamer.uid && g.uid !== leftGamer.uid && g.uid !== rightGamer.uid);
+                this.isWatch = true;
+                //console.log(bottomGamer);
+            } else {
+                if (this.isWatch) {
+                    this.isWatch = false;
+                    this.setState({
+                        toast: '观战模式退出，请注意准备开始游戏哦~'
+                    });
+                }
+            }
         }
         //只要有一个人没选择就要禁用
         let isAllcolorLack = '';
@@ -600,11 +628,17 @@ class Table extends Component {
         const rightGameState = this.state.game && rightGamer ? this.state.game.gameState['user_' + rightGamer.uid] : null;
         const leftGameState = this.state.game && leftGamer ? this.state.game.gameState['user_' + leftGamer.uid] : null;
         const topGameState = this.state.game && topGamer ? this.state.game.gameState['user_' + topGamer.uid] : null;
+        const bottomGameState = this.state.game && bottomGamer ? this.state.game.gameState['user_' + bottomGamer.uid] : null;
         return !this.state.isBegin ? <ImgLoader /> : <div style={{ height: '100%', overflow: 'hidden' }}><QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1, 1), (0.8, 0.8)] }
         ]} style={{ height: '100%' }}><div key='main' className={`MainTable ${isAllcolorLack} ${this.state.effectShow}`} style={this.state.option.deskTop ? { backgroundImage: 'url(' + this.state.option.deskTop + ')' } : {}} >
+                <div className='ruleNameBar'>
+                    <svg t="1528129063145" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="994" width="35" height="25" style={{ width: '1.2rem', height: '1.2rem', verticalAlign: 'top' }}><defs><style type="text/css"></style></defs><path d="M512.237056 125.5936L162.612736 456.8064l18.41152 441.61024H825.038336V419.9936l-312.80128-294.4z" fill="#FDDC00" p-id="3812"></path><path d="M162.612736 916.79744V775.97696c64.08192 30.96576 135.68 48.83456 211.6096 48.83456 234.57792 0 430.336-165.70368 476.95872-386.4064h10.63936v478.39232H162.612736z" fill="#F4B03A" p-id="3813"></path><path d="M503.031296 604.01664h18.41152c66.03776 0 119.6032 53.53472 119.6032 119.6032v91.98592c0 66.06848-53.56544 119.6032-119.6032 119.6032h-18.41152c-66.06848 0-119.6032-53.53472-119.6032-119.6032v-91.98592c0-66.06848 53.53472-119.6032 119.6032-119.6032z" fill="#FFFFFF" p-id="3814"></path><path d="M1015.533056 573.1328L533.802496 97.60768a30.79168 30.79168 0 0 0-21.57568-8.8064c-8.05888 0-15.84128 3.18464-21.57568 8.8064L8.930816 573.1328a29.83936 29.83936 0 0 0 0 42.57792c11.90912 11.76576 27.42272 11.76576 39.33184 0L144.221696 512v386.39616c0 16.64 17.53088 36.80256 34.36544 36.80256H849.716736c16.8448 0 30.52544-20.1728 30.52544-36.80256V530.39104l88.33024 85.31968c5.96992 5.87776 15.6672 8.83712 23.5008 8.83712 7.80288 0 16.55808-2.94912 22.51776-8.83712 11.89888-11.76576 12.8512-30.84288 0.94208-42.57792zM604.233216 880.00512H420.230656V677.61152c0-24.90368 29.98272-36.80256 55.1936-36.80256h92.0064c25.22112 0 36.80256 11.90912 36.80256 36.80256v202.3936z m220.81536 0H659.426816l-0.37888-208.27136c0-58.12224-32.75776-86.1184-91.62752-86.1184h-110.3872c-58.86976 0-92.0064 33.88416-92.0064 92.0064v202.3936H199.415296V456.8064c-7.26016 0.08192 0-0.08192 0 0l307.10784-295.31136 318.52544 313.7024v404.80768z" fill="#464646" p-id="3815"></path></svg>
+                    房间号：{getQueryString('roomId')}</div>
                 <div className='ruleNameBar'>{this.ruleName},{this.state.option.colorType === 2 ? '两' : '三'}门牌,{this.state.option.mulriple}倍</div>
+                {this.state.room && <Watchers room={this.state.room} />}
                 {me && <Gamer_mine game={this.state.game} user={me} room={this.state.room} userState={meGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} readyCallback={this.readyCallback} />}
+                {bottomGamer && <Gamer_Bottom game={this.state.game} user={bottomGamer} room={this.state.room} userState={bottomGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {rightGamer && <Gamer_right game={this.state.game} user={rightGamer} room={this.state.room} userState={rightGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {leftGamer && <Gamer_left game={this.state.game} user={leftGamer} room={this.state.room} userState={leftGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
                 {topGamer && <Gamer_top game={this.state.game} user={topGamer} room={this.state.room} userState={topGameState} lastOutCardKey={this.state.game && this.state.game.lastShowCard ? this.state.game.lastShowCard.key : ''} />}
@@ -721,6 +755,19 @@ class Table extends Component {
             <Toast key='toast' content={this.state.toast} onHide={() => { this.setState({ toast: '' }) }} />
             {this.state.notice && <div className='notice'><marquee >掌派桌游正式公测，无需房卡免费开房，欢迎玩家踊跃试玩，测试版本可能存在尚未发现的错误，若游戏期间出现问题望请理解，同时您也可以将问题截图发到我们的公众号，验证为有效bug将奖励50张房卡(公测期间每晚1:00~2:00点为固定系统维护期，可能会出现不稳定的情况，玩家请尽量绕开此时段游戏，感谢您的试玩！)</marquee></div>}
         </div >
+    }
+}
+class Watchers extends Component {
+    constructor(props) {
+        super(props);
+    }
+    componentDidMount() {
+
+    }
+    render() {
+        return <div className='watcherWrap'>
+            {this.props.room.watchers.map(watcher => <div key={watcher.uid} className='watchersItem'><img src={watcher.avatar} /></div>)}
+        </div>
     }
 }
 class Countdown extends Component {
@@ -890,7 +937,7 @@ class GamerDock extends Component {
             {/* <span className='colorLack'>{getColorName(this.props.colorLack || {})}</span> */}
             {!this.state.active && <div className='score'><span>&nbsp;{this.getTotal()}</span></div>}
             {this.state.active && <div className='location'><p>LA：{this.props.location ? this.props.location.latitude : '获取中'}</p><p>LO：{this.props.location ? this.props.location.longitude : '获取中'}</p></div>}
-            {this.state.active && <div className='Allscore'>15200</div>}
+            {this.state.active && <div className='Allscore'>{this.props.score}</div>}
             {this.props.state === 'ready' && this.props.room.state === 'wait' && <div className="ready_ok"></div>}
             {this.props.userState && this.props.userState.colorLack ? <span className='colorLack'><img src={`/images/games/majiang2/${this.props.userState.colorLack}.png`} /></span> : ''}
             {/* <div ref='showCardWeak' className={`showCardWeak ${this.myEvent && 'show'}`}>{this.myEvent && (this.myEvent.card ? <img src={`/images/games/majiang2/cards/${this.myEvent.card.color}${this.myEvent.card.number}.png`} /> : <span>{this.myEvent.name}</span>)}</div> */}
@@ -919,8 +966,9 @@ class Gamer_mine extends Component {
         this.clickHandle = this.clickHandle.bind(this);
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
+        this.getMinColor = this.getMinColor.bind(this);
         this.fetchCard_tran = true;
-
+        this.minColor = '';
     }
     // shouldComponentUpdate(nextProps) {
     //     if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
@@ -929,6 +977,7 @@ class Gamer_mine extends Component {
     //     return true;
     // }
     ready() {
+        //console.log('ready:' + this.minColor);
         if (this.cardHandler) return;
         this.cardHandler = true;
         const self = this;
@@ -952,6 +1001,7 @@ class Gamer_mine extends Component {
             hadOutCardKey: '',
             userState: nextProps.userState
         });
+        if (!this.props.game) this.minColor = '';
         this.fetchCard_tran = true;
 
         // let timer;
@@ -1099,8 +1149,7 @@ class Gamer_mine extends Component {
             color: color
         }));
     }
-
-    render() {
+    getMinColor() {
         let minColor = '', min = 100;
         if (this.props.userState) {
             //this.addConcatCard = concatCard(this.props.userState);
@@ -1114,13 +1163,48 @@ class Gamer_mine extends Component {
                     minColor = item;
                     min = minColorObj[item];
                 }
-            })
-            // for (let i in minColorObj) {
-            //     if (minColorObj[i] < min) {
-            //         minColor = i;
-            //         min = minColorObj[i];
-            //     }
-            // }
+            });
+            const getCardCon = (c) => {
+                const cards = this.props.userState.cards.filter(card => card.color === c);
+                let conSum = 0;
+                let lastCard = null;
+                //console.log(cards);
+                cards.forEach(card => {
+                    if (lastCard) {
+                        conSum += Math.abs(lastCard.number - card.number);
+                        //console.log(lastCard,card,conSum);
+                    }
+                    lastCard = card;
+                });
+
+                return conSum;
+            }
+            const minColorCopy = minColor;
+            let con1 = getCardCon(minColor);
+            //console.log(minColor);
+            ['b', 't', 'w'].filter(c => c !== minColor).forEach(c => {
+                console.log(minColorObj[minColorCopy] + '|' + minColorObj[c]);
+                if (minColorObj[minColorCopy] === minColorObj[c]) {
+                    //如果推荐的牌色跟其他数量相同，则按照牌色最小差额推荐
+                    const con2 = getCardCon(c);
+                    console.log(con2);
+                    console.log(c, con1, con2);
+                    if (con2 > con1) {
+                        minColor = c;
+                        con1 = con2;
+                    }
+                }
+            });
+        }
+        return minColor;
+    }
+    render() {
+        if (!this.minColor) {
+            console.log('重算推荐');
+            this.minColor = this.getMinColor();
+        }
+        if (this.props.userState) {
+            this.isLack = concatCard(this.props.userState).filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
         }
         const ready = <div key='ready' onClick={this.ready} className='btu ready'></div>
         const btu_showCard = <div key='showCard' onClick={this.showCard} className={`btu showCard ${this.state.activeCard.key && 'active'}`}></div>
@@ -1131,9 +1215,9 @@ class Gamer_mine extends Component {
 
 
         const lackColorChoose = <div key='ColorChoose'>
-            <div key='b' className={`btu chooseColor chooseB ${minColor === 'b' && 'mark'}`} onClick={() => this.chooseColor('b')}></div>
-            <div key='t' className={`btu chooseColor chooseT ${minColor === 't' && 'mark'}`} onClick={() => this.chooseColor('t')}></div>
-            <div key='w' className={`btu chooseColor chooseW ${minColor === 'w' && 'mark'}`} onClick={() => this.chooseColor('w')}></div>
+            <div key='b' className={`btu chooseColor chooseB ${this.minColor === 'b' && 'mark'}`} onClick={() => this.chooseColor('b')}></div>
+            <div key='t' className={`btu chooseColor chooseT ${this.minColor === 't' && 'mark'}`} onClick={() => this.chooseColor('t')}></div>
+            <div key='w' className={`btu chooseColor chooseW ${this.minColor === 'w' && 'mark'}`} onClick={() => this.chooseColor('w')}></div>
         </div>
         //this.props.userState && console.log(this.props.userState);
         return <div className='gamerWrap_mine'>
@@ -1198,6 +1282,58 @@ class Gamer_mine extends Component {
                 </div> : ''}
                 {<div className={`loadingPanel ${this.state.buttonVisible && 'action'}`}>loading</div>}
             </QueueAnim>
+        </div>
+    }
+}
+class Gamer_Bottom extends Component {
+    constructor(props) {
+        super(props);
+    }
+    shouldComponentUpdate(nextProps) {
+        if ((this.props.game && nextProps.game && this.props.room && nextProps.room && this.props.game.dataIndex === nextProps.game.dataIndex) && (this.props.room && this.props.room.dataIndex === nextProps.room.dataIndex)) {
+            return false;
+        }
+        return true;
+    }
+    render() {
+        return <div className='gamerWrap_mine gamerWrap_bottom'>
+            <GamerDock class_name='' {...this.props.user} room={this.props.room} userState={this.props.userState} />
+            {this.props.userState && <div className='cardListWrap'>
+                {this.props.userState.groupCards.meet.map((group, index) => <div key={`meets_${index}`} className='group meet'>
+                    {group.map(card =>
+                        <Card key={`meet_${card.key}`} type='group' card={card}></Card>)
+                    }
+                </div>)}
+                {this.props.userState.groupCards.fullMeet.map((group, index) => <div key={`fullmeets_${index}`} className='group fullmeet'>
+                    {group.map(card =>
+                        <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
+                    }
+                </div>)}
+                {(() => {
+                    if (isRealNum(this.props.userState.cards)) {
+                        let result = [];
+                        for (let i = 0; i < +this.props.userState.cards; i++) {
+                            result.push(<Card key={i} type='face_gamer_main'></Card>)
+                        }
+                        return result;
+                    } else {
+                        return this.props.userState.cards.map(card => <Card key={`card_${card.key}`} type='group' card={card} ></Card>)
+                    }
+                })()}
+                {this.props.userState.groupCards.winCard && <div key='win_card' className='group'>
+                    <Card type='group' card={this.props.userState.groupCards.winCard} ></Card>
+                </div>}
+                {this.props.userState.fatchCard && <div className='fetchCard'>
+                    <Card key='fetchCard' type='face_gamer_main stress'></Card>
+                </div>}
+
+            </div>}
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
+                {this.props.userState.outCards.map(card =>
+                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
+                }
+            </QueueAnim>}
+            <div className='bottomWeak'>观战模式</div>
         </div>
     }
 }
@@ -1297,8 +1433,8 @@ class Gamer_top extends Component {
 
             </div>}
             {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
-                {this.props.userState.outCards.map(card =>
-                    <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
+                {this.props.userState.outCards.map((card, index) =>
+                    <div style={{ display: 'inline-block', zIndex: 100 - index }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
             </QueueAnim>}
         </div>
@@ -1433,7 +1569,7 @@ class GameInfo extends Component {
                 <div className='contentWrap'>
                     {
                         this.props.room.gamers.map((gamer, index) => <div key={index} className='content'>
-                            <div className={gamer.uid === this.props.user.uid ? `self` : ''}>
+                            <div className={this.props.user && gamer.uid === this.props.user.uid ? `self` : ''}>
                                 <header>
                                     <div>
                                         <img src={`${gamer.avatar}`} />
@@ -1462,7 +1598,7 @@ class GameInfo extends Component {
                 <footer>
                     {this.props.room.state === 'end' && <div className='overWeak'>{this.props.room.allTime}局游戏已全部结束，休息一下，等你再战！</div>}
                     <button className='closeBtu' style={{ marginBottom: 0 }} onClick={this.props.closeHandle}></button>
-                    {this.props.room.state !== 'end' && this.props.isOver && <button className='closeBtu ready' style={{ marginBottom: 0, marginLeft: 10 }} onClick={() => { this.props.closeHandle('ready') }}></button>}
+                    {this.props.user && this.props.room.state !== 'end' && this.props.isOver && <button className='closeBtu ready' style={{ marginBottom: 0, marginLeft: 10 }} onClick={() => { this.props.closeHandle('ready') }}></button>}
                 </footer>
             </div>
 
@@ -1545,7 +1681,7 @@ class Toast extends Component {
             });
             this.timer = window.setTimeout(() => {
                 this.props.onHide();
-            }, 2000);
+            }, 3000);
         }
     }
     render() {
@@ -1737,7 +1873,8 @@ class ImgLoader extends Component {
             { key: "bug_hu", url: host + "/bigEvent/bug_hu.png" },
             { key: "cloud", url: host + "/bigEvent/cloud.png" },
             { key: "house", url: host + "/bigEvent/house.png" },
-
+            { key: "selfWin", url: host + "/bigEvent/selfWin.png" },
+            { key: "gangsh", url: host + "/bigEvent/gangsh.png" },
         ];
         const cardColor = ['b', 't', 'w']; let cardArr = [];
         for (let i = 1; i <= 9; i++) {

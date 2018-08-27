@@ -12,6 +12,7 @@ class Room {
         this.optionSet = Object.assign({
             roomId: 1,//(new UUID()).generateUUID(),
             gamers: [],
+            watchers: [],
             bulider: {},
             gamerNumber: 4,
             mulriple: 1,//倍数
@@ -98,12 +99,26 @@ class Room {
         delete dataClone.optionSet;
         return dataClone;
     }
+    watcherJoin(user) {
+        if (this.watchers.length <= 4) {
+            this.watchers.push(user);
+            return true;
+        } else {
+            //拒绝加入
+            return false;
+        }
+    }
+    watcherLeave(uid) {
+        if (this.watchers.find(w => w.uid === uid)) {
+            this.watchers = this.watchers.filter(watcher => watcher.uid != uid);
+            return true;
+        } else {
+            return false;
+        }
+    }
     gamerJoin(user) {
         if (this.gamers.length < this.gamerNumber) {
             this.gamers.push(user);
-            // this.gamers = this.gamers.sort(function (a, b) {
-            //     return +a.uid - +b.uid;
-            // });
             return true;
         } else {
             //拒绝加入
@@ -224,6 +239,31 @@ class Room {
                         //console.log(gamer.name);
                         sendForUser(gamer.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
                     }
+                }
+
+                for (let i = 0, l = self.watchers.length; i < l; i++) {
+                    const watcher = self.watchers[i];
+                    let _data = {
+                        gameState: (() => {
+                            let result = new Object(), l = content.gameState.length;
+                            for (let i = 0; i < l; i++) {
+                                const userState = content.gameState[i];
+                                result['user_' + userState.uid] = clone(userState);
+                                result['user_' + userState.uid].cards = userState.cards.length;
+                            }
+                            return result;
+                        })(),
+                        lastShowCard: content.lastShowCard,
+                        remainCardNumber: content.remainCardNumber,
+                        isOver: (content.isOver ? true : false),
+                        remainTime: content.remainTime,
+                        dataIndex: content.dataIndex
+                    }
+                    if (event) {
+                        _data['event'] = event;
+                        _data['payload'] = payload;
+                    }
+                    sendForUser(watcher.uid, `{"type":"gameData","content":${JSON.stringify(_data)}} `, this);
                 }
                 // self.gamers.forEach(gamer => {
                 //     let _data = {

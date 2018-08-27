@@ -114,7 +114,7 @@ class NewRoom extends Component {
             modal_visible: false,
             roomInfo_visible: false,
             deskTop_visible: false,
-            deskTopBgImg: '/images/games/majiang2/desktop/desktop6.jpg',
+            deskTopBgImg: '/images/games/majiang2/desktop/desktop_default.jpg',
             modal_title: '',
             modal_details: '',
             rule: ['chengdu'],
@@ -131,12 +131,15 @@ class NewRoom extends Component {
             { value: 'guangan', label: '广安麻将' }
         ]
         this.deskTopList = [
-            '/images/games/majiang2/desktop/desktop6.jpg',
             '/images/games/majiang2/desktop/desktop_default.jpg',
+            '/images/games/majiang2/desktop/desktop6.jpg',
             '/images/games/majiang2/desktop/desktop2.jpg',
-            '/images/games/majiang2/desktop/desktop4.jpg',
             '/images/games/majiang2/desktop/desktop5.jpg',
-            '/images/games/majiang2/desktop/desktop3.jpg'
+            '/images/games/majiang2/desktop/desktop7.jpg',
+            '/images/games/majiang2/desktop/desktop1.jpg',
+            '/images/games/majiang2/desktop/desktop4.jpg',
+            '/images/games/majiang2/desktop/desktop3.jpg',
+            '/images/games/majiang2/desktop/desktop8.jpg'
         ];
         this.quickCheckInOption = [
             {
@@ -279,7 +282,7 @@ class NewRoom extends Component {
             }
         }
         return !this.state.done ?
-            <div style={{ height: '100%' }}>
+            <div>
                 <div className="sub-title">
                     <img src='/images/games/majiang2/roomCheckin.png' />&nbsp;&nbsp;-掌派桌游-
                 </div>
@@ -299,7 +302,7 @@ class NewRoom extends Component {
                         </ul>
                     </div>
                     <div className='flex-container'>
-                        <div>
+                        <div style={{ marginBottom: '3rem' }}>
                             <WingBlank size="lg">
                                 <WhiteSpace size="lg" />
                                 <Card>
@@ -480,6 +483,7 @@ class NewRoom extends Component {
                             visible={this.state.deskTop_visible}
                             transparent
                             maskClosable={true}
+                            style={{width:370}}
                             title="桌布选择"
                             animationType='slide-down'
                             footer={[{ text: '取消', onPress: () => { this.setState({ deskTop_visible: false }) } }]}
@@ -503,7 +507,7 @@ class NewRoom extends Component {
                             }
                             {!this.state.userRooms.length && <li className='none'><div>您还尚未开设游戏房间</div></li>}
                         </ul>
-                        
+
                     </div>
                 </Tabs>
                 <footer className='foooterStyle'>
