@@ -135,7 +135,7 @@ class Room {
                     token: getToken()
                 })).then(function (response) {
                     console.log('----------------addBoard-------------------');
-                    console.log(response);
+                    console.log(response.data);
                     //room.boardId = response.data;
                     resolve(response.data);
                 }).catch(function (error) {
@@ -154,7 +154,7 @@ class Room {
                     token: getToken()
                 })).then(function (response) {
                     console.log('----------------updateBoardData-------------------');
-                    console.log(response);
+                    console.log(response.data);
                     resolve(response.data);
                 }).catch(function (error) {
                     reject();

@@ -130,7 +130,7 @@ button {
             width: 1.6rem;
             height: 1.6rem;
             border-radius: 1rem;
-            border:solid 1px #755e11;
+            border: solid 1px #755e11;
             margin-left: -1rem;
             img {
                 width: 100%;
@@ -143,8 +143,7 @@ button {
         // right: 0;
         // bottom: 0;
         // height: 1rem;
-        color: #fff;
-        //box-shadow: 1px 1px 1px #000;
+        color: #fff; //box-shadow: 1px 1px 1px #000;
         line-height: 1rem;
         padding: 0 .5rem;
         font-size: .5rem;
@@ -956,19 +955,20 @@ button {
     transform: none !important;
 }
 
-.gamerWrap_bottom{
-    .card_face_gamer_main{
+.gamerWrap_bottom {
+    .card_face_gamer_main {
         width: 3.8rem !important;
         height: 5.2rem !important;
         margin-left: -.2rem !important;
     }
-    .bottomWeak{
+    .bottomWeak {
         position: absolute;
         bottom: 0;
         right: 0;
         color: #fff;
     }
 }
+
 .gamerWrap_mine {
     //display: none;
     position: absolute;
@@ -980,7 +980,6 @@ button {
     box-sizing: border-box; // .userInfoWrap {
     //     .userDock;
     // }
-    
     .cardListWrap {
         .clearfix;
         position: absolute;
@@ -992,6 +991,26 @@ button {
         height: 5rem;
         text-align: center;
         .mainCards {}
+        .winWeakWrap {
+            height: 5rem;
+            border: solid .3rem #e4af4e;
+            border-radius: 1rem;
+            position: absolute;
+            top: -6rem;
+            left: 50%;
+            display: flex;
+            //background: #f0ebad;
+            background: rgba(240,235,173,.8);
+            padding: .2rem .5rem;
+            z-index: 5000;
+            .winWeakItem {
+                flex: 1;
+                margin: 0 .5rem;
+                &>div{
+                    font-size: .8rem;
+                }
+            }
+        }
         .group {
             text-align: left;
             display: inline-block;
@@ -1112,14 +1131,15 @@ button {
         left: 13rem;
         transform: rotate(90deg);
         height: 10rem;
-        &>div{
+        &>div {
             margin-left: -.5rem;
-            margin-top: -.2rem;
-            span{
-                background-image:url('/images/games/majiang2/sideCard3.png');
+            margin-top: auto; //-.2rem;
+            height: 2rem;
+            span {
+                background-image: url('/images/games/majiang2/sideCard3.png');
                 height: 2rem;
                 text-align: left;
-                img{
+                img {
                     margin: .15rem 0 0 .1rem;
                     width: 60%;
                     height: 80%;
@@ -1190,15 +1210,16 @@ button {
         left: -7.5rem;
         transform: rotate(-90deg);
         height: 10rem;
-        &>div{
+        &>div {
             float: right;
             margin-left: -.5rem;
-            margin-top: -.2rem;
-            span{
-                background-image:url('/images/games/majiang2/sideCard4.png');
+            margin-top: auto; //-.2rem;
+            height: 2rem;
+            span {
+                background-image: url('/images/games/majiang2/sideCard4.png');
                 height: 2rem;
                 text-align: left;
-                img{
+                img {
                     text-align: right;
                     margin: .1rem 0 0 .7rem;
                     width: 60%;
@@ -1206,8 +1227,6 @@ button {
                 }
             }
         }
-
-        
     }
     .showCardWeak {
         right: auto;
@@ -1284,18 +1303,18 @@ button {
         height: 5rem;
         left: 11rem;
         right: .5rem;
-        top:1rem;
+        top: 1rem;
         margin: auto;
         bottom: -3.3rem;
         transform: rotate(180deg);
-        &>div{
+        &>div {
             position: relative;
             margin-top: -0.7rem;
-            span{
-                background-image:url('/images/games/majiang2/mainCard_group2.png');
+            span {
+                background-image: url('/images/games/majiang2/mainCard_group2.png');
                 width: 1.8rem;
                 height: 2.2rem;
-                img{
+                img {
                     //transform: rotate(180deg);
                     margin-top: .5rem;
                 }
@@ -1449,6 +1468,15 @@ button {
         background-image: url('/images/games/majiang2/mainCard.png');
         width: 3.8rem;
         height: 5.2rem;
+        margin-left: -.1rem;
+        img {
+            margin-top: .4rem;
+        }
+    }
+    &.card_mine_win {
+        background-image: url('/images/games/majiang2/mainCard.png');
+        width: 2.5rem;
+        height: 3.5rem;
         margin-left: -.1rem;
         img {
             margin-top: .4rem;

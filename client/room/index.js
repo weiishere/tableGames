@@ -983,7 +983,7 @@ class Gamer_mine extends Component {
         const self = this;
         this.props.readyCallback();
         //$('.cardListWrap .card').remove();
-        this.setState({ userState: null });
+        this.setState({ userState: null, activeCard: {} });
         window.setTimeout(() => {
             ws.emit('ready', JSON.stringify({
                 user: self.props.user,
@@ -995,9 +995,32 @@ class Gamer_mine extends Component {
     }
     componentWillReceiveProps(nextProps) {
         this.cardHandler = false;
+        // let ac = this.state.activeCard;
+        // console.log(this.state.activeCard);
+        // if (nextProps.userState && nextProps.userState.fatchCard) {
+        //     if (JSON.stringify(this.state.activeCard) !== '{}') {
+        //         ac = this.state.activeCard;
+        //     } else {
+        //         if (nextProps.game && nextProps.userState.catcher) {
+        //             ac = nextProps.userState.fatchCard;
+        //         }
+        //     }
+        // }
+        // if (nextProps.game && nextProps.game.event === 'meet') {
+        //     ac = nextProps.userState.cards[nextProps.userState.cards.length - 1];
+        // }
+        console.log(this.state.activeCard);
+        let ac = {};
+        if (JSON.stringify(this.state.activeCard) === '{}') {
+            ac = (nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}))
+        } else {
+            ac = this.state.activeCard;
+        }
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
-            activeCard: nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}),
+            //activeCard: (nextProps.userState && JSON.stringify(this.state.activeCard) !== '{}' ? this.state.activeCard : (nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}))),
+            //activeCard: (nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {})),
+            activeCard: ac,
             hadOutCardKey: '',
             userState: nextProps.userState
         });
@@ -1016,8 +1039,8 @@ class Gamer_mine extends Component {
     }
     showCard(order) {
         if (this.cardHandler) return;
+        if (JSON.stringify(this.state.activeCard) === '{}') return;
         this.cardHandler = true;
-        this.setState({ buttonVisible: true });
         const _concatCard = concatCard(this.props.userState);
         const _isLack = _concatCard.filter(card => card.color === this.props.userState.colorLack).length === 0 ? true : false;
         const _showCard = _concatCard.find(card => card.key === this.state.activeCard.key);
@@ -1030,12 +1053,13 @@ class Gamer_mine extends Component {
 
         //必须在打缺了的情况下，或者打的缺花色的牌，才通过
         if (_showCard.color === this.props.userState.colorLack || this.isLack) {
-            this.setState({ activeCard: {}, hadOutCardKey: this.state.activeCard.key });
             this.cardHandler = false;
+            const activeCard_key = this.state.activeCard.key;
+            this.setState({ activeCard: {}, hadOutCardKey: activeCard_key });
             ws.emit('showCard', JSON.stringify({
                 roomId: this.props.room.roomId,
                 uid: this.props.user.uid,
-                cardKey: this.state.activeCard.key,
+                cardKey: activeCard_key,
                 fromUser: true,
                 isCancleAction: order === 'cancleAction' ? true : false
             }));
@@ -1082,7 +1106,7 @@ class Gamer_mine extends Component {
         //}
         this.cardHandler = true;
         //点击了就马上隐藏按钮，免得再多生事端
-        this.setState({ buttonVisible: true, fmChooseCardKey: [] });
+        this.setState({ buttonVisible: true, fmChooseCardKey: [], activeCard: {} });
         ws.emit('action', JSON.stringify({
             roomId: this.props.room.roomId,
             uid: this.props.user.uid,
@@ -1132,13 +1156,16 @@ class Gamer_mine extends Component {
                 } else {
                     this.showCard();
                 }
-                if (this.props.userState.catcher) {
-                    this.setState({ activeCard: card });
-                }
+                // if (this.props.userState.catcher) {
+                //     this.setState({ activeCard: card });
+                // } else {
+                //     this.setState({ activeCard: {}, buttonVisible: false });
+                // }
             } else {
                 this.setState({ activeCard: card });
             }
         }
+        console.log('clickHandle');
         playSound('select');
     }
     chooseColor(color) {
@@ -1181,14 +1208,10 @@ class Gamer_mine extends Component {
             }
             const minColorCopy = minColor;
             let con1 = getCardCon(minColor);
-            //console.log(minColor);
             ['b', 't', 'w'].filter(c => c !== minColor).forEach(c => {
-                console.log(minColorObj[minColorCopy] + '|' + minColorObj[c]);
                 if (minColorObj[minColorCopy] === minColorObj[c]) {
                     //如果推荐的牌色跟其他数量相同，则按照牌色最小差额推荐
                     const con2 = getCardCon(c);
-                    console.log(con2);
-                    console.log(c, con1, con2);
                     if (con2 > con1) {
                         minColor = c;
                         con1 = con2;
@@ -1199,8 +1222,8 @@ class Gamer_mine extends Component {
         return minColor;
     }
     render() {
+        console.log(this.state.activeCard);
         if (!this.minColor) {
-            console.log('重算推荐');
             this.minColor = this.getMinColor();
         }
         if (this.props.userState) {
@@ -1256,6 +1279,22 @@ class Gamer_mine extends Component {
                         card={this.props.userState.fatchCard}></Card>
                 </div>}
                 <div className='winDesc'>{this.props.userState.winDesc}</div>
+                {/* <div className='winWeakWrap'>
+                    <div className='winWeakItem'>
+                        <Card
+                            type={`mine_win`}
+                            card={{ color: 'b', key: 'card-b-9-12', number: 9 }}>
+                        </Card>
+                        <div>剩余：1</div>
+                    </div>
+                    <div className='winWeakItem'>
+                        <Card
+                            type={`mine_win`}
+                            card={{ color: 'b', key: 'card-b-9-12', number: 9 }}>
+                        </Card>
+                        <div>剩余：1</div>
+                    </div>
+                </div> */}
                 {/* <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf(':') ? this.props.userState.winDesc.split(':')[1] : this.props.userState.winDesc}</div> */}
             </QueueAnim>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
@@ -1381,7 +1420,7 @@ class Gamer_right extends Component {
                 </div>}
 
             </div>}
-            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
                     <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
@@ -1432,7 +1471,7 @@ class Gamer_top extends Component {
                 </div>}
 
             </div>}
-            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map((card, index) =>
                     <div style={{ display: 'inline-block', zIndex: 100 - index }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
@@ -1478,13 +1517,11 @@ class Gamer_left extends Component {
                         return this.props.userState.cards.map(card => <Card key={`card_${card.key}`} type='group' card={card} ></Card>)
                     }
                 })()}
-
                 {this.props.userState.fatchCard && <div className='fetchCard'>
                     <Card key='fetchCard' type='side_gamer_main stress'></Card>
                 </div>}
-
             </div>}
-            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='outCardListWrap'>
+            {this.props.userState && <QueueAnim delay={0} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
                     <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
                 }
@@ -1502,6 +1539,9 @@ class Card extends Component {
         this.props.clickHandle && this.props.clickHandle(e, card);
     }
     shouldComponentUpdate(nextProps) {
+        if (nextProps.activeKey !== this.props.activeKey) {
+            return true;
+        }
         if (nextProps.card && this.props.card && !nextProps.activeKey && nextProps.type === this.props.type && nextProps.card.key === this.props.card.key) {
             //console.log(nextProps.card);
             return false;
