@@ -38,8 +38,8 @@ class LayOut extends Component {
         this.state = {
             isAllow: false,
             user: userInfo,
-            roomcard: 100,
-            score: 100
+            roomcard: 0,
+            score: 0
         }
     }
     componentDidMount() {
@@ -63,7 +63,7 @@ class LayOut extends Component {
         // }).catch(function (error) {
         //     console.log(error);
         // });
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV !== 'development') {
             console.log(userInfo);
             axios.post('/api/login', {
                 openid: userInfo.openid,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
@@ -203,7 +203,7 @@ class NewRoom extends Component {
                 countdown: option.countdown || this.state.countdown[0],
                 roomCardNum: option.roomCardNum || this.state.roomCard,
                 deskTop: option.deskTopBgImg || this.state.deskTopBgImg,
-                isDev: false//process.env.NODE_ENV === 'development' ? true : false
+                isDev: process.env.NODE_ENV === 'development' ? true : false
             }).then((data) => {
                 if (process.env.NODE_ENV === 'development') {
                     this.setState({

@@ -11,7 +11,7 @@
 .clearfix {
     &:after {
         content: "";
-        height: 0;
+        height: 0;  
         line-height: 0;
         display: block;
         visibility: hidden;
@@ -980,6 +980,9 @@ button {
     box-sizing: border-box; // .userInfoWrap {
     //     .userDock;
     // }
+    .userDock{
+        bottom: 140%;
+    }
     .cardListWrap {
         .clearfix;
         position: absolute;
@@ -988,16 +991,24 @@ button {
         bottom: .5rem;
         margin: auto; //background: rgba(255, 255, 255, 0.1);
         width: 96%;
-        height: 5rem;
+        height: 5.5rem;
         text-align: center;
-        .mainCards {}
+        display: flex;
+        .cardsMineWrap{
+            height: 100%;
+            display: inline-block;
+            display: flex;
+        }
+        .mainCards {
+            flex: 1;
+        }
         .winWeakWrap {
             height: 5rem;
             border: solid .3rem #e4af4e;
             border-radius: 1rem;
             position: absolute;
             top: -6rem;
-            left: 50%;
+            left: 70%;
             display: flex;
             //background: #f0ebad;
             background: rgba(240,235,173,.8);
@@ -1008,6 +1019,7 @@ button {
                 margin: 0 .5rem;
                 &>div{
                     font-size: .8rem;
+                    font-weight: bold;
                 }
             }
         }
@@ -1029,12 +1041,19 @@ button {
                     transform: translate(0, -1.1rem);
                 }
             }
+            .card_group {
+                margin-top: 1rem;
+            }
         }
         .fetchCard {
-            //display: inline-block;
-            position: absolute;
-            right: 0;
-            top: 0;
+            display: inline-block;
+            margin-left: .5rem;
+            .card_mine_main  {
+                width: 4.2rem;
+            }
+            // position: absolute;
+            // right: 0;
+            // top: 0;
         } // &>div{
         //     ._transition
         // }
@@ -1082,7 +1101,7 @@ button {
     box-sizing: border-box;
     .userDock {
         left: 1rem;
-        bottom: 7rem;
+        bottom: 10rem;
     }
     .cardListWrap {
         .clearfix;
@@ -1466,8 +1485,12 @@ button {
     }
     &.card_mine_main {
         background-image: url('/images/games/majiang2/mainCard.png');
-        width: 3.8rem;
-        height: 5.2rem;
+        // width: 3.8rem;
+        // height: 5.2rem;
+        width: 103%;
+        max-width: 4.2rem;
+        min-width: 4rem;
+        height: 5.4rem;
         margin-left: -.1rem;
         img {
             margin-top: .4rem;

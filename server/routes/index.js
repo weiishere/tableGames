@@ -235,5 +235,9 @@ module.exports = (app) => {
             }
         }
         res.json({ code: '0000', msg: 'success', result: location });
+    });
+    app.post('/testAjax', function (req, res) {
+        
+        res.json({ code: '0000', msg: 'success' });
     })
 };

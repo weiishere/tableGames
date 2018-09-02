@@ -11,6 +11,9 @@ import Cookies from "js-cookie";
 import $ from 'jquery';
 import PropTypes from 'prop-types';
 import cardsImages from './image';
+import winCore from '../../server/gameEngine/majiang/winCore';
+import tool from '../../server/gameEngine/majiang/rule/tool';
+
 //import './test';
 //import wechatConfig from '../wxConfig';
 const playerNumber = 4;
@@ -115,9 +118,7 @@ if (!isDebug) {
                     desc: '您准备好了吗？戳我直接开始游戏-掌派桌游',
                     link: 'http://www.fanstongs.com/auth?target=' + escape('room?roomId=' + getQueryString('roomId')),//location.href,
                     imgUrl: 'http://www.fanstongs.com/images/games/majiang2/logo.jpeg',
-                    success: function () {
-                        //alert('success');
-                    }
+                    success: function () { }
                 });
                 wx.getLocation({
                     type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
@@ -129,6 +130,11 @@ if (!isDebug) {
                         userInfo.location = {
                             latitude, longitude
                         }
+                        axios.post('/setLoaction', {
+                            roomId: getQueryString('roomId'),
+                            uid: userInfo.userid,
+                            location: userInfo.location
+                        }).then(() => { });
                     }
                 });
             });
@@ -204,13 +210,12 @@ class Table extends Component {
         this.showCardAuto = this.showCardAuto.bind(this);
         this.winEventEffect = this.winEventEffect.bind(this);
         this.rainEventEffect = this.rainEventEffect.bind(this);
-        this.getlocation = this.getlocation.bind(this);
+        //this.getlocation = this.getlocation.bind(this);
         //this.heartBeat = this.heartBeat.bind(this);
         this.lastData = { isOver: false };
         this.allGamers = {}
         this.isUpdateTime = false;
         this.bgPlaying = false;
-        this.isGetLocation = false;
         this.isWatch = false;
     }
     // heartBeat({ roomId, uid }) {
@@ -306,40 +311,6 @@ class Table extends Component {
             }
         }, 2500);
     }
-    getlocation() {
-        //console.log(this.isGetlocationn);
-        this.isGetlocationn = true;
-        axios.post('/setLoaction', {
-            roomId: getQueryString('roomId'),
-            uid: userInfo.userid,
-            location: userInfo.location
-        }).then(() => { });
-        // if (!isDebug) {
-        //     wx.getLocation({
-        //         type: 'wgs84', // 默认为wgs84的gps坐标，如果要返回直接给openLocation用的火星坐标，可传入'gcj02'
-        //         success: function (res) {
-        //             var latitude = res.latitude; // 纬度，浮点数，范围为90 ~ -90
-        //             var longitude = res.longitude; // 经度，浮点数，范围为180 ~ -180。
-        //             var speed = res.speed; // 速度，以米/每秒计
-        //             var accuracy = res.accuracy; // 位置精度
-        //             userInfo.location = {
-        //                 latitude, longitude
-        //             }
-        //             axios.post('/setLoaction', {
-        //                 roomId: getQueryString('roomId'),
-        //                 uid: userInfo.userid,
-        //                 location: { latitude: latitude, longitude: longitude }
-        //             }).then(() => { });
-        //         }
-        //     });
-        // } else {
-        //     axios.post('/setLoaction', {
-        //         roomId: getQueryString('roomId'),
-        //         uid: userInfo.userid,
-        //         location: { latitude: 0, longitude: 0 }
-        //     }).then(() => { });
-        // }
-    }
     gameInit(room) {
         const self = this;
         let once = true;
@@ -378,10 +349,6 @@ class Table extends Component {
                     if (self.isFristLoad) {
                         self.isFristLoad = false;
                         self.setState({ showMsgPanel: data.content.state === 'wait' ? true : false, showHelpPanel: '0' });
-                    }
-                    if (!self.isGetLocation) {
-                        self.getlocation();
-                        self.isGetLocation = true;
                     }
                     break;
                 case 'gameData':
@@ -957,7 +924,8 @@ class Gamer_mine extends Component {
             buttonVisible: false,
             fmChooseCardKey: [], //用于多杠的情况
             hadOutCardKey: '',//用于马上打出去的牌
-            userState: null
+            userState: null,
+            showWinCardsPanel: true
         }
         this.cardHandler = false;
         this.isLack = false;
@@ -967,6 +935,8 @@ class Gamer_mine extends Component {
         this.showCard = this.showCard.bind(this);
         this.chooseColor = this.chooseColor.bind(this);
         this.getMinColor = this.getMinColor.bind(this);
+        this.getWinCard = this.getWinCard.bind(this);
+        this.winCards = [];
         this.fetchCard_tran = true;
         this.minColor = '';
     }
@@ -976,6 +946,56 @@ class Gamer_mine extends Component {
     //     }
     //     return true;
     // }
+    getWinCard(activeCard, targetProps) {
+        //要验证的牌（除去缺的牌）
+        let validateCards = [];
+        let winResultCard = [];
+        const _props = targetProps || this.props;
+        ['w', 't', 'b'].filter(item => item !== _props.userState.colorLack).forEach(color => {
+            for (let i = 1; i <= 9; i++) { validateCards.push({ key: color + i, number: i, color: color }); }
+        });
+        ['hz', 'fc', 'bb'].forEach((color, i) => {
+            validateCards.push({ key: color + i, number: 1, color: color });
+        });
+        let _cards = clone(_props.userState.cards);
+        _props.userState.fatchCard && _cards.push(_props.userState.fatchCard);
+        _cards = _cards.filter(card => card.key !== activeCard.key);
+        for (let i = 0; i < validateCards.length; i++) {
+            const __cards = _cards.concat(validateCards[i]).sort(tool.objectArraySort('key'));
+            validateCards[i].remainCount = 4;
+            if (winCore(__cards, _props.userState.colorLack)) winResultCard.push(validateCards[i]);
+        }
+        //console.log(winResultCard);
+        if (winResultCard.length !== 0) {
+            //取得所有打出去的牌和已经碰杠的牌
+            for (let i in _props.game.gameState) {
+                const _gameState = _props.game.gameState[i];
+                let vaCards = clone(_gameState.outCards);
+                _gameState.groupCards.meet.forEach(meetArr => {
+                    vaCards = vaCards.concat(meetArr);
+                })
+                _gameState.groupCards.fullMeet.forEach(meetArr => {
+                    vaCards = vaCards.concat(meetArr);
+                })
+                vaCards.forEach(c => {
+                    winResultCard.forEach(vc => {
+                        if (vc.color === c.color && vc.number === c.number) {
+                            vc.remainCount--;
+                        }
+                    })
+                });
+            }
+            _props.userState.cards.forEach(c => {
+                winResultCard.forEach(vc => {
+                    if (vc.color === c.color && vc.number === c.number) {
+                        vc.remainCount--;
+                    }
+                })
+            });
+        }
+        console.log(activeCard);
+        this.winCards = winResultCard;
+    }
     ready() {
         //console.log('ready:' + this.minColor);
         if (this.cardHandler) return;
@@ -1009,12 +1029,25 @@ class Gamer_mine extends Component {
         // if (nextProps.game && nextProps.game.event === 'meet') {
         //     ac = nextProps.userState.cards[nextProps.userState.cards.length - 1];
         // }
-        console.log(this.state.activeCard);
+        //console.log(this.state.activeCard);
         let ac = {};
+        this.winCards = [];
         if (JSON.stringify(this.state.activeCard) === '{}') {
-            ac = (nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}))
+            ac = (nextProps.userState && nextProps.userState.fatchCard || (nextProps.game && nextProps.userState.catcher && nextProps.game.event === 'meet' ? nextProps.userState.cards[nextProps.userState.cards.length - 1] : {}));
+            if (nextProps.userState && nextProps.userState.fatchCard) {
+                if (nextProps.game && nextProps.userState.fatchCard.color !== nextProps.userState.colorLack && concatCard(nextProps.userState).filter(card => card.color === nextProps.userState.colorLack).length !== 0 && nextProps.userState.catcher) {
+                    ac = nextProps.userState.cards[nextProps.userState.cards.length - 1];
+                }
+            }
+
         } else {
             ac = this.state.activeCard;
+        }
+        if (nextProps.userState && nextProps.userState.catcher && this.isLack) {
+            this.setState({
+                showWinCardsPanel: true
+            })
+            this.getWinCard(ac, nextProps);
         }
         this.setState({
             buttonVisible: false,//nextProps.userState.actionCode.length === 0 ? true : false,
@@ -1039,6 +1072,7 @@ class Gamer_mine extends Component {
     }
     showCard(order) {
         if (this.cardHandler) return;
+        if (!this.state.activeCard) return;
         if (JSON.stringify(this.state.activeCard) === '{}') return;
         this.cardHandler = true;
         const _concatCard = concatCard(this.props.userState);
@@ -1143,6 +1177,7 @@ class Gamer_mine extends Component {
             }));
             return;
         }
+
         if (!this.isLack && card.color !== this.props.userState.colorLack) {
             //this.setState({ activeCard: {} });
         } else {
@@ -1162,9 +1197,14 @@ class Gamer_mine extends Component {
                 //     this.setState({ activeCard: {}, buttonVisible: false });
                 // }
             } else {
-                this.setState({ activeCard: card });
+                if (this.props.userState.catcher) {
+                    //获取胡牌
+                    this.getWinCard(card);
+                }
+                this.setState({ activeCard: card, showWinCardsPanel: true });
             }
         }
+
         console.log('clickHandle');
         playSound('select');
     }
@@ -1222,7 +1262,7 @@ class Gamer_mine extends Component {
         return minColor;
     }
     render() {
-        console.log(this.state.activeCard);
+        //console.log(this.state.activeCard);
         if (!this.minColor) {
             this.minColor = this.getMinColor();
         }
@@ -1244,8 +1284,8 @@ class Gamer_mine extends Component {
         </div>
         //this.props.userState && console.log(this.props.userState);
         return <div className='gamerWrap_mine'>
-            <GamerDock class_name='' {...this.props.user} room={this.props.room} userState={this.props.userState} />
-            {this.props.userState && <QueueAnim delay={0} duration={500} type={['top']} className='cardListWrap' leaveReverse>
+            <GamerDock  {...this.props.user} room={this.props.room} userState={this.props.userState} />
+            {this.props.userState && <div className='cardListWrap' >
                 {/* <QueueAnim delay={300} duration={800} animConfig={[
             { opacity: [1, 0], scale: [(1,1), (0.8,0.8)] }
           ]} style={{height:'100%'}}> */}
@@ -1262,25 +1302,36 @@ class Gamer_mine extends Component {
                         <Card key={`fullmeet_${card.key}`} type='group' card={card} ></Card>)
                     }
                 </div>)}
-                {this.props.userState.cards.filter(c => c.key !== this.state.hadOutCardKey).map(card =>
-                    <div className='mainCards' style={{ display: 'inline-block' }} key={`cardWrap_${card.key}`}>
-                        <Card
-                            key={`card_mine_${card.key}`}
-                            activeKey={this.state.activeCard.key}
-                            clickHandle={this.clickHandle}
-                            type={`mine_main ${(!this.isLack && this.props.userState.colorLack !== card.color) || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1) ? 'gray' : ''}`}
-                            card={card}>
-                        </Card></div>)
-                }
-
-                {this.props.userState.fatchCard && <div key='fetchCard' className={`fetchCard ${!this.fetchCard_tran && 'fetchCard_tran'}`}>
-                    <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle}
-                        type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
-                        card={this.props.userState.fatchCard}></Card>
-                </div>}
+                <QueueAnim delay={0} duration={500} type={['top']} className='cardsMineWrap' style={{ width: `${this.props.userState.cards.length * 7.2}%` }} leaveReverse>
+                    {this.props.userState.cards.filter(c => c.key !== this.state.hadOutCardKey).map(card =>
+                        <div className='mainCards' style={{ display: 'inline-block' }} key={`cardWrap_${card.key}`}>
+                            <Card
+                                key={`card_mine_${card.key}`}
+                                activeKey={this.state.activeCard.key}
+                                clickHandle={this.clickHandle}
+                                type={`mine_main ${(!this.isLack && this.props.userState.colorLack !== card.color) || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1) ? 'gray' : ''}`}
+                                card={card}>
+                            </Card></div>)
+                    }
+                    {this.props.userState.fatchCard && <div key='fetchCard' className={`fetchCard ${!this.fetchCard_tran && 'fetchCard_tran'}`}>
+                        <Card activeKey={this.state.activeCard.key} clickHandle={this.clickHandle}
+                            type={`mine_main ${!this.isLack && (this.props.userState.colorLack !== this.props.userState.fatchCard.color || (this.state.fmChooseCardKey.length > 1 && this.state.fmChooseCardKey.indexOf(card.key) === -1)) ? 'gray' : ''} stress`}
+                            card={this.props.userState.fatchCard}></Card>
+                    </div>}
+                </QueueAnim>
                 <div className='winDesc'>{this.props.userState.winDesc}</div>
-                {/* <div className='winWeakWrap'>
-                    <div className='winWeakItem'>
+                {this.state.showWinCardsPanel && this.props.userState.catcher && this.winCards.length !== 0 && <div className='winWeakWrap' onClick={() => {
+                    this.setState({ showWinCardsPanel: false });
+                }}>
+                    {this.winCards.map(__card => <div key={__card.key} className='winWeakItem'>
+                        <Card
+                            key={`card_win_${__card.key}`}
+                            type={`mine_win`}
+                            card={__card}>
+                        </Card>
+                        <div>剩余:{__card.remainCount}</div>
+                    </div>)}
+                    {/* <div className='winWeakItem'>
                         <Card
                             type={`mine_win`}
                             card={{ color: 'b', key: 'card-b-9-12', number: 9 }}>
@@ -1293,10 +1344,10 @@ class Gamer_mine extends Component {
                             card={{ color: 'b', key: 'card-b-9-12', number: 9 }}>
                         </Card>
                         <div>剩余：1</div>
-                    </div>
-                </div> */}
+                    </div> */}
+                </div>}
                 {/* <div className='winDesc'>{this.props.userState.winDesc && this.props.userState.winDesc.indexOf(':') ? this.props.userState.winDesc.split(':')[1] : this.props.userState.winDesc}</div> */}
-            </QueueAnim>}
+            </div>}
             {this.props.userState && <QueueAnim delay={200} duration={500} type={['bottom']} className='outCardListWrap'>
                 {this.props.userState.outCards.map(card =>
                     <div style={{ display: 'inline-block' }} key={`out_${card.key}`}><Card type={`mine_main_out ${this.props.lastOutCardKey === card.key ? 'mark' : ''}`} card={card}></Card></div>)
