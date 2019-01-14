@@ -138,7 +138,7 @@ class Majiang {
                     });
                     if (!isAuto) {
                         console.log('自动动作未完成');
-                        console.log(self.gameState);
+                        //console.log(self.gameState);
                     }
                 }
             } catch (e) {
@@ -856,6 +856,8 @@ class Majiang {
                             if (winners.length >= 1) {
                                 //继续等待
                             } else {
+                                //清除其他人的动作等待（碰、杠）
+                                this.gameState.map(item => item.actionCode = []);
                                 const next = this.getNaxtCacher(userState.uid);
                                 //找到下一个人并摸牌
                                 this.setGamerCacher(next);
@@ -966,42 +968,38 @@ class Majiang {
     }
     //发牌，同时也就开始游戏了
     assignCard() {
-        this.gameState.forEach(userState => {
-            userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
-        });
+        // this.gameState.forEach(userState => {
+        //     userState.cards = this.cards.splice(0, 13).sort(objectArraySort('key'));
+        // });
 
         //获取指定的牌，主要还是快速调试
-        // this.gameState[0].cards = [
-        //     this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 2), this.getSpecifiedCard('w', 3),
-        //     this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 3), this.getSpecifiedCard('b', 8),
-        //     this.getSpecifiedCard('b', 8),this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 2),
-        //     this.getSpecifiedCard('b', 6), this.getSpecifiedCard('b', 6), this.getSpecifiedCard('b', 6)
-        // ].sort(objectArraySort('key'));
-        // this.gameState[0].groupCards.meet = [
-        //     [],
-        //     [],
+        this.gameState[0].cards = [
+            this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 8), this.getSpecifiedCard('t', 8),
+            this.getSpecifiedCard('t', 1), this.getSpecifiedCard('t', 3),
+            this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 2),
+            this.getSpecifiedCard('b', 6), this.getSpecifiedCard('b', 6), this.getSpecifiedCard('b', 6), this.getSpecifiedCard('b', 7), this.getSpecifiedCard('b', 8),
+        ].sort(objectArraySort('key'));
+        // this.gameState[0].groupCards.meet = [[]
         // ];
 
-        // this.gameState[1].cards = [
-        //     this.getSpecifiedCard('b', 3), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
-        //     this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 5), /*this.getSpecifiedCard('t', 7),*/
-        //     this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 9),
-        //     this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9),this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
-        // ].sort(objectArraySort('key'));
+        this.gameState[1].cards = [
+            this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 4),
+            this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('w', 7),
+            this.getSpecifiedCard('w', 7), this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 9),
+            this.getSpecifiedCard('w', 9), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('w', 6)
+        ].sort(objectArraySort('key'));
         // this.gameState[1].groupCards.meet = [[
-
         // ]
         // ];
 
 
-        // this.gameState[2].cards = [
-        //     this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3),
-        //     this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 5), this.getSpecifiedCard('t', 6), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 1), this.getSpecifiedCard('w', 9),
-        //     this.getSpecifiedCard('b', 2), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3),
-        //     this.getSpecifiedCard('b', 5), this.getSpecifiedCard('b', 9),
-        // ].sort(objectArraySort('key'));
+        this.gameState[2].cards = [
+            this.getSpecifiedCard('t', 2), this.getSpecifiedCard('t', 3), this.getSpecifiedCard('t', 4), this.getSpecifiedCard('t', 7),
+            this.getSpecifiedCard('t', 7), this.getSpecifiedCard('t', 7), this.getSpecifiedCard('w', 1),
+            this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3), this.getSpecifiedCard('b', 3),
+            this.getSpecifiedCard('b', 6), this.getSpecifiedCard('w', 6), this.getSpecifiedCard('b', 7),
+        ].sort(objectArraySort('key'));
         // this.gameState[2].groupCards.meet = [[
-
         // ]
         // ];
 
