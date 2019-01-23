@@ -13,7 +13,7 @@ const Item = Popover.Item;
 let userInfo = {
     userid: getQueryString('uid'),
     openid: 'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
-    nickname: 'huangwei',
+    nickname: 'didadi',
     headimgurl: '/images/games/majiang/head.jpg',
     // roomcard: 100,
     // score: 15200

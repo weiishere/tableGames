@@ -97,10 +97,11 @@ module.exports = (app) => {
         //console.log(encodeURI(_url));
         const data = {
             openid: userInfo.openid,
-            username: userInfo.nickname,
+            username: decodeURI(userInfo.nickname),
             headUrl: userInfo.headimgurl,
             token: getToken()
         }
+        console.log(data);
         axios.post(_url, qs.stringify(data))
             .then((response) => {
                 if (!response.data.userid) {
@@ -109,7 +110,7 @@ module.exports = (app) => {
                 userInfo['userid'] = response.data.userid;
                 userInfo['score'] = response.data.score;
                 userInfo['roomcard'] = response.data.roomcard;
-                userInfo.nickname = decodeURI(userInfo.nickname);
+                userInfo['nickname'] = decodeURI(userInfo.nickname);
                 res.setHeader('Set-Cookie', cookie.serialize('wxUserInfo', JSON.stringify(userInfo))
                     // , {
                     //     maxAge: 60 * 60 * 24 * 7 // 1 week

@@ -105,7 +105,7 @@ class Majiang {
                     // }
                     const redomCard = lackCards.length === 0 ? (catcher.fatchCard ? catcher.fatchCard : catcher.cards[getRedomNum(0, catcher.cards.length - 1)]) : {};
                     const _cardKey = lackCards.length === 0 ? redomCard.key : lackCards[0].key;
-                    console.log('自动出牌:' + _cardKey);
+                    //console.log('自动出牌:' + _cardKey);
                     self.showCard({
                         roomId: self.roomId,
                         uid: catcher.uid,
@@ -123,7 +123,7 @@ class Majiang {
                                 color: self.getMinColor(state)// ['b', 't', 'w'][getRedomNum(0, 2)]
                             });
                             isAuto = true;
-                            console.log('自动选花色');
+                            //console.log('自动选花色');
                         } else if (state.actionCode.length !== 0) {
                             //如果有胡，就胡，不然默认过
                             self.actionEvent({
@@ -133,7 +133,7 @@ class Majiang {
                                 actionType: state.actionCode.indexOf('winning') !== -1 ? 'winning' : 'pass'
                             });
                             isAuto = true;
-                            console.log('自动动作');
+                            //console.log('自动动作');
                         }
                     });
                     if (!isAuto) {

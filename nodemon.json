@@ -4,14 +4,20 @@
         ".git",
         "node_modules/**/node_modules"
     ],
-    "ignoreRoot": [".git", "node_modules", "bower_components", ".sass-cache"],
     "verbose": false,
     "execMap": {
         "js": "node --harmony"
     },
     "env": {
-        "NODE_ENV": "development",
-        "DEBUG": "*,-nodemon:*,-nodemon,-knex:pool"
+        "NODE_ENV": "development"
     },
-    "ext": "js json"
+    "events": {
+        "restart": "osascript -e 'display notification \"App restarted due to:\n'$FILENAME'\" with title \"nodemon\"'"
+    },
+    "watch": [
+        "test/fixtures/",
+        "test/samples/"
+    ],
+    "ext": "js json",
+    "legacy-watch": false
 }

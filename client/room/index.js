@@ -143,7 +143,7 @@ if (!isDebug) {
     });
     axios.post('/api/login', {
         openid: userInfo.openid,//'op9eV0yX5DEg7HU2VX3ttMCKXF_c',
-        nickname: userInfo.nickname,//'测试nickName',
+        nickname: decodeURI(userInfo.nickname),//'测试nickName',
         headimgurl: userInfo.headimgurl//'https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=1736960767,2920122566&fm=27&gp=0.jpg'
     }).then((req) => {
         if (!req.data.userid) {
@@ -1134,6 +1134,7 @@ class Gamer_mine extends Component {
     showCard(order) {
         try {
             //if (this.cardHandler) return;
+            
             if (JSON.stringify(this.state.activeCard) === '{}') return;
             this.cardHandler = true;
             const _concatCard = concatCard(this.props.userState);
@@ -1151,6 +1152,7 @@ class Gamer_mine extends Component {
                 this.cardHandler = false;
                 const activeCard_key = this.state.activeCard.key;
                 this.setState({ activeCard: {}, hadOutCardKey: activeCard_key });
+                if(this.props.game.isOver) return;
                 ws.emit('showCard', JSON.stringify({
                     roomId: this.props.room.roomId,
                     uid: this.props.user.uid,
@@ -2009,7 +2011,27 @@ class GameHelpPabel extends Component {
             {
                 key: 'chengdu',
                 name: '成都麻将',
-                content: <div>成都麻将详细规则</div>
+                content: <div>
+                    <center><h3>成都麻将胡牌规则</h3></center>
+                    平胡：普通的胡牌，不包括以下规则任何一种特征，为平胡，不计番数。<br/>
+自摸：牌局上所有未胡牌者加一番，即两倍。<br/>
+点炮：不计番数，点炮者输分数。<br/>
+大对子：“对子胡”，加1番，带一杠加一番。<br/>
+暗七对，加上胡牌14张牌全为对子，且无碰杠，加2番，即四倍。<br/>
+龙七对：带杠的为龙七对，因带杠会在暗七对上的2番上再加一番。<br/>
+清一色，所有牌型均为同一花色（包括碰杠牌），加2番。<br/>
+幺九：本游戏不予支持。<br/>
+下弯雨：牌局出现杠，引杠者输一倍底分给施杠者。<br/>
+下直雨：牌局出现自摸杠，牌局未胡牌者扣一番。（下雨扣分暂不支持结算查叫返还处理）。<br/>
+抢杠：对方已碰牌，再自摸进行自杠处理的时候，如果另外有一方出现胡此牌的玩家，则杠不成立，算作胡牌，并赔偿胡牌者2番。<br/>
+暗杠：手上牌组有四张同样的牌缺未摆出进行杠操作，若胡牌在最终结算时仍要加1番。<br/>
+杠上花：施杠者下牌之后会再摸一张牌，若此时正好胡牌，则加3番（自摸自带1番）。<br/>
+杠上炮：施杠者出的下一张牌，出现点炮，施杠者赔胡牌者加2番。<br/>
+天胡：庄家原手牌（还未出牌）状态则可胡牌，另外三家加2番。<br/>
+海底：最后摸的一张牌出现自摸，加2番。<br/>
+查叫：所有牌都摸完后，仍剩下2家及以上玩家未胡牌，无叫者则一律按照4倍底分赔偿有叫者，若都无叫则抵消赔偿。<br/>
+杠牌加番：胡牌结算时，明杠和暗杠均按照一杠加1番计算。<br/>
+                </div>
             },
             {
                 key: 'guangan',
