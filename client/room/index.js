@@ -2038,7 +2038,7 @@ class GameHelpPabel extends Component {
                 name: '广安麻将',
                 content: <div>
                     <center><h3>广安麻将胡牌规则</h3></center>
-	最基本基本字数 				1颗<br/>
+	最基本胡牌颗数 				1颗<br/>
 	卡张（46缺5）				+1颗<br/>
 	边张（89缺7）				+1颗<br/>
 	单调（钓将）				+1颗<br/>
