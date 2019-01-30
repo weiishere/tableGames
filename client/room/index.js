@@ -865,7 +865,7 @@ class GamerDock extends Component {
         this.props.room.recode.map(item => {
             const _uid = uid || this.props.uid;
             const u = item.find(user => _uid === user.uid);
-            total += u.point
+            if(u) total += u.point;
         });
         if (uid) return total;
         return (total > 0 ? '+' : '') + total;
@@ -1741,9 +1741,9 @@ class GameInfo extends Component {
                                     {
                                         recode.map((item, _index) =>
                                             <li key={`li_${_index}`}>
-                                                第{recode.length - _index}局： {item.find(user => user.uid === gamer.uid).point < 0 ? '' : '+'}
-                                                {item.find(user => user.uid === gamer.uid).point}
-                                                <div><label>{item.find(user => user.uid === gamer.uid).winDesc || '---'}</label></div>
+                                                第{recode.length - _index}局： {(!item.find(user => user.uid === gamer.uid)?0:item.find(user => user.uid === gamer.uid).point) < 0 ? '' : '+'}
+                                                {!item.find(user => user.uid === gamer.uid)?0:item.find(user => user.uid === gamer.uid).point}
+                                                <div><label>{(!item.find(user => user.uid === gamer.uid)?'':item.find(user => user.uid === gamer.uid).winDesc) || '---'}</label></div>
                                             </li>)
                                     }
                                 </ul>
@@ -2174,7 +2174,7 @@ class MsgPanel extends Component {
     }
     getTotal(uid) {
         let total = 0;
-        this.props.room.recode.map(item => total += item.find(user => uid === user.uid).point);
+        this.props.room.recode.map(item => total += (item.find(user => uid === user.uid)?item.find(user => uid === user.uid).point:0));
         return (total > 0 ? '+' : '') + total;
     }
     // shouldComponentUpdate(nextProps) {

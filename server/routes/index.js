@@ -8,6 +8,7 @@ const axios = require('axios');
 const request = require('request');
 //const sha1 = require('../util/sha1');
 const sha1 = require('js-sha1');
+const querystring = require('querystring');
 const appid = 'wxf6a4e87064c3fbd2';
 const secret = '7fb75eea66988061a1ed9578e7d8fef4';
 let tokens = {};
@@ -69,7 +70,7 @@ module.exports = (app) => {
         });
     });
     app.get('/auth/', function (req, res, next) {
-        const { target } = req.query;
+        const { target,isQuery } = req.query;
         // oauth = new OAuth(appid, secret, async (openid) => {
         //     //用于获取token的方法 异步操作需返回Promise
         //     // const txt = await fs.readFile(`${openid}:access_token.txt`, 'utf8');
@@ -83,7 +84,7 @@ module.exports = (app) => {
         //console.log(url);
     });
     app.get('/auth_response/', async function (req, res, next) {
-        const { code, state } = req.query;
+        const { code, state} = req.query;``
         const result = await oauth.getAccessToken(code);
         //console.log(result);
         const accessToken = result.data.access_token;
@@ -132,6 +133,37 @@ module.exports = (app) => {
         // }, () => {
         //     console.log('getAccessToken error');
         // })
+    });
+    app.get('/auth_query/', function (req, res, next) {
+        const { target,isQuery } = req.query;
+        const url = oauth.getAuthorizeURL('http://www.fanstongs.com/auth_response_query', target, 'snsapi_userinfo');
+        res.redirect(url);
+    });
+    app.get('/auth_response_query/', async function (req, res, next) {
+        const { code, state} = req.query;``
+        const result = await oauth.getAccessToken(code);
+        //console.log(result);
+        const accessToken = result.data.access_token;
+        const openid = result.data.openid;
+        //console.log(accessToken + '---' + openid);
+        //这一步先根据openId判断数据库有没有数据，有数据直接获取，没有数据写入之后再操作
+        let userInfo = await oauth.getUser(openid);
+        //console.log(userInfo);
+        //let _url = `http://manage.fanstongs.com/api/login?openid=${userInfo.openid}&token=${getToken()}&username=${userInfo.nickname}&headUrl=${userInfo.headimgurl}`
+        let _url = `http://manage.fanstongs.com/api/login`;
+        //console.log(encodeURI(_url));
+        const data = {
+            openid: userInfo.openid,
+            username: decodeURI(userInfo.nickname),
+            headUrl: userInfo.headimgurl,
+            token: getToken()
+        }
+        axios.post(_url, qs.stringify(data))
+            .then((response) => {
+                res.redirect(`${state}?${querystring.stringify(data)}`);
+            }).catch(function (error) {
+                writeLog('login api', error);
+            });
     });
     app.get('/playing', function (req, res, next) {
         const { uid } = req.query;
