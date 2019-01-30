@@ -4,6 +4,8 @@ var file = "roomDB.db";
 var exists = fs.existsSync(file);
 var sqlite3 = require("sqlite3").verbose();
 const UUID = require('./util/uuid');
+let wsIndex = 0;
+const maxWsIndex = 3;
 //(new UUID()).generateUUID()
 
 var db = new sqlite3.Database(file, function (err) {
@@ -15,7 +17,10 @@ module.exports = {
         db.serialize(function () {
             //数据库对象的run函数可以执行任何的SQL语句，该函数一般不用来执行查询
             var insert = db.prepare("INSERT OR REPLACE INTO rooms (roomId,checkinTime,updateTime,state,checkiner,jsonData) VALUES (?,?,?,?,?,?)"); //插入或者替换数据
-            const uuid = parseInt((new Date()).getSeconds() * 150000 + Math.random() * 10000000);//(new UUID()).generateUUID();
+            let uuid = parseInt((new Date()).getSeconds() * 150000 + Math.random() * 10000000);//(new UUID()).generateUUID();
+            wsIndex++;
+            if (wsIndex > maxWsIndex) wsIndex = 0;
+            uuid = uuid + '' + wsIndex;
             insert.run(uuid, Date.now(), Date.now(), state, uid, jsonData, function (err, result) {
                 if (err) {
                     if (error) error(err);

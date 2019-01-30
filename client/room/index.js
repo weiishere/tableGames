@@ -48,8 +48,15 @@ var u = navigator.userAgent;
 var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
 var isIOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
 const isDebug = process.env.NODE_ENV === 'development';
-let ws = isDebug ? /*io('ws://192.168.31.222:8800')*/io('ws://192.168.31.222:8700') : io('ws://220.167.101.116:3300');
-
+const thisRoomId=getQueryString('roomId');
+const wsServerList=[
+    'ws1.fanstongs.com:80',
+    'ws2.fanstongs.com:80',
+    'ws3.fanstongs.com:80',
+    'ws4.fanstongs.com:80'
+];
+//let ws = isDebug ? io('ws://192.168.31.222:8700') : io('ws://220.167.101.116:3300');
+let ws = isDebug ? io('ws://192.168.31.222:8700') : io(wsServerList[parseInt(thisRoomId.substring(thisRoomId.length-1,thisRoomId.length))]);
 let userInfo = {
     userid: getQueryString('uid'),
     nickname: getQueryString('name') || 'player',
@@ -89,7 +96,7 @@ $(function () {
 if (!isDebug) {
     const userInfoCookie = Cookies.get('wxUserInfo');
     if (!userInfoCookie) {
-        location.replace('/auth?target=' + escape('room?roomId=' + getQueryString('roomId')));
+        location.replace('/auth?target=' + escape('room?roomId=' + thisRoomId));
     } else {
         userInfo = JSON.parse(userInfoCookie);
         userInfo.nickname = decodeURI(userInfo.nickname);
