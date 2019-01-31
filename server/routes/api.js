@@ -8,7 +8,7 @@ const qs = require('qs');
 module.exports = (app) => {
     const path = '/api';
     app.post(path + '/login', function (req, res, next) {
-        const { openid, nickname, headimgurl } = req.body;
+        const { openid, nickname,sex, headimgurl } = req.body;
         //const url = `http://manage.fanstongs.com/api/login?openid=${openId}&token=${getToken()}&username=${nickname}&headUrl=${headimgurl}`;
         let _url = `http://manage.fanstongs.com/api/login`;
         const _token = getToken();
@@ -45,7 +45,7 @@ module.exports = (app) => {
     });
     app.post(path + '/checkin', function (req, res, next) {
         try {
-            const { uid, rule, ruleName, mulriple, colorType, countdown, roomCardNum, deskTop, isDev } = req.body;
+            const { uid, rule, ruleName, soundType, mulriple, colorType, countdown, roomCardNum, deskTop, isDev } = req.body;
             if (!uid) {
                 res.json('none');
                 return;
@@ -58,11 +58,13 @@ module.exports = (app) => {
                 state: 'wait',
                 gameType: 'majiang',
                 rule: rule,
+                soundType:soundType,
                 ruleName: ruleName,
                 colorType: colorType,
                 countdown: countdown,
                 deskTop: deskTop
             }
+            console.log(option);
             if (isDev) {
                 sqliteCommon.insert({
                     uid: uid,

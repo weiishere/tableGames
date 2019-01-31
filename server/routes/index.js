@@ -102,7 +102,7 @@ module.exports = (app) => {
             headUrl: userInfo.headimgurl,
             token: getToken()
         }
-        console.log(data);
+        //console.log(data);
         axios.post(_url, qs.stringify(data))
             .then((response) => {
                 if (!response.data.userid) {

@@ -118,6 +118,7 @@ class NewRoom extends Component {
             modal_title: '',
             modal_details: '',
             rule: ['chengdu'],
+            soundType: ['sc'],
             ruleName: '成都麻将',
             mulriple: 5,
             colorType: [3],
@@ -129,6 +130,10 @@ class NewRoom extends Component {
         this.ruleData = [
             { value: 'chengdu', label: '成都麻将' },
             { value: 'guangan', label: '广安麻将' }
+        ]
+        this.soundTypeData = [
+            { value: 'sc', label: '四川话版' },
+            { value: 'pt', label: '普通话版' }
         ]
         this.deskTopList = [
             '/images/games/majiang2/desktop/desktop_default.jpg',
@@ -144,6 +149,7 @@ class NewRoom extends Component {
         this.quickCheckInOption = [
             {
                 rule: 'guangan',
+                soundType:'sc',
                 ruleName: '广安麻将',
                 mulriple: 5,
                 colorType: 3,
@@ -152,6 +158,7 @@ class NewRoom extends Component {
             },
             {
                 rule: 'guangan',
+                soundType:'sc',
                 ruleName: '广安麻将',
                 mulriple: 10,
                 colorType: 3,
@@ -160,6 +167,7 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
+                soundType:'sc',
                 ruleName: '成都麻将',
                 mulriple: 5,
                 colorType: 3,
@@ -168,6 +176,7 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
+                soundType:'sc',
                 ruleName: '成都麻将',
                 mulriple: 5,
                 colorType: 2,
@@ -176,6 +185,7 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
+                soundType:'sc',
                 ruleName: '成都麻将',
                 mulriple: 10,
                 colorType: 3,
@@ -197,6 +207,7 @@ class NewRoom extends Component {
             axios.post('/api/checkin', {
                 uid: this.props.user.userid,
                 rule: option.rule || this.state.rule[0],
+                soundType:option.soundType || this.state.soundType[0],
                 ruleName: option.ruleName || this.state.ruleName,
                 mulriple: option.mulriple || this.state.mulriple,
                 colorType: option.colorType || this.state.colorType[0],
@@ -396,6 +407,28 @@ class NewRoom extends Component {
                                                             modal_visible: true,
                                                             modal_title: '桌布背景',
                                                             modal_details: '选择游戏桌布，提供不一样的视觉效果'
+                                                        })
+                                                    }} />
+                                                </div>
+                                            </List.Item>
+
+                                            <List.Item>
+                                                <Picker data={this.soundTypeData} cols={1}
+                                                    value={this.state.soundType}
+                                                    onChange={v => this.setState({
+                                                        soundType: v
+                                                    })}
+                                                    onOk={v => this.setState({
+                                                        soundType: v
+                                                    })}>
+                                                    <List.Item arrow="horizontal">语音报牌</List.Item>
+                                                </Picker>
+                                                <div className='iconFloat'>
+                                                    <Icon type='ellipsis' onClick={() => {
+                                                        this.setState({
+                                                            modal_visible: true,
+                                                            modal_title: '语音报牌',
+                                                            modal_details: '您可以选择报牌语音类别，预置四川成都话版和普通话版（由于系统限制，苹果手机用户暂无法播放出牌语音）'
                                                         })
                                                     }} />
                                                 </div>

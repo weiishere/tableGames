@@ -285,6 +285,7 @@ module.exports = (io, scoket) => {
                                 mulriple: data.option.mulriple || jsonData.mulriple,//倍数
                                 gameTime: data.option.gameTime || jsonData.gameTime,
                                 countdown: data.option.countdown || jsonData.countdown,//倒计时
+                                soundType:data.option.soundType || jsonData.soundType,//语音类型
                                 state: 'wait',
                                 gameType: 'majiang',
                                 roomCards: data.option.roomCards || [],//房卡组
