@@ -181,6 +181,9 @@ module.exports = (io, scoket) => {
                     room.gamerJoin(data.user);
                     //为用户注册scoket事件
                     //room.game.regAction(scoket, room);
+
+
+                    //-----------------------------------------------
                     console.log('(' + (new Date()).toLocaleString() + ')' + data.user.name + '加入房间房间ID:' + room.roomId);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
@@ -286,6 +289,7 @@ module.exports = (io, scoket) => {
                                 gameTime: data.option.gameTime || jsonData.gameTime,
                                 countdown: data.option.countdown || jsonData.countdown,//倒计时
                                 soundType:data.option.soundType || jsonData.soundType,//语音类型
+                                bgMusicType:data.option.bgMusicType || jsonData.bgMusicType,//背景乐
                                 state: 'wait',
                                 gameType: 'majiang',
                                 roomCards: data.option.roomCards || [],//房卡组
@@ -453,6 +457,8 @@ module.exports = (io, scoket) => {
                     room.gamerJoin(data.user);
                     setTimeout(() => {
                         sendForRoom(data.roomId, `{"type":"roomData","content":${JSON.stringify(room.getSimplyData())}}`);
+                        // console.log('----------------------------------------------------');
+                        // console.log(room.getSimplyData());
                         setTimeout(() => {
                             sendForRoom(data.roomId, `{"type":"notified","content":"${decodeURI(data.user.name)}加入房间"}`);
                         }, 50);

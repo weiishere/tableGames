@@ -26,11 +26,12 @@ let scoketDone = false;
 let newRecore = false;
 let disableSound = false;
 let bgMusicDisable = false;
+let bgMusicId='';
 let ruleName = '';
 let shareDesc = '';
 
 const bgPlay = () => {
-    const bgAudio = document.getElementById('bgMusic');
+    const bgAudio = document.getElementById(bgMusicId);
     if (bgAudio.paused) {
         bgAudio.play();
         bgMusicDisable = false;
@@ -39,7 +40,8 @@ const bgPlay = () => {
         bgMusicDisable = true;
     }
 }
-const playSound = (type, format) => {
+//loop="loop"
+const playSound = (type, format, callback) => {
     if (!disableSound) {
         if (!document.getElementById(type)) {
             //<audio controls="controls" src="sound/give.mp3" id="showCard" preload="auto" style={{ display: 'none' }}></audio>
@@ -51,9 +53,10 @@ const playSound = (type, format) => {
             audio.src = `sound/${type}.${format || 'mp3'}`;
             audio.id = type;
             body.appendChild(audio);
-            document.getElementById(type).play();
+            callback ? callback(document.getElementById(type)) : document.getElementById(type).play();
+        } else {
+            callback ? callback(document.getElementById(type)) : document.getElementById(type).play();
         }
-        document.getElementById(type).play();
     }
 }
 var u = navigator.userAgent;
@@ -393,11 +396,18 @@ class Table extends Component {
             countdown: roomOption.countdown,
             roomCards: roomOption.roomCards,
             deskTop: roomOption.deskTop,
-            soundType: roomOption.soundType
+            soundType: roomOption.soundType,
+            bgMusicType: roomOption.bgMusicType
         }
+        bgMusicId = roomOption.bgMusicType;
+        playSound(roomOption.bgMusicType, undefined, function (music) {
+            music.loop = 'loop';
+            music.play();
+        });
         this.setState({
             option: __option
         })
+        self.state.user.name=encodeURI(self.state.user.name);
         ws.emit('checkin', JSON.stringify({
             user: self.state.user,
             roomId: room.roomId,
@@ -437,19 +447,23 @@ class Table extends Component {
                     if (data.content.event) {
                         const payload = JSON.parse(data.content.payload);
                         const sex = self.state.room.gamers.find(item => item.uid === payload.uid[0]).sex;//获取事件发生者的性别（这里取第一个）
-                        const soundTypeCode = this.state.option.colorType === 'sc' ? 's-' : '';
+                        const soundTypeCode = self.state.option.soundType === 'sc' ? 's-' : '';
                         const sexFloder = soundTypeCode + (sex + '' === '2' ? 'w/' : 'm/');
 
                         if (data.content.event === 'showCard') {
                             //console.log(payload.card);
                             //userInfo.sex //性别
-                            playSound(sexFloder + payload.card.color + payload.card.number, this.state.option.colorType === 'sc' ? 'wav' : undefined);
+                            if(isIOS){
+                                playSound('showCard');
+                                return;
+                            }
+                            playSound(sexFloder + payload.card.color + payload.card.number, self.state.option.soundType === 'sc' ? 'wav' : undefined);
                         } else if (data.content.event === 'meet') {
-                            playSound(sexFloder + '/peng');
+                            playSound(sexFloder + '/peng',self.state.option.soundType === 'sc' ? 'wav' : undefined);
                         } else if (data.content.event === 'fullMeet') {
-                            playSound(sexFloder + '/gang');
+                            playSound(sexFloder + '/gang',self.state.option.soundType === 'sc' ? 'wav' : undefined);
                         } else if (data.content.event === 'win' || data.content.event === 'selfwin') {
-                            playSound(sexFloder + '/hu');
+                            playSound(sexFloder + '/hu',self.state.option.soundType === 'sc' ? 'wav' : undefined);
                         }
                     }
                     break;
@@ -1252,7 +1266,7 @@ class Gamer_mine extends Component {
             }));
         });
         if (isIOS && (type === 'meet' || type === 'fullMeet')) {
-            //playSound(type);
+            playSound(type);
         }
     }
     clickHandle(e, card) {
@@ -2444,7 +2458,7 @@ class Sound extends Component {
             <audio controls="controls" src="sound/click.mp3" id="click" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/gameStart.mp3" id="gameStart" preload="auto" style={{ display: 'none' }}></audio>
             <audio controls="controls" src="sound/select.mp3" id="select" preload="auto" style={{ display: 'none' }}></audio>
-            <audio controls="controls" src="sound/bgMusic.mp3" autoPlay="autoplay" id="bgMusic" loop="loop" preload="auto" style={{ display: 'none' }}></audio>
+            {/* <audio controls="controls" src="sound/bgMusic.mp3" autoPlay="autoplay" id="bgMusic" loop="loop" preload="auto" style={{ display: 'none' }}></audio> */}
         </div>
     }
 }

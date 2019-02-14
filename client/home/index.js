@@ -6,7 +6,7 @@ import clone from 'clone';
 import Cookies from "js-cookie";
 import '../reset.less';
 import './style.less';
-import { getQueryString, getColorName, concatCard, getRedom } from '../util';
+import { getQueryString, getColorName, concatCard, getRedomNum } from '../util';
 import $ from 'jquery';
 const axios = require('axios');
 const Item = Popover.Item;
@@ -30,6 +30,25 @@ if (process.env.NODE_ENV !== 'development') {
     // }).catch(function (error) {
     //     alert(error);
     // });
+}
+let lastMusic;
+const playSound = (type, format, callback) => {
+    if (!lastMusic) lastMusic = document.getElementById('sound/bgMusic1');
+    lastMusic.pause();
+    if (!document.getElementById(type)) {
+        var body = document.body;
+        var audio = document.createElement("audio");
+        audio.controls = "controls";
+        audio.preload = "auto";
+        audio.style.display = 'none';
+        audio.src = `sound/${type}.${format || 'mp3'}`;
+        audio.id = type;
+        body.appendChild(audio);
+        lastMusic = audio;
+        callback ? callback(document.getElementById(type)) : document.getElementById(type).play();
+    } else {
+        callback ? callback(document.getElementById(type)) : document.getElementById(type).play();
+    }
 }
 
 class LayOut extends Component {
@@ -79,7 +98,7 @@ class LayOut extends Component {
                 this.setState({
                     isAllow: true,
                     user: userInfo,
-                })
+                });
             });
         } else {
             window.setTimeout(() => {
@@ -87,7 +106,7 @@ class LayOut extends Component {
                 userInfo['score'] = 100;
                 this.setState({
                     isAllow: true,
-                    user: userInfo,
+                    user: userInfo
                 })
             }, 1000);
         }
@@ -106,9 +125,8 @@ class LayOut extends Component {
 class NewRoom extends Component {
     constructor(props) {
         super(props);
-
         this.state = {
-            roomCard: 0,
+            roomCard: this.props.user.roomcard > 0 ? 1 : 0,
             roomId: 0,
             visible: false,
             modal_visible: false,
@@ -119,6 +137,7 @@ class NewRoom extends Component {
             modal_details: '',
             rule: ['chengdu'],
             soundType: ['sc'],
+            bgMusicType: ['bgMusic1'],
             ruleName: '成都麻将',
             mulriple: 5,
             colorType: [3],
@@ -135,6 +154,17 @@ class NewRoom extends Component {
             { value: 'sc', label: '四川话版' },
             { value: 'pt', label: '普通话版' }
         ]
+        this.bgMusicTypeData = [
+            { value: 'bgMusic1', label: '欢快跳跃' },
+            { value: 'bgMusic2', label: '悠扬古筝' },
+            { value: 'bgMusic3', label: '现代轻笛' },
+            { value: 'bgMusic4', label: '琵琶风笛' },
+            { value: 'bgMusic8', label: '可爱活泼' },
+            { value: 'bgMusic9', label: '清新愉悦' },
+            { value: 'bgMusic5', label: 'QQ欢乐斗地主背景乐1' },
+            { value: 'bgMusic6', label: 'QQ欢乐斗地主背景乐2' },
+            { value: 'bgMusic7', label: 'QQ欢乐斗地主背景乐3' }
+        ]
         this.deskTopList = [
             '/images/games/majiang2/desktop/desktop_default.jpg',
             '/images/games/majiang2/desktop/desktop6.jpg',
@@ -146,10 +176,12 @@ class NewRoom extends Component {
             '/images/games/majiang2/desktop/desktop3.jpg',
             '/images/games/majiang2/desktop/desktop8.jpg'
         ];
+        const redomBgMusic = this.bgMusicTypeData[getRedomNum(0, this.bgMusicTypeData.length - 1)].value;
         this.quickCheckInOption = [
             {
                 rule: 'guangan',
-                soundType:'sc',
+                soundType: 'sc',
+                bgMusicType: redomBgMusic,
                 ruleName: '广安麻将',
                 mulriple: 5,
                 colorType: 3,
@@ -158,7 +190,8 @@ class NewRoom extends Component {
             },
             {
                 rule: 'guangan',
-                soundType:'sc',
+                soundType: 'sc',
+                bgMusicType: redomBgMusic,
                 ruleName: '广安麻将',
                 mulriple: 10,
                 colorType: 3,
@@ -167,7 +200,8 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
-                soundType:'sc',
+                soundType: 'sc',
+                bgMusicType: redomBgMusic,
                 ruleName: '成都麻将',
                 mulriple: 5,
                 colorType: 3,
@@ -176,7 +210,8 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
-                soundType:'sc',
+                soundType: 'sc',
+                bgMusicType: redomBgMusic,
                 ruleName: '成都麻将',
                 mulriple: 5,
                 colorType: 2,
@@ -185,7 +220,8 @@ class NewRoom extends Component {
             },
             {
                 rule: 'chengdu',
-                soundType:'sc',
+                soundType: 'sc',
+                bgMusicType: redomBgMusic,
                 ruleName: '成都麻将',
                 mulriple: 10,
                 colorType: 3,
@@ -207,7 +243,8 @@ class NewRoom extends Component {
             axios.post('/api/checkin', {
                 uid: this.props.user.userid,
                 rule: option.rule || this.state.rule[0],
-                soundType:option.soundType || this.state.soundType[0],
+                soundType: option.soundType || this.state.soundType[0],
+                bgMusicType: option.bgMusicType || this.state.bgMusicType[0],
                 ruleName: option.ruleName || this.state.ruleName,
                 mulriple: option.mulriple || this.state.mulriple,
                 colorType: option.colorType || this.state.colorType[0],
@@ -413,6 +450,31 @@ class NewRoom extends Component {
                                             </List.Item>
 
                                             <List.Item>
+                                                <Picker data={this.bgMusicTypeData} cols={1}
+                                                    value={this.state.bgMusicType}
+                                                    onChange={v => {
+                                                        this.setState({
+                                                            bgMusicType: v
+                                                        })
+                                                        playSound(v);
+                                                    }}
+                                                    onOk={v => this.setState({
+                                                        bgMusicType: v
+                                                    })}>
+                                                    <List.Item arrow="horizontal">背景音乐</List.Item>
+                                                </Picker>
+                                                <div className='iconFloat'>
+                                                    <Icon type='ellipsis' onClick={() => {
+                                                        this.setState({
+                                                            modal_visible: true,
+                                                            modal_title: '背景音乐',
+                                                            modal_details: '您可以选择背景音乐类别，苹果用户暂需手动播放'
+                                                        })
+                                                    }} />
+                                                </div>
+                                            </List.Item>
+
+                                            <List.Item>
                                                 <Picker data={this.soundTypeData} cols={1}
                                                     value={this.state.soundType}
                                                     onChange={v => this.setState({
@@ -421,18 +483,20 @@ class NewRoom extends Component {
                                                     onOk={v => this.setState({
                                                         soundType: v
                                                     })}>
-                                                    <List.Item arrow="horizontal">语音报牌</List.Item>
+                                                    <List.Item arrow="horizontal">语音报牌(仅Android)</List.Item>
                                                 </Picker>
                                                 <div className='iconFloat'>
                                                     <Icon type='ellipsis' onClick={() => {
                                                         this.setState({
                                                             modal_visible: true,
                                                             modal_title: '语音报牌',
-                                                            modal_details: '您可以选择报牌语音类别，预置四川成都话版和普通话版（由于系统限制，苹果手机用户暂无法播放出牌语音）'
+                                                            modal_details: '您可以选择报牌语音类别，预置四川成都话版和普通话版（由于系统限制，苹果手机用户暂不支持语音报牌）'
                                                         })
                                                     }} />
                                                 </div>
                                             </List.Item>
+
+
                                             <List.Item>
                                                 <Picker data={[
                                                     { value: 3, label: '三门牌' },
@@ -516,7 +580,7 @@ class NewRoom extends Component {
                             visible={this.state.deskTop_visible}
                             transparent
                             maskClosable={true}
-                            style={{width:370}}
+                            style={{ width: 370 }}
                             title="桌布选择"
                             animationType='slide-down'
                             footer={[{ text: '取消', onPress: () => { this.setState({ deskTop_visible: false }) } }]}
@@ -546,6 +610,7 @@ class NewRoom extends Component {
                 <footer className='foooterStyle'>
                     <div>&nbsp;&nbsp;持有房卡：{this.props.user.roomcard}</div>
                     <div>积分：{this.props.user.score}&nbsp;&nbsp;</div>
+                    <audio controls="controls" src="sound/bgMusic9.mp3" autoPlay="autoplay" id="sound/bgMusic9" loop="loop" preload="auto" style={{ display: 'none' }}></audio>
                 </footer>
             </div> : <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" scrolling="no" allowtransparency="yes" width="100%" height="100%" src={`./room?roomId=${this.state.roomId}`}></iframe>;
     }

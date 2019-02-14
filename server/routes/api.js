@@ -45,7 +45,7 @@ module.exports = (app) => {
     });
     app.post(path + '/checkin', function (req, res, next) {
         try {
-            const { uid, rule, ruleName, soundType, mulriple, colorType, countdown, roomCardNum, deskTop, isDev } = req.body;
+            const { uid, rule, ruleName, soundType,bgMusicType, mulriple, colorType, countdown, roomCardNum, deskTop, isDev } = req.body;
             if (!uid) {
                 res.json('none');
                 return;
@@ -59,6 +59,7 @@ module.exports = (app) => {
                 gameType: 'majiang',
                 rule: rule,
                 soundType:soundType,
+                bgMusicType:bgMusicType,
                 ruleName: ruleName,
                 colorType: colorType,
                 countdown: countdown,
